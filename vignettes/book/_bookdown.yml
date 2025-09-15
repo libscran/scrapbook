@@ -1,0 +1,13 @@
+book_filename: "scrapbook"
+pagetitle: "Single-cell RNA-seq analyses with scrapper"
+delete_merged_file: true
+new_session: true
+language:
+  ui:
+    chapter_name: "Chapter "
+  label:
+    fig: "Figure "
+    tab: "Table "
+cover-image: "images/cover.png"
+output_dir: "docs"
+rmd_files: ["index.Rmd"]

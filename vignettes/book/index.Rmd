@@ -1,0 +1,41 @@
+--- 
+title: "Single-cell RNA-seq analysis with scrapper"
+documentclass: book
+bibliography: [ref.bib]
+biblio-style: apalike
+link-citations: yes
+favicon: "favicon.ico"
+description: "Or: how I learned to stop worrying and love the t-SNEs."
+cover-image: "https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif"
+github-repo: libscran/scrapbook
+---
+
+```{r, echo=FALSE}
+.gh_url <- file.path('https://github.com', rmarkdown::metadata[['github-repo']])
+
+curpath <- getwd()
+while (curpath != (nextpath <- dirname(curpath))) {
+    target <- file.path(curpath, "DESCRIPTION")
+    if (file.exists(target)) {
+        break
+    }
+    curpath <- nextpath
+}
+if (!file.exists(target)) {
+    stop("failed to find a DESCRIPTION file")
+}
+
+info <- read.dcf(target)
+authors <- eval(parse(text=info[,"Authors@R"]))
+```
+
+---
+author: `r paste(paste('\n- name:', format(authors, include=c('given', 'family', 'role'))), collapse='')`
+url: "`r .gh_url`"
+---
+
+# Introduction {-}
+
+<a href="https://bioconductor.org"><img src="`r rmarkdown::metadata[["cover-image"]]`" width="200" alt="Bioconductor Sticker" align="right" style="margin: 0 1em 0 1em" /></a> 
+
+Something something something.

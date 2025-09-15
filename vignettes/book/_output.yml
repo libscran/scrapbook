@@ -1,0 +1,19 @@
+bookdown::gitbook:
+  css: style.css
+  config:
+    fontsettings:
+      theme: white
+    toc:
+      before: |
+        <li><a href="./">Single-cell analyses with scrapper</a></li>
+      after: |
+        <li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+    download: null
+    edit: https://github.com/libscran/scrapbook/edit/master/%s
+    view: https://github.com/libscran/scrapbook/blob/master/%s
+    history: https://github.com/libscran/scrapbook/commits/master/%s
+    sharing:
+      github: yes
+      facebook: no
+      twitter: no
+      linkedin: no 

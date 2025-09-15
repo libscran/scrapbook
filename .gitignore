@@ -1,0 +1,4 @@
+*.swp
+*.rds
+*.tar.gz
+vignettes/book/docs
