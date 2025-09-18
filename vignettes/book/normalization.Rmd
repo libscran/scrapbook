@@ -1,6 +1,7 @@
 # Normalization 
 
 ```{r, echo=FALSE}
+library(BiocStyle)
 knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 ```
 
@@ -115,6 +116,7 @@ this roughly translates to an original count of 30-60 UMIs in each cell, which g
 This relationship to the original data would be less obvious if the centering were not performed.
 
 ```{r zeisel-demo-snap25, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
+library(scater)
 plotExpression(sce.qc.zeisel, x="level1class", features="Snap25", colour="level1class")
 ```
 
@@ -274,7 +276,7 @@ as shown below for _Malat1_^[Yet another appearance for my favorite gene.] (Figu
 logcounts.lib.richard <- normalizeCounts(counts(sce.qc.richard), lib.factor.richard)
 assay(sce.qc.richard, "logcounts.lib") <- logcounts.lib.richard
 
-logcounts.spike.richard <- normalizeCounts(counts(sce.qc.richard), spike.factors.richard)
+logcounts.spike.richard <- normalizeCounts(counts(sce.qc.richard), spike.factor.richard)
 assay(sce.qc.richard, "logcounts.spike") <- logcounts.spike.richard
 
 library(scater)
@@ -291,8 +293,8 @@ gridExtra::grid.arrange(
 
 ```{r, echo=FALSE, results="hide"}
 # Checking that Malat1 does indeed change in its DE status in unstimulated vs the rest.
-markers1 <- scoreMarkers(logcounts.lib.richard["ENSMUSG00000092341",,drop=FALSE], sce.richard$stimulus, all.pairwise=TRUE)
-markers2 <- scoreMarkers(logcounts.spike.richard["ENSMUSG00000092341",,drop=FALSE], sce.richard$stimulus, all.pairwise=TRUE)
+markers1 <- scoreMarkers(logcounts.lib.richard["ENSMUSG00000092341",,drop=FALSE], sce.qc.richard$stimulus, all.pairwise=TRUE)
+markers2 <- scoreMarkers(logcounts.spike.richard["ENSMUSG00000092341",,drop=FALSE], sce.qc.richard$stimulus, all.pairwise=TRUE)
 diff <- markers1$cohens.d[,"unstimulated",] - markers2$cohens.d[,"unstimulated",]
 diff <- diff[setdiff(names(diff), "unstimulated")]
 stopifnot(all(diff > 0.2))
