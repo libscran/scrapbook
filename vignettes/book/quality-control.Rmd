@@ -67,6 +67,7 @@ summary(qc.metrics.416b$subsets$MT)
 Happily enough, this dataset also contains spike-in transcripts so we can compute the spike-in proportions as well.
 These days, spike-ins are rare as they don't work well in high-throughput scRNA-seq protocols.
 But `sce.416b` is a good old-fashioned plate-based dataset, so if we've got spike-in data, we might as well use it.
+(Obviously, we can just skip this step for datasets where spike-in counts are not available.)
 
 ```{r}
 # Fetching the spike-in data from the alternative experiment.
