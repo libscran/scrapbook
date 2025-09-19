@@ -53,7 +53,7 @@ HVGs are identified as the top $H$ genes with the largest residuals above the tr
 We use the variances in the log-values to ensure that the feature selection is based on the same expression values that are used for later downstream steps.
 Genes with the largest variances will contribute most to the distances between cells during procedures like clustering and dimensionality reduction.
 
-```{r trend-plot-pbmc, fig.cap="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene while the blue line represents the trend fitted to all genes. HVGs are represented by black points while the other genes are grey."}
+```{r trend-plot-pbmc, fig.cap="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene, colored according to whether it was chosen as a HVG. The blue line represents the trend fitted to all genes."}
 library(scrapper)
 var.10x <- modelGeneVariances(logcounts(sce.qc.10x))
 
@@ -69,13 +69,11 @@ length(hvgs.10x)
 is.hvg.10x <- seq_len(nrow(var.10x$statistics)) %in% hvgs.10x
 plot(var.10x$statistics$means, var.10x$statistics$variances,
     col=ifelse(is.hvg.10x, "black", "grey"), pch=16, cex=1,
-    xlab="Mean of log-expression",
-    ylab="Variance of log-expression")
+    xlab="Mean of log-expression", ylab="Variance of log-expression")
+legend("topright", col=c("black", "grey"), pch=16, legend=c("non-HVG", "HVG"))
 
-ordered.mean.10x <- order(var.10x$statistics$means)
-lines(var.10x$statistics$means[ordered.mean.10x],
-    var.10x$statistics$fitted[ordered.mean.10x],
-    col="dodgerblue", lwd=2)
+trend.10x <- approxfun(var.10x$statistics$means, var.10x$statistics$fitted)
+curve(trend.10x, add=TRUE, col="dodgerblue", lwd=2)
 ```
 
 We use residuals to select HVGs as the log-transformation is not a variance stabilizing transformation.
@@ -159,11 +157,8 @@ for (block in names(var.tropho$per.block)) {
         xlab="Mean of log-expression",
         ylab="Variance of log-expression",
         main=block, pch=16, cex=0.5)
-
-    ordered <- order(current$means)
-    lines(current$means[ordered],
-        current$fitted[ordered],
-        col="dodgerblue", lwd=2)
+    trend <- approxfun(current$means, current$fitted)
+    curve(trend, add=TRUE, col="dodgerblue", lwd=2)
 }
 ```
 
@@ -221,23 +216,17 @@ We can improve the fit by tinkering with some of the trend fitting options.
 In particular, setting `use.min.width=TRUE` will switch to a different strategy to defining the window around each point,
 which improves sensitivity in sparse intervals at the risk of overfitting.
 
-```{r trend-plot-seger, fig.cap="Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the blue and red lines represent trends fitted with different parameters."}
+```{r trend-plot-seger, fig.cap="Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the lines represent trends fitted with different parameters."}
 var.default.seger <- modelGeneVariances(logcounts(sce.qc.seger))
 var.minw.seger <- modelGeneVariances(logcounts(sce.qc.seger), use.min.width=TRUE)
 
 plot(var.default.seger$statistics$means, var.default.seger$statistics$variances,
-    xlab="Mean of log-expression", ylab="Variance of log-expression",
-    pch=16, cex=0.5)
-
-ordered <- order(var.default.seger$statistics$means)
-lines(var.default.seger$statistics$means[ordered],
-    var.default.seger$statistics$fitted[ordered],
-    col="dodgerblue", lwd=2)
-lines(var.minw.seger$statistics$means[ordered],
-    var.minw.seger$statistics$fitted[ordered],
-    col="red", lwd=2)
-
-legend("topright", lwd=2, col=c("dodgerblue", "red"), legend=c("default", "min-width"))
+    xlab="Mean of log-expression", ylab="Variance of log-expression", pch=16, cex=0.5)
+trend.default.seger <- approxfun(var.default.seger$statistics$means, var.default.seger$statistics$fitted)
+curve(trend.default.seger, add=TRUE, col="dodgerblue", lwd=2)
+trend.minw.seger <- approxfun(var.minw.seger$statistics$means, var.minw.seger$statistics$fitted)
+curve(trend.minw.seger, add=TRUE, col="salmon", lwd=2)
+legend("topright", lwd=2, col=c("dodgerblue", "salmon"), legend=c("default", "min-width"))
 ```
 
 In practice, the parametrization of the trend fitting doesn't matter all that much.
@@ -277,7 +266,7 @@ summary(b.genes)
 
 Don't be ashamed to take advantage of prior biological knowledge during feature selection to address specific hypotheses!
 We say this because a common refrain in genomics is that the data analysis should be "unbiased", i.e., free from any biological preconceptions.
-Fine, but such "biases" are already present at every stage, starting with experimental design and ending with the interpretation of the data.
+Which is fine and all, but such "biases" are already present at every stage, starting with experimental design and ending with the interpretation of the data.
 So if we already know what we're looking for, why not make life simpler and just go for it?
 Of course, the downside of focusing on pre-defined genes is that it will limit our capacity to detect novel or unexpected aspects of variation.
 Thus, this kind of focused analysis should be complementary to (rather than a replacement for) the unsupervised feature selection strategies discussed above.
@@ -364,18 +353,13 @@ var.gene.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TR
 var.spike.zeisel <- modelGeneVariances(logcounts(altExp(sce.qc.zeisel, "ERCC")))
 
 plot(var.gene.zeisel$statistics$means, var.gene.zeisel$statistics$variances,
-    xlab="Mean of log-expression", ylab="Variance of log-expression",
-    pch=16, cex=0.5)
-ordered.mean.gene.zeisel <- order(var.gene.zeisel$statistics$means)
-lines(var.gene.zeisel$statistics$means[ordered.mean.gene.zeisel],
-    var.gene.zeisel$statistics$fitted[ordered.mean.gene.zeisel],
-    col="dodgerblue", lwd=2)
+    xlab="Mean of log-expression", ylab="Variance of log-expression", pch=16, cex=0.5)
+trend.gene.zeisel <- approxfun(var.gene.zeisel$statistics$means, var.gene.zeisel$statistics$fitted)
+curve(trend.gene.zeisel, add=TRUE, col="dodgerblue", lwd=2)
 
 points(var.spike.zeisel$statistics$means, var.spike.zeisel$statistics$variances, pch=4)
-ordered.mean.spike.zeisel <- order(var.spike.zeisel$statistics$means)
-lines(var.spike.zeisel$statistics$means[ordered.mean.spike.zeisel],
-    var.spike.zeisel$statistics$fitted[ordered.mean.spike.zeisel],
-    col="red", lwd=2, lty=2)
+trend.spike.zeisel <- approxfun(var.spike.zeisel$statistics$means, var.spike.zeisel$statistics$fitted, rule=2)
+curve(trend.spike.zeisel, add=TRUE, col="salmon", lwd=2, lty=2)
 
 legend("topright", c("gene", "spike-in"), pch=c(16, 4))
 ```
@@ -386,9 +370,7 @@ We could then use the biological component to select HVGs via `chooseHighlyVaria
 In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
 
 ```{r}
-tech.var.zeisel <- approx(var.spike.zeisel$statistics$means,
-    var.spike.zeisel$statistics$variances,
-    xout=var.gene.zeisel$statistics$means, rule=2)$y
+tech.var.zeisel <- trend.spike.zeisel(var.gene.zeisel$statistics$means)
 summary(tech.var.zeisel)
 
 bio.var.zeisel <- var.gene.zeisel$statistics$variances - tech.var.zeisel

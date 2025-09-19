@@ -364,11 +364,9 @@ Setting `block=` in `suggestRnaQcThresholds()` and `filterRnaQcMetrics()` yields
 
 ```{r qc-dist-416b-batch, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
 # Making a combined factor for easier reading.
-batch.416b <- paste0(
-    ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced"),
-    "-",
-    sce.416b$block
-)
+plate.416b <- sce.416b$block # i.e., the plate of origin.
+pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
+batch.416b <- paste0(pheno.416b, "-", plate.416b)
 
 qc.thresh.batch.416b <- suggestRnaQcThresholds(qc.metrics.416b, block=batch.416b)
 qc.thresh.batch.416b

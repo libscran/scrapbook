@@ -270,7 +270,7 @@ These differences have real consequences for downstream interpretation.
 If the spike-in size factors were applied to the counts, the expression values in unstimulated cells would be scaled up while expression in stimulated cells would be scaled down.
 However, the opposite would occur if the deconvolution size factors were used. 
 This can manifest as shifts in the magnitude and direction of DE between conditions when we switch between normalization strategies,
-as shown below for _Malat1_^[Yet another appearance for my favorite gene.] (Figure \@ref(fig:norm-effect-malat)).
+as shown below for _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
 
 ```{r norm-effect-malat, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
 logcounts.lib.richard <- normalizeCounts(counts(sce.qc.richard), lib.factor.richard)
