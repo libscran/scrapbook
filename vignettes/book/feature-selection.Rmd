@@ -1,0 +1,402 @@
+# Feature selection 
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+We often use scRNA-seq data in exploratory analyses to characterize heterogeneity across the cell population.
+Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles,
+which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells.
+The choice of genes to use in this calculation has a major impact on the behavior of the metric and the performance of downstream methods.
+We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise.
+In addition to improving signal, this reduces the size of the data to improve computational efficiency of later steps.
+
+## Selecting highly variable genes
+
+### Modelling the mean-variance trend
+
+Our aim is to select the most highly variable genes (HVGs) based on their expression across the population.
+This assumes that genuine biological differences will manifest as increased variation in the affected genes,
+compared to other genes that are only affected by technical noise or a baseline level of "uninteresting" biological variation (e.g., from transcriptional bursting).
+To demonstrate, we'll pull out the classic PBMC dataset from 10X Genomics [@zheng2017massively]:
+
+```{r}
+# Loading in raw data from the 10X output files.
+library(DropletTestFiles)
+raw.path.10x <- getTestFile("tenx-2.1.0-pbmc4k/1.0.0/filtered.tar.gz")
+dir.path.10x <- file.path(tempdir(), "pbmc4k")
+untar(raw.path.10x, exdir=dir.path.10x)
+
+library(DropletUtils)
+fname.10x <- file.path(dir.path.10x, "filtered_gene_bc_matrices/GRCh38")
+sce.10x <- read10xCounts(fname.10x, col.names=TRUE)
+
+# Applying our default QC with outlier-based thresholds.
+library(scrapper)
+is.mito.10x <- grepl("^MT-", rowData(sce.10x)$Symbol)
+qc.metrics.10x <- computeRnaQcMetrics(counts(sce.10x), subsets=list(MT=is.mito.10x))
+sce.10x$sum <- qc.metrics.10x$sum
+qc.thresh.10x <- suggestRnaQcThresholds(qc.metrics.10x)
+qc.keep.10x <- filterRnaQcMetrics(qc.thresh.10x, qc.metrics.10x)
+sce.qc.10x <- sce.10x[,qc.keep.10x]
+
+# Computing log-normalized expression values.
+lib.factor.10x <- centerSizeFactors(sce.qc.10x$sum)
+logcounts(sce.qc.10x) <- normalizeCounts(counts(sce.qc.10x), lib.factor.10x)
+```
+
+We compute the variance of the log-normalized expression values for each gene across all cells [@lun2016step].
+We then fit a trend to the variances with respect to the mean (Figure \@ref(fig:trend-plot-pbmc)).
+HVGs are identified as the top $H$ genes with the largest residuals above the trend, where $H$ is typically between 1000 and 5000.
+We use the variances in the log-values to ensure that the feature selection is based on the same expression values that are used for later downstream steps.
+Genes with the largest variances will contribute most to the distances between cells during procedures like clustering and dimensionality reduction.
+
+```{r trend-plot-pbmc, fig.cap="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene while the blue line represents the trend fitted to all genes. HVGs are represented by black points while the other genes are grey."}
+library(scrapper)
+var.10x <- modelGeneVariances(logcounts(sce.qc.10x))
+
+# Let's have a peek at the statistics for the top HVGs.
+var.10x$statistics$symbol <- rowData(sce.qc.10x)$Symbol # for easier reading.
+ordered.residual.10x <- order(var.10x$statistics$residual, decreasing=TRUE)
+var.10x$statistics[head(ordered.residual.10x),]
+
+# We now choose the top HVGs.
+hvgs.10x <- chooseHighlyVariableGenes(var.10x$statistics$residual, top=4000)
+length(hvgs.10x)
+
+is.hvg.10x <- seq_len(nrow(var.10x$statistics)) %in% hvgs.10x
+plot(var.10x$statistics$means, var.10x$statistics$variances,
+    col=ifelse(is.hvg.10x, "black", "grey"), pch=16, cex=1,
+    xlab="Mean of log-expression",
+    ylab="Variance of log-expression")
+
+ordered.mean.10x <- order(var.10x$statistics$means)
+lines(var.10x$statistics$means[ordered.mean.10x],
+    var.10x$statistics$fitted[ordered.mean.10x],
+    col="dodgerblue", lwd=2)
+```
+
+We use residuals to select HVGs as the log-transformation is not a variance stabilizing transformation.
+The assumption is that, at any given abundance, the variation in expression for most genes is driven by uninteresting processes like sampling noise. 
+The fitted value of the trend at any given gene's abundance represents a mean-dependent estimate of its uninteresting variation,
+while the residuals represent the "interesting" variation for each gene and can be used as the metric for HVG selection.
+If we just used the total variance without any trend, the choice of HVGs would be driven more by the gene's abundance than its biological heterogeneity. 
+
+Once we have our top HVGs, we can use them in downstream steps like principal components analysis.
+We'll discuss this more in Chapter \@ref(dimensionality-reduction), but it is as simple as using only the subset of HVGs in the analysis:
+
+```{r}
+pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.10x,])
+```
+
+### Choosing the number of HVGs
+
+How many HVGs should we use in our downstream analyses, i.e., what is the "best" value of $H$?
+A larger set of HVGs will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes,
+at the cost of increasing noise from irrelevant genes that might obscure said signal.
+It is difficult to determine the optimal trade-off for any given application as noise in one context may be useful signal in another.
+For example, heterogeneity in T cell activation responses is an interesting phenomena [@richard2018tcell]
+but may be irrelevant noise in studies that only care about distinguishing the major immunophenotypes.
+Our recommendation is to simply pick a reasonable $H$ (somewhere between 1000 and 5000) and proceed with the rest of the analysis.
+We can always test other choices later rather than spending much time worrying about obtaining the "optimal" value.
+
+Alternatively, we could define the set of HVGs as all genes with variances above the trend.
+This avoids any judgement calls regarding what level of variation is interesting enough to retain.
+By retaining all potential biological signal, we give secondary population structure the chance to manifest.
+This is most useful for rare and/or weakly-separated subpopulations where the relevant marker genes are not variable enough to sneak into the top $H$ genes.
+The obvious cost is that more noise is also captured, which can reduce the resolution of subpopulations;
+and we need to perform more computational work in each downstream step, as more genes are involved.
+
+```{r}
+# TODO: set bound = 0 by default.
+# Setting top=Inf to select all genes with positive residuals.
+hvgs.all.10x <- chooseHighlyVariableGenes(var.10x$statistics$residual, top=Inf, bound=0)
+length(hvgs.all.10x)
+
+# This can be used just like our other HVGs.
+pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.all.10x,])
+```
+
+## Handling batch effects {#variance-batch}
+
+Larger datasets may contain multiple batches that exhibit uninteresting differences in gene expression, i.e., batch effects.
+We are usually not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
+We demonstrate using some trophoblast scRNA-seq data generated across two batches [@lun2017assessing]:
+
+```{r}
+library(scRNAseq)
+sce.tropho <- LunSpikeInData("tropho")
+
+# Computing the QC metrics. For brevity, we'll skip the spike-ins. 
+library(scrapper)
+location.tropho <- rowRanges(sce.tropho)
+is.mito.tropho <- which(any(seqnames(location.tropho)=="MT"))
+qc.metrics.tropho <- computeRnaQcMetrics(counts(sce.tropho), subsets=list(MT=is.mito.tropho))
+sce.tropho$sum <- qc.metrics.tropho$sum
+qc.thresh.tropho <- suggestRnaQcThresholds(qc.metrics.tropho, block=sce.tropho$block)
+qc.keep.tropho <- filterRnaQcMetrics(qc.thresh.tropho, qc.metrics.tropho, block=sce.tropho$block)
+sce.qc.tropho <- sce.tropho[,qc.keep.tropho]
+
+# Computing log-normalized expression values.
+lib.factor.tropho <- centerSizeFactors(sce.qc.tropho$sum, block=sce.qc.tropho$block)
+logcounts(sce.qc.tropho) <- normalizeCounts(counts(sce.qc.tropho), lib.factor.tropho)
+```
+
+Setting `block=` in `modelGeneVariances()` will compute statistics and fit a separate trend within each batch.
+The use of a batch-specific trend fit is useful as it accommodates differences in the mean-variance trends between batches.
+This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.
+In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
+
+```{r trend-plot-tropho, fig.width=10, fig.asp=0.5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
+var.tropho <- modelGeneVariances(logcounts(sce.qc.tropho), block=sce.qc.tropho$block)
+
+par(mfrow=c(1,2))
+for (block in names(var.tropho$per.block)) {
+    current <- var.tropho$per.block[[block]]
+    plot(current$means, current$variances,
+        xlab="Mean of log-expression",
+        ylab="Variance of log-expression",
+        main=block, pch=16, cex=0.5)
+
+    ordered <- order(current$means)
+    lines(current$means[ordered],
+        current$fitted[ordered],
+        col="dodgerblue", lwd=2)
+}
+```
+
+`modelGeneVariances()` will also average statistics across batches for feature selection.
+This ensures that each batch contributes some information about the variability of each gene. 
+Here, we select the top 2000 HVGs based on the average residuals across the two batches:
+
+```{r}
+hvgs.tropho <- chooseHighlyVariableGenes(var.tropho$statistics$residual, top=2000)
+```
+
+As an aside, the wave-like shape observed in Figure \@ref(fig:trend-plot-tropho) is typical of the mean-variance trend for log-expression values.
+A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero.
+In contrast, the relative contribution of sampling noise decreases at high abundances, resulting in a downward trend.
+The peak represents the point at which these two competing effects cancel each other out.
+
+## Refining the trend fit
+
+The trend fit in `modelGeneVariances()` uses the LOWESS non-parametric smoother [@cleveland1979lowess] by default.
+This slides a window across the x-coordinates and performs a linear regression within each window to obtain the fitted value for the point at the window's center.
+The size of the window varies between points, expanding or contracting until it contains some proportion of all points in the dataset (by default, 30%).
+This mostly works well but can be suboptimal in very sparse intervals of the x-axis.
+To demonstrate, let's have a look at a human pancreas dataset from @segerstolpe2016singlecell:
+
+```{r}
+library(scRNAseq)
+sce.seger <- SegerstolpePancreasData()
+
+# For simplicity, we'll focus on one of the donors. 
+sce.seger <- sce.seger[,sce.seger$individual=="H2"]
+
+# For reasons unknown to us, the data supplied by the authors contain
+# duplicated row names, so we'll just get rid of those to avoid confusion.
+sce.seger <- sce.seger[!duplicated(rownames(sce.seger)),]
+
+# Running QC. Seems like they don't have any data for the mitochondrial genes,
+# unfortunately, but they do have spike-ins so we'll just use those instead.
+library(scrapper)
+qc.metrics.seger <- computeRnaQcMetrics(counts(sce.seger), subsets=NULL)
+sce.seger$sum <- qc.metrics.seger$sum
+ercc.metrics.seger <- computeRnaQcMetrics(counts(altExp(sce.seger, "ERCC")), subsets=NULL)
+qc.metrics.seger$subsets$ERCC <- ercc.metrics.seger$sum / (ercc.metrics.seger$sum + qc.metrics.seger$sum)
+qc.thresh.seger <- suggestRnaQcThresholds(qc.metrics.seger)
+qc.keep.seger <- filterRnaQcMetrics(qc.thresh.seger, qc.metrics.seger)
+sce.qc.seger <- sce.seger[,qc.keep.seger]
+
+# Computing log-normalized expression values.
+lib.factor.seger <- centerSizeFactors(sce.qc.seger$sum)
+logcounts(sce.qc.seger) <- normalizeCounts(counts(sce.qc.seger), lib.factor.seger)
+```
+
+There are very few genes at high abundances, which forces the LOWESS window to expand to contain more points.
+This reduces sensitivity of the fitted trend to the behavior of the high-abundance genes (Figure \@ref(fig:trend-plot-seger)).
+We can improve the fit by tinkering with some of the trend fitting options.
+In particular, setting `use.min.width=TRUE` will switch to a different strategy to defining the window around each point,
+which improves sensitivity in sparse intervals at the risk of overfitting.
+
+```{r trend-plot-seger, fig.cap="Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the blue and red lines represent trends fitted with different parameters."}
+var.default.seger <- modelGeneVariances(logcounts(sce.qc.seger))
+var.minw.seger <- modelGeneVariances(logcounts(sce.qc.seger), use.min.width=TRUE)
+
+plot(var.default.seger$statistics$means, var.default.seger$statistics$variances,
+    xlab="Mean of log-expression", ylab="Variance of log-expression",
+    pch=16, cex=0.5)
+
+ordered <- order(var.default.seger$statistics$means)
+lines(var.default.seger$statistics$means[ordered],
+    var.default.seger$statistics$fitted[ordered],
+    col="dodgerblue", lwd=2)
+lines(var.minw.seger$statistics$means[ordered],
+    var.minw.seger$statistics$fitted[ordered],
+    col="red", lwd=2)
+
+legend("topright", lwd=2, col=c("dodgerblue", "red"), legend=c("default", "min-width"))
+```
+
+In practice, the parametrization of the trend fitting doesn't matter all that much.
+There are so few genes in these sparse intervals that whether or not they are chosen as HVGs won't have a major effect on downstream analyses.
+But sometimes it's just nice to look at some well-fitted curves.
+
+## Selecting _a priori_ genes of interest
+
+A blunt yet effective feature selection strategy is to use pre-defined sets of interesting genes.
+The aim is to focus on specific aspects of biological heterogeneity that may be masked by other factors when using unsupervised methods for HVG selection.
+For example, to study transcriptional changes during the earliest stages of cell fate commitment [@messmer2019transcriptional],
+we might focus only on lineage markers to avoid interference from variability in other pathways (e.g., cell cycle, metabolism).
+Using scRNA-seq data in this manner is conceptually equivalent to a fluorescence activated cell sorting (FACS) experiment,
+with the convenience of being able to (re)define the features of interest at any time.
+We provide some examples of _a priori_ selection based on MSigDB gene sets [@godec2016compendium] below:
+
+```{r}
+library(msigdbr)
+c7.sets <- msigdbr(species = "Homo sapiens", category = "C7")
+head(unique(c7.sets$gs_name))
+
+# Using the Goldrath sets to distinguish CD8 subtypes
+cd8.sets <- c7.sets[grep("GOLDRATH", c7.sets$gs_name),]
+cd8.genes <- rownames(sce.10x) %in% cd8.sets$ensembl_gene
+summary(cd8.genes)
+
+# Using GSE11924 to distinguish between T helper subtypes
+th.sets <- c7.sets[grep("GSE11924", c7.sets$gs_name),]
+th.genes <- rownames(sce.10x) %in% th.sets$ensembl_gene
+summary(th.genes)
+
+# Using GSE11961 to distinguish between B cell subtypes
+b.sets <- c7.sets[grep("GSE11961", c7.sets$gs_name),]
+b.genes <- rownames(sce.10x) %in% b.sets$ensembl_gene
+summary(b.genes)
+```
+
+Don't be ashamed to take advantage of prior biological knowledge during feature selection to address specific hypotheses!
+We say this because a common refrain in genomics is that the data analysis should be "unbiased", i.e., free from any biological preconceptions.
+Fine, but such "biases" are already present at every stage, starting with experimental design and ending with the interpretation of the data.
+So if we already know what we're looking for, why not make life simpler and just go for it?
+Of course, the downside of focusing on pre-defined genes is that it will limit our capacity to detect novel or unexpected aspects of variation.
+Thus, this kind of focused analysis should be complementary to (rather than a replacement for) the unsupervised feature selection strategies discussed above.
+
+Alternatively, we can invert this reasoning to remove genes that are unlikely to be of interest prior to downstream analyses. 
+This eliminates unwanted variation that could mask relevant biology and interfere with interpretation of the results.
+Ribosomal protein genes or mitochondrial genes are common candidates for removal,
+especially in situations with varying levels of cell damage within a population.
+For immune cell subsets, we might also be inclined to remove immunoglobulin genes and T cell receptor genes 
+for which clonal expression introduces (possibly irrelevant) population structure.
+
+```{r}
+# Identifying ribosomal proteins:
+ribo.discard <- grepl("^RP[SL]\\d+", rownames(sce.10x))
+sum(ribo.discard)
+
+# A more curated approach for identifying ribosomal protein genes:
+c2.sets <- msigdbr(species = "Homo sapiens", category = "C2")
+ribo.set <- c2.sets[c2.sets$gs_name=="KEGG_RIBOSOME",]$ensembl_gene
+ribo.discard <- rownames(sce.10x) %in% ribo.set
+sum(ribo.discard)
+
+library(AnnotationHub)
+edb <- AnnotationHub()[["AH73881"]]
+anno <- select(edb, keys=rowData(sce.10x)$ID, keytype="GENEID", 
+    columns="TXBIOTYPE")
+
+# Removing immunoglobulin variable chains:
+igv.set <- anno$GENEID[anno$TXBIOTYPE %in% c("IG_V_gene", "IG_V_pseudogene")]
+igv.discard <- rownames(sce.10x) %in% igv.set
+sum(igv.discard)
+
+# Removing TCR variable chains:
+tcr.set <- anno$GENEID[anno$TXBIOTYPE %in% c("TR_V_gene", "TR_V_pseudogene")]
+tcr.discard <- rownames(sce.10x) %in% tcr.set
+sum(tcr.discard)
+```
+
+In practice, we tend to err on the side of caution and abstain from preemptive filtering on biological function 
+until these genes are demonstrably problematic in downstream analyses.
+
+## Quantifying technical noise
+
+Back in the old days, everyone was all about modelling the gene-wise variability in scRNA-seq data.
+Spike-in transcripts were key to this effort as they allowed us to decompose each gene's variance into technical and biological components. 
+As spike-ins should not be subject to biological effects, the variance in spike-in expression could be used as an estimate of the technical component. 
+Subtracting this from the variance of an endogenous gene at a similar abundance would then yield an estimate of the biological component.
+Sadly, those days are gone and people don't care about variance decomposition anymore.
+But for old times' sake, we'll demonstrate how to do this with the @zeisel2015brain dataset:
+
+```{r}
+library(scRNAseq)
+sce.zeisel <- ZeiselBrainData()
+is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
+
+# Performing some QC to set up the dataset prior to normalization.
+library(scrapper)
+qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
+ercc.metrics.zeisel <- computeRnaQcMetrics(counts(altExp(sce.zeisel, "ERCC")), subsets=NULL)
+qc.metrics.zeisel$subsets$ERCC <- ercc.metrics.zeisel$sum / (qc.metrics.zeisel$sum + ercc.metrics.zeisel$sum)
+qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
+qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
+sce.zeisel$sum <- qc.metrics.zeisel$sum
+sce.zeisel$ERCC_sum <- ercc.metrics.zeisel$sum
+sce.zeisel$detected <- qc.metrics.zeisel$detected
+sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
+sce.zeisel$ERCC_proportion <- qc.metrics.zeisel$subsets$ERCC
+sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+
+# Computing log-normalized expression values. This time, we do it for both the
+# endogenous genes and the spike-ins.
+lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
+logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
+spike.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$ERCC_sum)
+logcounts(altExp(sce.qc.zeisel, "ERCC")) <- normalizeCounts(counts(altExp(sce.qc.zeisel, "ERCC")), spike.factor.zeisel)
+```
+
+We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
+At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
+This assumes that the spike-ins and endogenous genes are both affected by the same technical factors.
+
+```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)."}
+var.gene.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
+var.spike.zeisel <- modelGeneVariances(logcounts(altExp(sce.qc.zeisel, "ERCC")))
+
+plot(var.gene.zeisel$statistics$means, var.gene.zeisel$statistics$variances,
+    xlab="Mean of log-expression", ylab="Variance of log-expression",
+    pch=16, cex=0.5)
+ordered.mean.gene.zeisel <- order(var.gene.zeisel$statistics$means)
+lines(var.gene.zeisel$statistics$means[ordered.mean.gene.zeisel],
+    var.gene.zeisel$statistics$fitted[ordered.mean.gene.zeisel],
+    col="dodgerblue", lwd=2)
+
+points(var.spike.zeisel$statistics$means, var.spike.zeisel$statistics$variances, pch=4)
+ordered.mean.spike.zeisel <- order(var.spike.zeisel$statistics$means)
+lines(var.spike.zeisel$statistics$means[ordered.mean.spike.zeisel],
+    var.spike.zeisel$statistics$fitted[ordered.mean.spike.zeisel],
+    col="red", lwd=2, lty=2)
+
+legend("topright", c("gene", "spike-in"), pch=c(16, 4))
+```
+
+To decompose each gene's variance into the technical and biological components,
+we estimate the fitted value of the spike-in trend at that gene's mean and subtract it from the gene's total variance.
+We could then use the biological component to select HVGs via `chooseHighlyVariableGenes()`.
+In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
+
+```{r}
+tech.var.zeisel <- approx(var.spike.zeisel$statistics$means,
+    var.spike.zeisel$statistics$variances,
+    xout=var.gene.zeisel$statistics$means, rule=2)$y
+summary(tech.var.zeisel)
+
+bio.var.zeisel <- var.gene.zeisel$statistics$variances - tech.var.zeisel
+summary(bio.var.zeisel)
+```
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+```
