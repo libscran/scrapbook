@@ -2,3 +2,6 @@
 *.rds
 *.tar.gz
 vignettes/book/docs
+vignettes/book/libs
+*.html
+*_files/
