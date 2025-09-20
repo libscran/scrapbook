@@ -1,0 +1,224 @@
+# Principal components analysis
+
+```{r, echo=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+Principal components analysis (PCA) is commonly used to clean up and compact the HVG-filtered log-normalized expression matrix.
+Consider each HVG as a dimension of our dataset where the cells are the observations,
+i.e., each cell's expression profile defines its location in the high-dimensional expression space.
+PCA discovers axes in this high-dimensional space that capture the largest amount of variation [@pearson1901lines].
+Each principal component (PC) corresponds to an axis in this space, where the earliest PCs capture the dominant factors of heterogeneity in our data.
+The idea is to use the first few PCs to approximate our original dataset (which is, in fact, the optimal strategy for obtaining a low-rank approximation). 
+Similarly, the Euclidean distances between cells in the PC space approximate the same distances in the original dataset.
+This effectively compresses multiple genes into a single dimension, e.g., an "eigengene" [@langfelder2007eigengene],
+and allows us to use a much smaller matrix in downstream steps like clustering.
+
+## Getting the top PCs
+
+Our assumption is that biological processes affect multiple genes in a coordinated manner.
+This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behavior of many genes.
+In contrast, random technical or biological noise is expected to affect each gene independently.
+There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs.
+By retaining the earlier PCs, we can focus on the biological signal while removing random noise.
+To demonstrate, we'll pull out our favorite mouse brain dataset from @zeisel2015brain:
+
+```{r}
+library(scRNAseq)
+sce.zeisel <- ZeiselBrainData()
+is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
+
+# Performing some QC to set up the dataset prior to normalization. We'll skip
+# calculation of spike-in proportions for brevity.
+library(scrapper)
+qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
+qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
+qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
+sce.zeisel$sum <- qc.metrics.zeisel$sum
+sce.zeisel$detected <- qc.metrics.zeisel$detected
+sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
+sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+
+# Computing log-normalized expression values.
+lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
+logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
+
+# Computing the variances.
+var.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
+```
+
+To perform the PCA, we call `runPca()` on our HVG-filtered log-normalized expression matrix.
+While PCA is robust to random noise, too much of it may cause the earlier PCs to capture noise instead of meaningful structure [@johnstone2009consistency].
+This effect can be mitigated by restricting the PCA to a subset of HVGs, as discussed in Chapter \@ref(feature-selection).
+Here, we take the top 2000 HVGs and compact them into the top 25 PCs.
+The `components` matrix contains the "PC scores", i.e., the coordinates for each cell in the new low-dimensional space, which can be used in clustering, visualization, etc.
+
+```{r}
+hvgs.zeisel <- chooseHighlyVariableGenes(var.zeisel$statistics$residuals, top=2000)
+pcs.zeisel <- runPca(logcounts(sce.qc.zeisel)[hvgs.zeisel,], number=25)
+dim(pcs.zeisel$components)
+
+# Storing the components back inside the SingleCellExperiment so we can pull it
+# out later in our downstream analyses. 
+reducedDim(sce.qc.zeisel, "PCA") <- t(pcs.zeisel$components)
+```
+
+## How many PCs?
+
+The million dollar question is, how many of the top PCs should we retain for downstream analyses?
+Using more PCs will retain more biological signal at the cost of including more noise that might mask that signal.
+As with the number of HVGs, it is hard to determine whether an "optimal" choice exists here.
+Sure, technical variation is almost always uninteresting,
+but there is no straightforward way to automatically determine which aspects of biological variation are relevant to a particular scientific question.
+For example, heterogeneity within a population might be interesting when studying continuous processes like metabolic flux or differentiation potential,
+but is comparable to noise in applications that only aim to distinguish between distinct cell types.
+
+Most practitioners will simply set $d$ to a "reasonable" but arbitrary value, typically ranging from 10 to 50.
+This is often satisfactory as the later PCs explain so little variance that their inclusion or omission has no major effect.
+For example, in the Zeisel dataset, few PCs explain more than 1\% of the variance in the entire dataset (Figure \@ref(fig:zeisel-scree)).
+Choosing between, say, 20 and 40 PCs would not even amount to 5 percentage points' worth of difference in variance.
+In fact, the main consequence of using more PCs is simply that downstream calculations take longer as they need to compute over more dimensions,
+but most PC-related calculations are fast enough that this is not a practical concern.
+
+```{r zeisel-scree, fig.cap="Percentage of variance explained by successive PCs in the Zeisel dataset, shown on a log-scale."}
+pcs.more.zeisel <- runPca(logcounts(sce.qc.zeisel)[hvgs.zeisel,], number=50)
+percent.var <- pcs.more.zeisel$variance.explained / pcs.more.zeisel$total.variance * 100
+plot(percent.var, log="y", xlab="PC", ylab="Variance explained (%)")
+```
+
+```{r, echo=FALSE}
+stopifnot(sum(percent.var[20:40]) < 5)
+```
+
+If we really must try to guess the "best" number of PCs^[Probably because a reviewer asked us to.], here are a few approaches:
+
+- We can choose the elbow point in the scree plot (Figure \@ref(fig:zeisel-scree)), e.g., using the `findElbowPoint()` function from the `r Biocpkg("PCAtools")` package.
+  The assumption is that there should be a sharp drop in the percentage of variance explained when we move past the last PC corresponding to biological structure.
+  However, the ideal cut-off can be difficult to gauge when there are sources of weaker biological variation. 
+- We can keep the number of PCs that cumulatively explain variance equal to the sum of the biological components among the HVGs.
+  This relies on the decomposition of each gene's variance into biological and technical components (see Chapter \@ref(feature-selection)).
+  In practice, the distinction between biological and technical variation is usually not so clear as they will not be isolated to the earlier and later PCs, respectively.
+- We can use random matrix theory to select an appropriate number of PCs.
+  This might involve the Marchenko-Pastur limit [@shekhar2016comprehensive], Horn's parallel analysis [@horn1965rationale],
+  or the Gavish-Donoho threshold for optimal reconstruction [@gavish2014optimal] (see relevant functions in `r Biocpkg("PCAtools")`).
+  Each of these methods has its own limitations, e.g., requirement for i.i.d. noise.
+
+But if we're really concerned about the number of PCs, it's probably just better to repeat the analysis with different number of PCs.
+This allows us explore other perspectives of the data at different trade-offs between biological signal and technical noise.
+
+## Handling multiple batches
+
+In the presence of multiple batches, we want to ensure that batch effects do not dominate the PCA.
+We don't want to waste our top PCs on capturing uninteresting technical differences between batches. 
+Instead, we want our PCA to focus on the biological structure within each batch.
+To demonstrate, let's use a dataset consisting of two plates of wild-type and oncogene-induced 416B cells [@lun2017assessing].
+Differences in expression due to the plate of origin are obviously technical and should be ignored;
+for the sake of this section, we will pretend that oncogene induction is also an uninteresting experimental factor^[
+Which is not entirely unreasonable.
+Say that we want to identify matching cell states across the wild-type and induced populations.
+In such cases, we would ignore the induction effect so that the matching states will cluster together.] to be treated as a batch effect.
+
+```{r}
+library(scRNAseq)
+sce.416b <- LunSpikeInData("416b")
+plate.416b <- sce.416b$block # i.e., the plate of origin.
+pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
+sce.416b$batch <- factor(paste0(pheno.416b, "-", plate.416b))
+
+# Computing the QC metrics. For brevity, we'll skip the spike-ins. 
+library(scrapper)
+location.416b <- rowRanges(sce.416b)
+is.mito.416b <- which(any(seqnames(location.416b)=="MT"))
+qc.metrics.416b <- computeRnaQcMetrics(counts(sce.416b), subsets=list(MT=is.mito.416b))
+sce.416b$sum <- qc.metrics.416b$sum
+qc.thresh.416b <- suggestRnaQcThresholds(qc.metrics.416b, block=sce.416b$batch)
+qc.keep.416b <- filterRnaQcMetrics(qc.thresh.416b, qc.metrics.416b, block=sce.416b$batch)
+sce.qc.416b <- sce.416b[,qc.keep.416b]
+
+# Computing log-normalized expression values.
+lib.factor.416b <- centerSizeFactors(sce.qc.416b$sum, block=sce.qc.416b$batch)
+logcounts(sce.qc.416b) <- normalizeCounts(counts(sce.qc.416b), lib.factor.416b)
+
+# Choosing the topHVGs after blocking on the uninteresting factors.
+var.416b <- modelGeneVariances(logcounts(sce.qc.416b), block=sce.qc.416b$batch)
+hvg.416b <- chooseHighlyVariableGenes(var.416b$statistics$residuals, top=1000)
+```
+
+We set `block=` to instruct `runPca()` to focus on the variation within each batch.
+This is equivalent to centering each batch at the origin and then finding the axes of largest variation among the residuals.
+The non-centered expression values for each cell are then projected onto these axes to obtain that cell's PC scores.
+Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),
+allowing our subsequent analyses to focus on heterogeneity within each subpopulation.
+
+```{r pca-416b, fig.width=10, fig.asp=0.5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
+pcs.raw.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20)
+pcs.blocked.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20, block=sce.qc.416b$batch)
+
+par(mfrow=c(1,2))
+plot(pcs.raw.416b$components[1,], pcs.raw.416b$components[2,], col=sce.qc.416b$batch,
+    main="Without block", xlab="PC1", ylab="PC2", pch=16)
+plot(pcs.blocked.416b$components[1,], pcs.blocked.416b$components[2,], col=sce.qc.416b$batch,
+    main="Blocked", xlab="PC1", ylab="PC2", pch=16)
+legend("topright", col=1:4, pch=16, legend=levels(sce.qc.416b$batch), bg="white")
+```
+
+Note that blocking during PCA is usually not sufficient for batch correction.
+If we're lucky, all of the uninteresting batch effects are orthogonal to the major biological variation,
+such that taking the first few PCs will focus on the latter and remove the former.
+In practice, most batch effects tend to have some biological component that might be captured by the first few PCs.
+This requires some additional effort to remove (see Chapter \@ref(batch-correction)) prior to downstream steps like clustering.
+Nonetheless, blocking is still helpful as it eliminates some of the batch effects and preserves more biological signal in the top PCs.
+
+It's worth mentioning one exception to the above statement, which is to directly compute the PC scores from the residuals.
+Setting `components.from.residuals=TRUE` yields corrected scores that do not require any further processing to remove the batch effect.
+However, this approach is only correct when the batch effect is a simple shift in the high-dimensional expression space.
+This effectively assumes that all batches have the same subpopulation composition and the batch effect is consistent for all cell subpopulations.
+Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
+In our 416B example, the two subpopulations are now forced together (Figure \@ref(fig:pca-residuals-416b)) for better or worse.
+
+```{r pca-residuals-416b, fig.width=10, fig.asp=0.5, fig.cap="First two PCs for the 416B dataset with blocking, where PC scores are projected (default) or computed from residuals. Each point represents a cell, colored by its combination of experimental factors."}
+pcs.residuals.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20,
+    block=sce.qc.416b$batch, components.from.residuals=TRUE)
+
+par(mfrow=c(1,2))
+plot(pcs.blocked.416b$components[1,], pcs.blocked.416b$components[2,], col=sce.qc.416b$batch,
+    main="Default", xlab="PC1", ylab="PC2", pch=16)
+plot(pcs.residuals.416b$components[1,], pcs.residuals.416b$components[2,], col=sce.qc.416b$batch,
+    main="From residuals", xlab="PC1", ylab="PC2", pch=16)
+legend("topright", col=1:4, pch=16, legend=levels(sce.qc.416b$batch), bg="white")
+```
+
+As with HVGs, we should only use `block=` for experimental factors that are not interesting.
+If we were interested in the effects of oncogene induction, we shouldn't block on it so that the PCA can capture the associated changes in expression.
+Sometimes, though, it is not obvious whether something is "interesting" or not,
+as we may wish to ignore some biological differences to obtain a consistent set of clusters across treatment conditions, tissues, etc.
+Check out Chapter \@ref(batch-correction) for a more detailed discussion.
+
+## Visualizing the PCs
+
+We might as well touch on another common use of PCA, which is visualization of high-dimensional data.
+This is used in a variety of fields and applications (including bulk RNA-seq) but is not so effective for scRNA-seq data. 
+If we're lucky, our population structure is simple enough that the first two PCs capture most of the relevant biology (Figures \@ref(fig:pca-416b) and \@ref(fig:pca-residuals-416b)).
+However, in most cases, relevant biological heterogeneity is spread throughout 10-50 PCs that are much harder to visualize.
+For example, examination of the top 4 PCs is still insufficient to resolve all subpopulations identified by @zeisel2015brain (Figure \@ref(fig:zeisel-pca-multi)).
+
+```{r zeisel-pca-multi, fig.wide=TRUE, fig.asp=1, fig.cap="PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors."}
+library(scater)
+plotReducedDim(sce.qc.zeisel, dimred="PCA", ncomponents=4,
+    colour_by="level1class")
+```
+
+The problem is that PCA is a linear technique, i.e., only variation along a line in high-dimensional space is captured by each PC.
+As such, it cannot efficiently represent high-dimensional differences in the first 2 PCs.
+If the first PC is devoted to resolving the biggest difference between subpopulations, and the second PC is devoted to resolving the next biggest difference,
+then the remaining differences will not be visible in the plot.
+That said, PCA is still useful as the top PCs are often used as input to more sophisticated algorithms for dimensionality reduction (Chapter \@ref(visualization)).
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+```
