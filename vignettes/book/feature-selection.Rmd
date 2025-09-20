@@ -93,17 +93,24 @@ pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.10x,])
 
 How many HVGs should we use in our downstream analyses, i.e., what is the "best" value of $H$?
 A larger set of HVGs will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes,
-at the cost of increasing noise from irrelevant genes that might obscure said signal.
-It is difficult to determine the optimal trade-off for any given application as noise in one context may be useful signal in another.
-For example, heterogeneity in T cell activation responses is an interesting phenomena [@richard2018tcell]
-but may be irrelevant noise in studies that only care about distinguishing the major immunophenotypes.
-Our recommendation is to simply pick a reasonable $H$ (somewhere between 1000 and 5000) and proceed with the rest of the analysis.
-We can always test other choices later rather than spending much time worrying about obtaining the "optimal" value.
+at the cost of adding noise from irrelevant genes that might obscure that signal.
+It's difficult to determine the optimal trade-off for any given application as the distinction between noise and signal is context-dependent.
+For example, variation in the activation status of certain immune cells may not be interesting when we are only interested in identifying the cell types;
+the former can even interfere with the latter by encouraging the formation of clusters based on activation strength instead.
 
-Alternatively, we could define the set of HVGs as all genes with variances above the trend.
-This avoids any judgement calls regarding what level of variation is interesting enough to retain.
-By retaining all potential biological signal, we give secondary population structure the chance to manifest.
-This is most useful for rare and/or weakly-separated subpopulations where the relevant marker genes are not variable enough to sneak into the top $H$ genes.
+Our recommendation is to simply pick a reasonable $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
+If we can answer our scientific question, then our choice is good enough; if not, we can just try another value.
+There's nothing wrong with trying different parameters during data exploration^[
+If would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
+In such cases, it would be improper to shop around for the best parameters that gives us the result that we want.
+Fortunately, single-cell analyses have looser standards as we often don't know what we're looking for.]
+In fact, different choices of $H$ can provide new perspectives of the same dataset by changing the balance between signal and noise,
+so we might discover new population structure that would not be apparent with other parameters.
+Don't spend too much time worrying about obtaining the "optimal" value.
+
+If we really want to ensure that all biological structure is preserved, we could define the set of HVGs as all genes with variances above the trend.
+This avoids any judgement calls about the definition of "interesting" variation, giving an opportunity for weaker population structure to manifest.
+It is most useful for rare and/or weakly-separated subpopulations where the relevant marker genes are not variable enough to sneak into the top $H$ genes.
 The obvious cost is that more noise is also captured, which can reduce the resolution of subpopulations;
 and we need to perform more computational work in each downstream step, as more genes are involved.
 
@@ -120,12 +127,13 @@ pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.all.10x,])
 ## Handling batch effects {#variance-batch}
 
 Larger datasets may contain multiple batches that exhibit uninteresting differences in gene expression, i.e., batch effects.
-We are usually not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
+We are not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
 We demonstrate using some trophoblast scRNA-seq data generated across two batches [@lun2017assessing]:
 
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
+table(sce.tropho$block) # plate of origin, which is our batch.
 
 # Computing the QC metrics. For brevity, we'll skip the spike-ins. 
 library(scrapper)
@@ -142,8 +150,9 @@ lib.factor.tropho <- centerSizeFactors(sce.qc.tropho$sum, block=sce.qc.tropho$bl
 logcounts(sce.qc.tropho) <- normalizeCounts(counts(sce.qc.tropho), lib.factor.tropho)
 ```
 
-Setting `block=` in `modelGeneVariances()` will compute statistics and fit a separate trend within each batch.
-The use of a batch-specific trend fit is useful as it accommodates differences in the mean-variance trends between batches.
+Setting `block=` in `modelGeneVariances()` will compute the mean and variance for each gene within each batch.
+This ensures that any differences between batches will not inflate the variance estimates.
+It will also fit a separate trend for each batch, which accommodates differences in the mean-variance relationships between batches.
 This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.
 In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
 
@@ -162,13 +171,19 @@ for (block in names(var.tropho$per.block)) {
 }
 ```
 
-`modelGeneVariances()` will also average statistics across batches for feature selection.
+`modelGeneVariances()` will report the average statistics across batches for feature selection.
 This ensures that each batch contributes some information about the variability of each gene. 
 Here, we select the top 2000 HVGs based on the average residuals across the two batches:
 
 ```{r}
 hvgs.tropho <- chooseHighlyVariableGenes(var.tropho$statistics$residual, top=2000)
 ```
+
+It is generally expected that `block=` will be used for uninteresting factors of variation.
+In this case, the plate of origin is a technical factor that should be ignored. 
+However, imagine instead that each plate corresponds to a different treatment condition.
+In such cases, we might not use `block=` to ensure that our variance estimates can capture the differences between treatments.
+We discuss these considerations in more detail in Chapter \@ref(batch-correction).
 
 As an aside, the wave-like shape observed in Figure \@ref(fig:trend-plot-tropho) is typical of the mean-variance trend for log-expression values.
 A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero.

@@ -153,16 +153,20 @@ The non-centered expression values for each cell are then projected onto these a
 Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),
 allowing our subsequent analyses to focus on heterogeneity within each subpopulation.
 
-```{r pca-416b, fig.width=10, fig.asp=0.5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
+```{r pca-416b, fig.asp=1.5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
 pcs.raw.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20)
+reducedDim(sce.qc.416b, "PCA.unblocked") <- t(pcs.raw.416b$components)
 pcs.blocked.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20, block=sce.qc.416b$batch)
+reducedDim(sce.qc.416b, "PCA.blocked") <- t(pcs.blocked.416b$components)
 
-par(mfrow=c(1,2))
-plot(pcs.raw.416b$components[1,], pcs.raw.416b$components[2,], col=sce.qc.416b$batch,
-    main="Without block", xlab="PC1", ylab="PC2", pch=16)
-plot(pcs.blocked.416b$components[1,], pcs.blocked.416b$components[2,], col=sce.qc.416b$batch,
-    main="Blocked", xlab="PC1", ylab="PC2", pch=16)
-legend("topright", col=1:4, pch=16, legend=levels(sce.qc.416b$batch), bg="white")
+library(scater)
+gridExtra::grid.arrange(
+    plotReducedDim(sce.qc.416b, dimred="PCA.unblocked", colour_by="batch") +
+        ggtitle("Without blocking"),
+    plotReducedDim(sce.qc.416b, dimred="PCA.blocked", colour_by="batch") +
+        ggtitle("Blocked"),
+    ncol=1
+)
 ```
 
 Note that blocking during PCA is usually not sufficient for batch correction.
@@ -179,16 +183,13 @@ This effectively assumes that all batches have the same subpopulation compositio
 Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
 In our 416B example, the two subpopulations are now forced together (Figure \@ref(fig:pca-residuals-416b)) for better or worse.
 
-```{r pca-residuals-416b, fig.width=10, fig.asp=0.5, fig.cap="First two PCs for the 416B dataset with blocking, where PC scores are projected (default) or computed from residuals. Each point represents a cell, colored by its combination of experimental factors."}
+```{r pca-residuals-416b, fig.cap="First two PCs for the 416B dataset with blocking, where PC scores are computed from residuals. Each point represents a cell, colored by its combination of experimental factors."}
 pcs.residuals.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20,
     block=sce.qc.416b$batch, components.from.residuals=TRUE)
+reducedDim(sce.qc.416b, "PCA.residuals") <- t(pcs.residuals.416b$components)
 
-par(mfrow=c(1,2))
-plot(pcs.blocked.416b$components[1,], pcs.blocked.416b$components[2,], col=sce.qc.416b$batch,
-    main="Default", xlab="PC1", ylab="PC2", pch=16)
-plot(pcs.residuals.416b$components[1,], pcs.residuals.416b$components[2,], col=sce.qc.416b$batch,
-    main="From residuals", xlab="PC1", ylab="PC2", pch=16)
-legend("topright", col=1:4, pch=16, legend=levels(sce.qc.416b$batch), bg="white")
+library(scater)
+plotReducedDim(sce.qc.416b, dimred="PCA.residuals", colour_by="batch")
 ```
 
 As with HVGs, we should only use `block=` for experimental factors that are not interesting.

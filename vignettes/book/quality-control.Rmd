@@ -357,10 +357,11 @@ For example, if the sequencing coverage is lower in one batch compared to the ot
 This will reduce the suitability of the adaptive threshold for the other batches.
 
 A possibly better approach is to compute an adaptive threshold separately for each batch, under the assumption that most cells in each batch are of high quality.
-We illustrate using the 416B dataset again, which actually contains two experimental factors that we previously ignored.
-The first is the plate of origin, as the data was generated across two runs in different microwell plates;
-and the second is the oncogene induction status, where some of the cells were treated with doxycycline to induce expression of the _CBFB-MYH11_ oncogene.
-Setting `block=` in `suggestRnaQcThresholds()` and `filterRnaQcMetrics()` yields a separate threshold for each combination of the factors (Figure \@ref(fig:qc-dist-416b-batch)).
+We illustrate using our 416B dataset again, which actually contains two experimental factors that we previously ignored:
+the microwell plate in which each cell was processed, and whether the expression of a _CBFB-MYH11_ oncogene was induced by doxycycline treatment.
+For the purposes of QC, we will consider each unique combination of these factors to be an experimental batch,
+as both have the potential to alter the QC metrics, e.g., different sequencing coverage in each run, different RNA content after treatment.
+Setting `block=` in `suggestRnaQcThresholds()` and `filterRnaQcMetrics()` yields a separate threshold for each batch (Figure \@ref(fig:qc-dist-416b-batch)).
 
 ```{r qc-dist-416b-batch, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
 # Making a combined factor for easier reading.
