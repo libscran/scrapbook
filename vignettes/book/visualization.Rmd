@@ -1,0 +1,207 @@
+# Visualization
+
+```{r, echo=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+One of the major aims of scRNA-seq data analysis is to generate a pretty figure that visualizes the distribution of cells.
+This is not straightforward as our data contains too many dimensions, even after PCA (Chapter \@ref(principal-components-analysis)).
+We can't just create FACS-style biaxial plots of each gene/PC against another as there would be too many plots to examine.
+Instead, we use more aggressive dimensionality reduction methods that can represent our population structure in a two-dimensional embedding.
+The idea is to facilitate interpretation of the data by creating a visual "map" of its heterogeneity,
+where similar cells are placed next to each other in the embedding while dissimilar cells are further apart.
+
+## $t$-stochastic neighbor embedding
+
+Historically, scRNA-seq data analyses were synonymous with $t$-stochastic neighbor embedding ($t$-SNE) [@van2008visualizing].
+This method attempts to find a low-dimensional representation of the data that preserves the relationships between each point and its neighbors in the high-dimensional space. 
+Unlike PCA, $t$-SNE is not restricted to linear transformations, nor is it obliged to accurately represent distances between distant populations.
+This means that it has much more freedom in how it arranges cells in low-dimensional space, enabling it to separate many distinct clusters in a complex population.
+To demonstrate, let's pull out the @zeisel2015brain dataset again:
+
+```{r}
+library(scRNAseq)
+sce.zeisel <- ZeiselBrainData()
+is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
+
+# Performing some QC to set up the dataset prior to normalization. We'll skip
+# calculation of spike-in proportions for brevity.
+library(scrapper)
+qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
+qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
+qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
+sce.zeisel$sum <- qc.metrics.zeisel$sum
+sce.zeisel$detected <- qc.metrics.zeisel$detected
+sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
+sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+
+# Computing log-normalized expression values.
+lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
+logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
+
+# Computing the variances.
+var.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
+hvgs.zeisel <- chooseHighlyVariableGenes(var.zeisel$statistics$residuals, top=2000)
+
+# Performing the PCA.
+pcs.zeisel <- runPca(logcounts(sce.qc.zeisel)[hvgs.zeisel,], number=25)
+reducedDim(sce.qc.zeisel, "PCA") <- t(pcs.zeisel$components)
+```
+
+We compute the $t$-SNE from the PCs to exploit the data compaction and noise removal of the PCA.
+This yields a 2-dimensional embedding in which neighboring cells have similar expression profiles.
+In Figure \@ref(fig:tsne-brain), we see that cells organize into distinct subpopulations corresponding to their cell types.
+
+```{r tsne-brain, fig.cap="$t$-SNE plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, colored according to the authors' published annotation."}
+tsne.zeisel <- runTsne(pcs.zeisel$components)
+reducedDim(sce.qc.zeisel, "TSNE") <- tsne.zeisel
+
+library(scater)
+plotReducedDim(sce.qc.zeisel, dimred="TSNE", colour_by="level1class")
+```
+
+As with everything in scRNA-seq, $t$-SNE is sensitive to a variety of different parameter choices (discussed [here](http://distill.pub/2016/misread-tsne/) in some depth).
+One obvious parameter is the random seed used to initialize the coordinates for each cell in the two-dimensional space.
+Changing the seed will yield a different embedding (Figure \@ref(fig:tsne-brain-seed)),
+though they usually have enough qualitative similarities that the interpretation of the plot is unaffected.
+
+```{r tsne-brain-seed, fig.cap="$t$-SNE plot constructed from the top PCs in the Zeisel brain dataset with a different seed. Each point represents a cell, colored according to the authors' published annotation."}
+tsne.seed.zeisel <- runTsne(pcs.zeisel$components, seed=123456)
+reducedDim(sce.qc.zeisel, "TSNE.seed") <- tsne.seed.zeisel
+plotReducedDim(sce.qc.zeisel, dimred="TSNE.seed", colour_by="level1class")
+```
+
+The perplexity is another important parameter that determines the granularity of the visualization. 
+Low perplexities will favor resolution of finer structure while higher values focus on the broad organization of subpopulations.
+We can test different perplexity values to obtain different perspectives of the data (Figure \@ref(fig:tsne-perplexity)),
+depending on whether we are interested in local or global structure.
+
+```{r tsne-perplexity, fig.cap="$t$-SNE plots constructed from the top PCs in the Zeisel brain dataset, using a range of perplexity values. Each point represents a cell, coloured according to its annotation.", fig.wide=TRUE, fig.asp=2.5}
+tsne.p5.zeisel <- runTsne(pcs.zeisel$components, seed=123456, perplexity=5)
+reducedDim(sce.qc.zeisel, "TSNE.p5") <- tsne.p5.zeisel
+
+tsne.p20.zeisel <- runTsne(pcs.zeisel$components, seed=123456, perplexity=20)
+reducedDim(sce.qc.zeisel, "TSNE.p20") <- tsne.p20.zeisel
+
+tsne.p80.zeisel <- runTsne(pcs.zeisel$components, seed=123456, perplexity=80)
+reducedDim(sce.qc.zeisel, "TSNE.p80") <- tsne.p80.zeisel
+
+gridExtra::grid.arrange(
+    plotReducedDim(sce.qc.zeisel, dimred="TSNE.p5", colour_by="level1class") + ggtitle("perplexity = 5"),
+    plotReducedDim(sce.qc.zeisel, dimred="TSNE.p20", colour_by="level1class") + ggtitle("perplexity = 20"),
+    plotReducedDim(sce.qc.zeisel, dimred="TSNE.p80", colour_by="level1class") + ggtitle("perplexity = 80"),
+    ncol=1
+)
+```
+
+We'd recommend interpreting these $t$-SNE plots with a grain of salt.
+$t$-SNE will inflate dense clusters and compress sparse ones, so we cannot use the relative size on the plot as a measure of subpopulation heterogeneity.
+The algorithm is not obliged to preserve the relative locations of non-neighboring clusters, so we cannot use their positions to determine relationships between distant clusters.
+Many liberties were taken with the data in order to squish it into a two-dimensional representation, so it's worth being skeptical of the fidelity of that representation.
+That said, the $t$-SNE plots are pretty and historically popular so get used to seeing them^[
+Personally, I like $t$-SNE plots because they look a bit like histology slides, which can trick the casual reader into thinking that I'm a real biologist.].
+
+### Uniform manifold approximation and projection
+
+These days, $t$-SNE has largely been supplanted in the community's consciousness by uniform manifold approximation and projection (UMAP) [@mcInnes2018umap].
+UMAP is roughly similar to $t$-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space.
+However, the two methods are based on different theory that manifests as a different visualization (Figure \@ref(fig:umap-brain)).
+Compared to $t$-SNE, UMAP tends to produce more compact visual clusters with more empty space between them.
+
+```{r umap-brain, fig.cap="UMAP plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, coloured according to the published annotation."}
+umap.zeisel <- runUmap(pcs.zeisel$components)
+reducedDim(sce.qc.zeisel, "UMAP") <- umap.zeisel
+plotReducedDim(sce.qc.zeisel, dimred="UMAP", colour_by="level1class")
+```
+
+Like $t$-SNE, UMAP has its own suite of parameters that affect the visualization (see the documentation [here](https://umap-learn.readthedocs.io/en/latest/parameters.html)).
+The number of neighbors is most analogous to $t$-SNE's perplexity, where lower values focus on the local structure around each cell (Figure \@ref(fig:umap-neighbors)).
+
+```{r umap-neighbors, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of neighbors. Each point represents a cell, coloured according to its annotation.", fig.wide=TRUE, fig.asp=2.5}
+umap.n5.zeisel <- runUmap(pcs.zeisel$components, num.neighbors=5)
+reducedDim(sce.qc.zeisel, "UMAP.n5") <- umap.n5.zeisel
+
+umap.n20.zeisel <- runUmap(pcs.zeisel$components, num.neighbors=20)
+reducedDim(sce.qc.zeisel, "UMAP.n20") <- umap.n20.zeisel
+
+umap.n50.zeisel <- runUmap(pcs.zeisel$components, num.neighbors=50)
+reducedDim(sce.qc.zeisel, "UMAP.n50") <- umap.n50.zeisel
+
+gridExtra::grid.arrange(
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.n5", colour_by="level1class") + ggtitle("neighbors = 5"),
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.n20", colour_by="level1class") + ggtitle("neighbors = 20"),
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.n50", colour_by="level1class") + ggtitle("neighbors = 50"),
+    ncol=1
+)
+```
+
+Another influential parameter is the minimum distance between points in the embedding.
+Larger values will generally inflate the visual clusters and reduce the amount of whitespace in the plot (Figure \@ref(fig:umap-mindist)).
+Sometimes it's worth fiddling around with some of these parameters to get a prettier plot.
+
+```{r umap-mindist, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of minimum distances. Each point represents a cell, coloured according to its annotation.", fig.wide=TRUE, fig.asp=2.5}
+umap.d01.zeisel <- runUmap(pcs.zeisel$components, min.dist=0.01)
+reducedDim(sce.qc.zeisel, "UMAP.d01") <- umap.d01.zeisel
+
+umap.d1.zeisel <- runUmap(pcs.zeisel$components, min.dist=0.1)
+reducedDim(sce.qc.zeisel, "UMAP.d1") <- umap.d1.zeisel
+
+umap.d5.zeisel <- runUmap(pcs.zeisel$components, min.dist=0.5)
+reducedDim(sce.qc.zeisel, "UMAP.d5") <- umap.d5.zeisel
+
+gridExtra::grid.arrange(
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.d01", colour_by="level1class") + ggtitle("mindist = 0.01"),
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.d1", colour_by="level1class") + ggtitle("mindist = 0.1"),
+    plotReducedDim(sce.qc.zeisel, dimred="UMAP.d5", colour_by="level1class") + ggtitle("mindist = 0.5"),
+    ncol=1
+)
+```
+
+The choice between UMAP or $t$-SNE is mostly down to personal preference.
+It seems that most people find the UMAP to be nicer to look at, possiblly because of the cleaner separation between clusters.
+Perhaps UMAP also has an advantage in that its default initialization (derived from the nearest-neighbors graph) is better at capturing the global structure [@kobak2021initialiation];
+however, this is not applicable when distant subpopulations are completely disconnected in the graph.
+From a practical perspective, UMAP is often faster than $t$-SNE, which is an important consideration for large datasets.
+In any case, much of the same skepticism that we expressed for $t$-SNE is still applicable to UMAP, as a great deal of information is lost when flattening the data into two dimensions.
+
+## More comments on interpretation
+
+All of these visualizations necessarily distort the relationships between cells to fit high-dimensional data into a 2-dimensional space.
+It's fair to question whether the results of such distortions can be trusted.
+As a general rule, focusing on local neighborhoods provides the safest interpretation of $t$-SNE and UMAP plots.
+These methods spend considerable effort to ensure that each cell's nearest neighbors in the input high-dimensional space are still its neighbors in the output two-dimensional embedding.
+Thus, if we see multiple cell types or clusters in a single unbroken "island" in the embedding, we could infer that those populations were also close neighbors in higher-dimensional space.
+
+Less can be said about non-neighboring cells/clusters as there is no guarantee that large distances are faithfully recapitulated in the embedding.
+We can conclude that cells in distinct visual clusters are indeed different, but comparing distances between clusters is usually pointless^[
+I've seen people do this with a ruler, to "prove" that one cell type is more closely related to another.].
+As a thought exercise, imagine a dataset with 4 cell types arranged in three-dimensional space as a regular tetrahedron^[
+A triangular pyramid where all edges are the same length.].
+All cell types are equally distant from each other, but it is impossible to preserve this property in a two-dimensional embedding.
+This can lead to some incorrect conclusions about the relative (dis)similarity of the different cell types if we are not careful with our interpretation of the plot.
+
+Typically, we only use the $t$-SNE/UMAP coordinates for visualization.
+Other steps like clustering still use the higher-rank representation (i.e., the PCs)
+to leverage all of the information in the data without any of the compromises required to obtain a two-dimensional embedding.
+In theory, we could use the $t$-SNE/UMAP coordinates directly for clustering to ensure that any results are directly consistent with the visualization^[
+Clustering is rather arbitrary anyway, so there is nothing inherently wrong with this strategy.
+In fact, it can be treated as a rather circuitous implementation of graph-based clustering (Section \@ref(clustering-graph)).].
+We don't do this as we don't want our analysis results to change whenever we tweak the parameters to beautify our visualizations.
+
+## Other visualization methods
+
+Here's a non-exhaustive list of other visualization methods in R/Bioconductor packages:
+
+- Interpolation-based $t$-SNE [@linderman2019fitsne] from the `r Biocpkg("snifter")` package.
+- Density-preserving $t$-SNE and UMAP [@narayan2021densvis] from the `r Biocpkg("densvis")` package.
+
+All of these packages will happily accept a matrix of PC scores and are plug-and-play replacements for `runTsne()` and `runUmap()`.
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+```
