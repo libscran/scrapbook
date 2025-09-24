@@ -1,0 +1,350 @@
+# Clustering
+
+```{r setup, echo=FALSE, results="asis"}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+Clustering is an unsupervised learning procedure that is used to empirically define groups of cells with similar expression profiles.
+This allows us to summarize our complex scRNA-seq data into discrete categories for easier human interpretation.
+Specifically, a biological meaning is assigned to each cluster, typically based on its upregulated marker genes (Chapter \@ref(marker-detection)).
+We can then treat the clusters as proxies for actual cell types/states in the rest of the analysis. 
+
+## Graph-based clustering {#clustering-graph}
+
+Popularized by its use in `r CRANpkg("Seurat")`, graph-based clustering is a flexible and scalable technique for clustering large scRNA-seq datasets.
+We first build a graph where each node is a cell that is connected to its nearest neighbors in the high-dimensional space.
+Edges are weighted based on the similarity between the cells involved, with higher weight given to cells that are more closely related.
+Clusters are then identified as "communities" of nodes that are more strongly interconnected in the graph, i.e., edges are concentrated between cells in the same cluster. 
+To demonstrate, we'll pull out the PBMC dataset from 10X Genomics [@zheng2017massively]:
+
+```{r}
+# Loading in raw data from the 10X output files.
+library(DropletTestFiles)
+raw.path.10x <- getTestFile("tenx-2.1.0-pbmc4k/1.0.0/filtered.tar.gz")
+dir.path.10x <- file.path(tempdir(), "pbmc4k")
+untar(raw.path.10x, exdir=dir.path.10x)
+
+library(DropletUtils)
+fname.10x <- file.path(dir.path.10x, "filtered_gene_bc_matrices/GRCh38")
+sce.10x <- read10xCounts(fname.10x, col.names=TRUE)
+
+# Applying our default QC with outlier-based thresholds.
+library(scrapper)
+is.mito.10x <- grepl("^MT-", rowData(sce.10x)$Symbol)
+qc.metrics.10x <- computeRnaQcMetrics(counts(sce.10x), subsets=list(MT=is.mito.10x))
+sce.10x$sum <- qc.metrics.10x$sum
+qc.thresh.10x <- suggestRnaQcThresholds(qc.metrics.10x)
+qc.keep.10x <- filterRnaQcMetrics(qc.thresh.10x, qc.metrics.10x)
+sce.qc.10x <- sce.10x[,qc.keep.10x]
+
+# Computing log-normalized expression values.
+lib.factor.10x <- centerSizeFactors(sce.qc.10x$sum)
+logcounts(sce.qc.10x) <- normalizeCounts(counts(sce.qc.10x), lib.factor.10x)
+
+# We now choose the top HVGs.
+var.10x <- modelGeneVariances(logcounts(sce.qc.10x))
+hvgs.10x <- chooseHighlyVariableGenes(var.10x$statistics$residual, top=4000)
+
+# Running the PCA on the HVG submatrix.
+pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.10x,], number=25)
+reducedDim(sce.qc.10x, "PCA") <- t(pcs.10x$components)
+
+# Running a t-SNE for visualization purposes.
+tsne.10x <- runTsne(pcs.10x$components)
+reducedDim(sce.qc.10x, "TSNE") <- tsne.10x
+```
+
+We build a "shared nearest neighbor" (SNN) graph from the PCs of our dataset.
+Two cells are connected by an edge if they share any of their nearest neighbors,
+where the weight of the edge is defined from the number or rank of the shared neighbors [@xu2015identification].
+We then apply a community detection algorithm on the graph - in this case the multi-level algorithm, also known as Louvain.
+Each node in the graph becomes a member of a community, giving us a cluster assignment for each cell (Figure \@ref(fig:tsne-clust-graph)).
+
+```{r tsne-clust-graph, fig.cap="$t$-SNE plot of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned cluster from graph-based clustering."}
+snn.10x <- buildSnnGraph(pcs.10x$components)
+louvain.10x <- clusterGraph(snn.10x, method="multilevel")
+table(louvain.10x$membership)
+
+library(scater)
+sce.qc.10x$clusters.louvain <- louvain.10x$membership
+plotReducedDim(sce.qc.10x, "TSNE", colour_by="clusters.louvain")
+```
+
+If we're not satisfied with this clustering, we can fiddle with a large variety of parameters until we get what we want.
+(Also see discussion in Section \@ref(choosing-the-clustering-parameters).)
+This includes:
+
+- The number of neighbors used in SNN graph construction (`num.neighbors=`).
+  More neighbors increases the connectivity of the graph, resulting in broader clusters.
+- The edge weighting scheme used in SNN graph construction.
+  For example, we could mimic `r CRANpkg("seurat")`'s behavior by using the Jaccard index to weight the edges.
+- The resolution used by the community detection algorithm.
+  Higher values will favor the detection of smaller, finer clusters.
+- The community detection algorithm itself.
+  For example, we could switch to the Leiden algorithm, which typically results in finer clusters.
+
+```{r}
+snn.snn20.10x <- buildSnnGraph(pcs.10x$components, num.neighbors=20)
+louvain.snn20.10x <- clusterGraph(snn.snn20.10x, method="multilevel")
+table(louvain.snn20.10x$membership)
+
+snn.jaccard.10x <- buildSnnGraph(pcs.10x$components, weight.scheme="jaccard")
+louvain.jaccard.10x <- clusterGraph(snn.jaccard.10x, method="multilevel")
+table(louvain.jaccard.10x$membership)
+
+louvain.lowres.10x <- clusterGraph(snn.10x, method="multilevel", multilevel.resolution=0.1)
+table(louvain.lowres.10x$membership)
+
+leiden.10x <- clusterGraph(snn.10x, method="leiden", leiden.objective="cpm")
+table(leiden.10x$membership)
+```
+
+Graph-based clustering has several appealing features that contribute to its popularity.
+It only requires a nearest neighbor search and is relatively efficient compared to, say, hierachical clustering methods that need a full distance matrix.
+Each cell is always connected to some neighbors in the graph, reducing the risk of generating many uninformative clusters consisting of one or two outlier cells.
+Community detection does not need _a priori_ specification of the number of clusters,
+making it more robust for use across multiple datasets with different numbers of cell subpopulations.
+(Note that the number of clusters is still dependent on an arbitrary resolution parameter, so this shouldn't be treated as an objective truth;
+but at least we avoid egregious cases of over- or underclustering that we might encounter with other methods like $k$-means.)
+
+One drawback of graph-based methods is that, after graph construction, no information is retained about relationships beyond the neighboring cells^[
+Sten Linarrsson talked about this at the SCG2018 conference, but I don't know where that work ended up.
+So this is what passes as a reference for the time being.].
+This has some practical consequences in datasets that exhibit differences in cell density.
+More steps through the graph are required to move the same distance through a region of higher cell density.
+During community detection, this effect "inflates" the high-density regions such that any internal substructure is more likely to cause formation of subclusters.
+Thus, the resolution of the clustering becomes dependent on the density of cells, which can occasionally be misleading if it overstates the heterogeneity in the data.
+
+```{r, echo=FALSE, eval=FALSE}
+set.seed(999)
+
+# For contributors who don't believe me, try this out.
+a <- matrix(rnorm(100000, 10), ncol=10)
+b <- matrix(rnorm(100, 0), ncol=10)
+x <- rbind(a, b)
+
+library(scrapper)
+g <- buildSnnGraph(t(x), weight.scheme="jaccard")
+out <- clusterGraph(g, method="walktrap")$membership
+table(out, rep(1:2, c(nrow(a), nrow(b))))
+```
+
+## $k$-means clustering
+
+$k$-means clustering is a classic technique for partitioning cells into a pre-specified number of clusters.
+Briefly, $k$ cluster centroids are selected during initialization, each cell is assigned to its closest centroid,
+the centroids are then updated based on the means of its assigned cells, and this is repeated until convergence.
+This is simple, fast, and gives us exactly the desired number of clusters (Figure \@ref(fig:tsne-clust-kmeans)).
+
+```{r tsne-clust-kmeans, fig.cap="$t$-SNE plot of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned cluster from $k$-means clustering."}
+kmeans.10x <- clusterKmeans(pcs.10x$components, k=10)
+table(kmeans.10x$clusters)
+
+sce.qc.10x$clusters.kmeans <- kmeans.10x$clusters
+plotReducedDim(sce.qc.10x, "TSNE", colour_by="clusters.kmeans")
+```
+
+Again, if we're not satisfied with the results, we can just tinker with the parameters.
+Obviously, we could just increase $k$ to obtain a greater numbr of smaller clusters. 
+We could also alter the initialization and refinement strategies, though the effects of doing so are less clear.
+(By default, our initialization uses the variance partitioning approach [@su2007search], which avoids the randomness of other approaches.)
+
+```{r}
+kmeans.more.10x <- clusterKmeans(pcs.10x$components, k=20)
+table(kmeans.more.10x$clusters)
+
+kmeans.kpp.10x <- clusterKmeans(pcs.10x$components, k=10, init.method="kmeans++")
+table(kmeans.kpp.10x$clusters)
+
+kmeans.lloyd.10x <- clusterKmeans(pcs.10x$components, k=10, refine.method="lloyd")
+table(kmeans.lloyd.10x$clusters)
+```
+
+The major drawback of $k$-means clustering is that we need to specify $k$ in advance.
+It is difficult to select a default value that works well for a variety of datasets.
+If it is larger than the number of distinct subpopulations, we will overcluster, i.e., split subpopulations into smaller clusters;
+if it is smaller than the number of subpopulations, we will undercluster, i.e., group multiple subpopulations into a single cluster.
+We might consider some methods to automatically determine a "suitable" value for $k$, e.g., by maximizing the gap statistic [@tibshirani2001estimating].
+This can be computationally intensive as it involves repeated clusterings at a variety of possible $k$.
+
+```{r}
+# Gap statistic involves the random generation of a simulated dataset,
+# so we need to set the seed to get a reproducible result.
+set.seed(999)
+
+library(cluster)
+gap.10x <- clusGap(
+    t(pcs.10x$components),
+    FUNcluster=function(x, k) {
+        list(cluster=as.integer(clusterKmeans(t(x), k)$clusters))
+    },
+    K.max=50,
+    B=5
+)
+
+# Choosing the number of clusters that maximizes the gap statistic.
+maxSE(f = gap.10x$Tab[,"gap"], SE.f = gap.10x$Tab[,"SE.sim"])
+```
+
+In practice, we use $k$-means clustering for vector quantization.
+Instead of attempting to interpret the clusters, we treat each centroid as a "pseudo-cell" that represents all of its assigned cells.
+These representatives are used directly in computationally intensive steps, which is more efficient than operating on the per-cell data.
+We usually set $k$ to a large value such as the square root of the number of cells.
+This yields a set of fine-grained clusters that approximates the underlying distribution of cells in downstream steps, e.g., hierarchical clustering.
+A similar approach is used in `r Biocpkg("SingleR")` to compact large references prior to cell type annotation.
+
+```{r hclust-kmeans-10x, fig.cap="Dendrogram of the $k$-means cluster centroids from the PBMC dataset. Each leaf represents a centroid from $k$-means clustering."}
+vq.10x <- clusterKmeans(pcs.10x$components, k=sqrt(ncol(pcs.10x$components)))
+dim(vq.10x$centers)
+
+# Using centroids for something expensive, e.g., hierarchical clustering.
+dist.vq.10x <- dist(t(vq.10x$centers))
+hclust.vq.10x <- hclust(dist.vq.10x, method="ward.D2")
+plot(hclust.vq.10x, xlab="", sub="")
+
+# Cutting the dendrogram at a dynamic height to cluster our centroids. 
+library(dynamicTreeCut)
+cutree.vq.10x <- cutreeDynamic(hclust.vq.10x, distM=as.matrix(dist.vq.10x), minClusterSize=1)
+table(cutree.vq.10x)
+
+# Now extrapolating to all cells assigned to each k-means cluster.
+hclust.full.10x <- cutree.vq.10x[vq.10x$clusters]
+table(hclust.full.10x)
+```
+
+## Choosing the clustering parameters
+
+What is the "right" number of clusters?
+Which clustering algorithm is "correct"?
+These thoughts have plagued us ever since we did our first scRNA-seq analysis^[
+Indeed, it's a staple question whenever we're reviewing a manuscript and don't have anything better to say.].
+But with a decade of experience under our belt, our advice is to not worry too much about an "optimal" clustering.
+Just proceed with the rest of the analysis and attempt to assign biological meaning to each cluster (Chapter \@ref(marker-detection)).
+If the clusters represent our cell types/states of interest, great; if not, we can always come back here and fiddle with the parameters.
+
+It is helpful to realize that clustering, like a microscope, is simply a tool to explore the data.
+We can zoom in and out by changing the resolution-related clustering parameters,
+and we can experiment with different clustering algorithms to obtain alternative perspectives. 
+Perhaps we just want to resolve the major cell types, in which case a lower resolution would be appropriate;
+or maybe we want to distinguish finer subtypes or cell states (e.g., metabolic activity, stress), which would require higher resolution.
+The best clustering really depends on the scientific aims, which are difficult to translate into an _a priori_ choice of parameters or algorithms.
+So, we can just try again if we don't get what we want on the first pass^[
+This sounds pretty subjective but is pretty much par for the course in data exploration when we don't know much about anything.
+If you want rigorous statistical analyses with formal hypothesis testing... single-cell genomics might not be the right field for you.].
+
+Nonetheless, if we really need some kind of "objective" metric of cluster quality^[
+Because the reviewers are on our case.],
+we can evaluate the stability of each cluster using bootstrap replicates.
+Ideally, the clustering should be stable to perturbations to the input data [@luxburg2010clustering], which increases the likelihood that they can be reproduced in an independent study.
+To quantify stability, we create a "bootstrap replicate" dataset by sampling cells with replacement from the original dataset.
+The same clustering procedure is applied to this replicate to determine if the clusters from the original dataset can be reproduced.
+In Figure \@ref(fig:bootstrap-matrix), a diagonal entry near 1 indicates that the corresponding cluster is not split apart in the bootstrap replicates,
+while an off-diagonal entry near 1 indicates that the corresponding pair of clusters are always separated.
+Unstable clusters or unstable separation between pairs of clusters warrant some caution during interpretation.
+
+```{r bootstrap-matrix, fig.cap="Heatmap of probabilities of co-clustering from bootstrapping of graph-based clustering in the PBMC dataset. Each row and column represents an original cluster and each entry is colored according to the probability that two cells from their respective row/column clusters are clustered together (diagonal) or separated (off-diagonal) in the bootstrap replicates."}
+# Bootstrapping involves random sampling so we need to set
+# the seed to get a reproducible result.
+set.seed(888)
+
+library(bluster)
+bootstrap.10x <- bootstrapStability(
+    pcs.10x$components,
+    FUN=function(x) {
+        # Replace with your clustering procedure 
+        g <- buildSnnGraph(x)
+        clusterGraph(g, method="multilevel")$membership
+    },
+    clusters=louvain.10x$membership,
+    adjusted=FALSE,
+    transposed=TRUE
+)
+
+library(pheatmap)
+pheatmap(bootstrap.10x, cluster_row=FALSE, cluster_col=FALSE,
+    color=viridis::magma(100), breaks=seq(0, 1, length.out=101))
+```
+
+If even more clustering diagnostics are required^[Reviewer 2, am I right?],
+we can choose from a variety of measures of cluster "quality":
+
+- The silhouette width, as implemented in the `approxSilhouette()` function from `r Biocpkg("bluster")`.
+  For each cell, we compute the average distance to all cells in the same cluster.
+  We also find the minimum of the average distances to all cells in any other cluster.
+  The silhouette width for each cell is defined as the difference between these two values divided by their maximum.
+  Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in the nearest other cluster.
+  Thus, clusters with large positive silhouette widths are well-separated from other clusters.
+- The clustering purity, as implemented in the `clusterPurity()` function from `r Biocpkg("bluster")`.
+  The purity is defined for each cell as the proportion of neighboring cells that are assigned to the same cluster,
+  after some weighting to adjust for differences in the number of cells between clusters.
+  This quantifies the degree to which cells from multiple clusters intermingle in expression space.
+  Well-separated clusters should exhibit little intermingling and thus high purity values for all member cells.
+- The root mean-squared deviation (RMSD), as implemented in the `clusterRSMD()` function from `r Biocpkg("bluster")`.
+  This is root of the mean of the squared differences from the cluster centroid across across all cells in the cluster.
+  It is closely related to the within-cluster sum of squares (WCSS) and is a natural diagnostic for $k$-means clustering.
+  A large RMSD suggests that a cluster has some internal structure and should be prioritized for further subclustering.
+
+In general, we find these diagnostics to be more helpful for understanding the properties of each cluster than to identify "good" or "bad" clusters.
+For example, a low average silhouette width indicates that the cluster is weakly separated from its nearest neighboring clusters.
+This is not necessarily a bad thing if we're looking at subtypes or states that exhibit relatively subtle changes in expression^[
+In fact, I'd argue that this is where most of the novel biology is, given that any major differences between cell types would be old news.].
+One might be tempted to objectively define a "best" clustering by fiddling with the clustering parameters to optimize one of these metrics, e.g., maximum silhouette width. 
+There's nothing wrong with this approach but it may or may not yield clusters that correspond to our cell types/states of interest.
+
+## Subclustering
+
+Another simple approach to improving resolution is to repeat the feature selection and clustering within a single cluster.
+This selects HVGs and PCs that are more relevant to the cluster's internal variation, improving resolution by avoiding noise from unnecessary features.
+The absence of distinct subpopulations also encourages clustering methods to separate cells according to more modest intra-cluster heterogeneity
+Let's demonstrate on cluster 2 of our PBMC dataset:
+
+```{r}
+chosen.cluster <- "2"
+sce.sub.10x <- sce.qc.10x[,louvain.10x$membership == chosen.cluster]
+dim(sce.sub.10x)
+
+# Choosing the top HVGs.
+var.sub.10x <- modelGeneVariances(logcounts(sce.sub.10x))
+hvgs.sub.10x <- chooseHighlyVariableGenes(var.sub.10x$statistics$residuals, top=4000)
+
+# Running the PCA on the HVG submatrix.
+pcs.sub.10x <- runPca(logcounts(sce.sub.10x)[hvgs.sub.10x,], number=25)
+reducedDim(sce.sub.10x, "PCA") <- t(pcs.sub.10x$components)
+
+# Running a t-SNE for visualization purposes, because why not.
+tsne.sub.10x <- runTsne(pcs.sub.10x$components)
+reducedDim(sce.sub.10x, "TSNE") <- tsne.sub.10x
+```
+
+We perform a new round of clustering on all of the cells in this subset of the data (Figure \@ref(fig:tsne-subclust-graph)).
+This effectively increases our resolution of cluster `r chosen.cluster` by breaking it into further subclusters^[
+As of time of writing, the subclustering was pretty cool-looking for cluster `r chosen.cluster`.
+Hopefully it still looks cool, but maybe the results changed with the latest package versions, and that might cause something else to be cluster `r chosen.cluster`.
+So if it doesn't look as cool, I'm sorry.].
+Importantly, we can increase resolution without changing the parameters of the parent clustering, which is convenient if we're already satisfied with those clusters.
+
+```{r tsne-subclust-graph, fig.cap=paste("$t$-SNE plot of cells in cluster", chosen.cluster, "of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned subcluster from graph-based clustering.")}
+# We don't necessarily have to use the same procedure as the full dataset, but
+# there's no reason to change either, so whatever.
+snn.sub.10x <- buildSnnGraph(pcs.sub.10x$components)
+louvain.sub.10x <- clusterGraph(snn.sub.10x, method="multilevel")
+table(louvain.sub.10x$membership)
+
+sce.sub.10x$subclusters.louvain <- louvain.sub.10x$membership
+plotReducedDim(sce.sub.10x, "TSNE", colour_by="subclusters.louvain")
+```
+
+Subclustering can also simplify the interpretation of the subclusters, as these only need to be considered in the context of the parent cluster's biological identity.
+For example, if we knew that the parent cluster contained T cells, we could prioritize T cell subtypes when examining the subclusters.
+However, this is a double-edged sword as it is difficult for practitioners to consider the uncertainty of identification for the parent cluster.
+If cell types or states span cluster boundaries, conditioning on the putative identity of the parent cluster may be premature,
+e.g., a subcluster is actually contamination from a cell type in a neighboring parent cluster.
+
+## Session information
+
+```{r}
+sessionInfo()
+```
