@@ -7,15 +7,17 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-Clustering is an unsupervised learning procedure that is used to empirically define groups of cells with similar expression profiles.
-This allows us to summarize our complex scRNA-seq data into discrete categories for easier human interpretation.
-Specifically, a biological meaning is assigned to each cluster, typically based on its upregulated marker genes (Chapter \@ref(marker-detection)).
-We can then treat the clusters as proxies for actual cell types/states in the rest of the analysis. 
+Clustering is an unsupervised learning technique that partitions a dataset into groups (clusters) based on the similarities between observations.
+In the context of scRNA-seq, cells in the same cluster will have similar expression profiles but cells in different clusters will be less similar. 
+By assigning cells into clusters, we summarize our complex scRNA-seq data into discrete categories for easier human interpretation.
+The idea is to attribute some biological meaning to each cluster, typically based on its upregulated marker genes (Chapter \@ref(marker-detection)).
+We can then treat the clusters as proxies for actual cell types/states in the rest of the analysis,
+which is more intuitive than describing population heterogeneity as some high-dimensional distribution.
 
 ## Graph-based clustering {#clustering-graph}
 
 Popularized by its use in `r CRANpkg("Seurat")`, graph-based clustering is a flexible and scalable technique for clustering large scRNA-seq datasets.
-We first build a graph where each node is a cell that is connected to its nearest neighbors in the high-dimensional space.
+We build a graph where each node is a cell that is connected to its nearest neighbors in the high-dimensional space.
 Edges are weighted based on the similarity between the cells involved, with higher weight given to cells that are more closely related.
 Clusters are then identified as "communities" of nodes that are more strongly interconnected in the graph, i.e., edges are concentrated between cells in the same cluster. 
 To demonstrate, we'll pull out the PBMC dataset from 10X Genomics [@zheng2017massively]:
@@ -182,7 +184,8 @@ gap.10x <- clusGap(
         list(cluster=as.integer(clusterKmeans(t(x), k)$clusters))
     },
     K.max=50,
-    B=5
+    B=5,
+    verbose=FALSE
 )
 
 # Choosing the number of clusters that maximizes the gap statistic.
@@ -207,7 +210,12 @@ plot(hclust.vq.10x, xlab="", sub="")
 
 # Cutting the dendrogram at a dynamic height to cluster our centroids. 
 library(dynamicTreeCut)
-cutree.vq.10x <- cutreeDynamic(hclust.vq.10x, distM=as.matrix(dist.vq.10x), minClusterSize=1)
+cutree.vq.10x <- cutreeDynamic(
+    hclust.vq.10x,
+    distM=as.matrix(dist.vq.10x),
+    minClusterSize=1,
+    verbose=0
+)
 table(cutree.vq.10x)
 
 # Now extrapolating to all cells assigned to each k-means cluster.
@@ -219,7 +227,7 @@ table(hclust.full.10x)
 
 What is the "right" number of clusters?
 Which clustering algorithm is "correct"?
-These thoughts have plagued us ever since we did our first scRNA-seq analysis^[
+These thoughts have haunted us ever since we did our first scRNA-seq analysis^[
 Indeed, it's a staple question whenever we're reviewing a manuscript and don't have anything better to say.].
 But with a decade of experience under our belt, our advice is to not worry too much about an "optimal" clustering.
 Just proceed with the rest of the analysis and attempt to assign biological meaning to each cluster (Chapter \@ref(marker-detection)).
