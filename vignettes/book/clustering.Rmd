@@ -59,10 +59,12 @@ tsne.10x <- runTsne(pcs.10x$components)
 reducedDim(sce.qc.10x, "TSNE") <- tsne.10x
 ```
 
-We build a "shared nearest neighbor" (SNN) graph from the PCs of our dataset.
+We build a "shared nearest neighbor" (SNN) graph where the cells are the nodes.
+Each cell's set of nearest neighbors is identified from their PC scores,
+taking advantage of the compaction and denoising of the PCA (Chapter \@ref(principal-components-analysis).
 Two cells are connected by an edge if they share any of their nearest neighbors,
-where the weight of the edge is defined from the number or rank of the shared neighbors [@xu2015identification].
-We then apply a community detection algorithm on the graph - in this case the multi-level algorithm, also known as Louvain.
+where the weight of the edge is defined from the number/rank of the shared neighbors [@xu2015identification].
+We then apply a community detection algorithm on the SNN graph - in this case the multi-level algorithm, also known as Louvain.
 Each node in the graph becomes a member of a community, giving us a cluster assignment for each cell (Figure \@ref(fig:tsne-clust-graph)).
 
 ```{r tsne-clust-graph, fig.cap="$t$-SNE plot of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned cluster from graph-based clustering."}
@@ -134,12 +136,13 @@ out <- clusterGraph(g, method="walktrap")$membership
 table(out, rep(1:2, c(nrow(a), nrow(b))))
 ```
 
-## $k$-means clustering
+## $k$-means clustering {#clustering-kmeans}
 
 $k$-means clustering is a classic technique for partitioning cells into a pre-specified number of clusters.
 Briefly, $k$ cluster centroids are selected during initialization, each cell is assigned to its closest centroid,
 the centroids are then updated based on the means of its assigned cells, and this is repeated until convergence.
 This is simple, fast, and gives us exactly the desired number of clusters (Figure \@ref(fig:tsne-clust-kmeans)).
+Again, we use the per-cell PC scores for efficiency and denoising.
 
 ```{r tsne-clust-kmeans, fig.cap="$t$-SNE plot of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned cluster from $k$-means clustering."}
 kmeans.10x <- clusterKmeans(pcs.10x$components, k=10)
@@ -149,8 +152,8 @@ sce.qc.10x$clusters.kmeans <- kmeans.10x$clusters
 plotReducedDim(sce.qc.10x, "TSNE", colour_by="clusters.kmeans")
 ```
 
-Again, if we're not satisfied with the results, we can just tinker with the parameters.
-Obviously, we could just increase $k$ to obtain a greater numbr of smaller clusters. 
+If we're not satisfied with the results, we can just tinker with the parameters.
+Obviously, we could just increase $k$ to obtain a greater number of smaller clusters. 
 We could also alter the initialization and refinement strategies, though the effects of doing so are less clear.
 (By default, our initialization uses the variance partitioning approach [@su2007search], which avoids the randomness of other approaches.)
 
@@ -203,7 +206,9 @@ A similar approach is used in `r Biocpkg("SingleR")` to compact large references
 vq.10x <- clusterKmeans(pcs.10x$components, k=sqrt(ncol(pcs.10x$components)))
 dim(vq.10x$centers)
 
-# Using centroids for something expensive, e.g., hierarchical clustering.
+# Using centroids for something expensive, e.g., hierarchical clustering. This
+# involves creating a distance matrix that would be too large if we did it for
+# each pair of cells; so instead we do it between pairs of k-means centroids.
 dist.vq.10x <- dist(t(vq.10x$centers))
 hclust.vq.10x <- hclust(dist.vq.10x, method="ward.D2")
 plot(hclust.vq.10x, xlab="", sub="")
@@ -243,7 +248,16 @@ So, we can just try again if we don't get what we want on the first pass^[
 This sounds pretty subjective but is pretty much par for the course in data exploration when we don't know much about anything.
 If you want rigorous statistical analyses with formal hypothesis testing... single-cell genomics might not be the right field for you.].
 
-Nonetheless, if we really need some kind of "objective" metric of cluster quality^[
+For what it's worth, there exist many more clustering algorithms that we have not discussed here.
+Some of our favorites include hierarchical clustering, a classic technique that builds a dendrogram to summarize relationships between clusters;
+density-based clustering, which adapts to unusual cluster shapes and can ignore outlier points;
+and affinity propagation, which identifies exemplars based on similarities between points.
+All of these methods have been applied successfully to scRNA-seq data and might be worth considering if graph-based clustering isn't satisfactory. 
+For larger datasets, any scalability issues for these methods can be overcome by clustering on $k$-means centroids instead (Section \@ref(clustering-kmeans)).
+
+## Clustering diagnostics
+
+If we really need some "objective" metric of cluster quality^[
 Because the reviewers are on our case.],
 we can evaluate the stability of each cluster using bootstrap replicates.
 Ideally, the clustering should be stable to perturbations to the input data [@luxburg2010clustering], which increases the likelihood that they can be reproduced in an independent study.
@@ -262,7 +276,7 @@ library(bluster)
 bootstrap.10x <- bootstrapStability(
     pcs.10x$components,
     FUN=function(x) {
-        # Replace with your clustering procedure 
+        # i.e., our clustering procedure.
         g <- buildSnnGraph(x)
         clusterGraph(g, method="multilevel")$membership
     },
@@ -277,30 +291,49 @@ pheatmap(bootstrap.10x, cluster_row=FALSE, cluster_col=FALSE,
 ```
 
 If even more clustering diagnostics are required^[Reviewer 2, am I right?],
-we can choose from a variety of measures of cluster "quality":
+we can choose from a variety of measures of cluster "quality" in the `r Biocpkg("bluster")` package:
 
-- The silhouette width, as implemented in the `approxSilhouette()` function from `r Biocpkg("bluster")`.
+- The silhouette width, as implemented in the `approxSilhouette()` function.
   For each cell, we compute the average distance to all cells in the same cluster.
   We also find the minimum of the average distances to all cells in any other cluster.
   The silhouette width for each cell is defined as the difference between these two values divided by their maximum.
   Cells with large positive silhouette widths are closer to other cells in the same cluster than to cells in the nearest other cluster.
   Thus, clusters with large positive silhouette widths are well-separated from other clusters.
-- The clustering purity, as implemented in the `clusterPurity()` function from `r Biocpkg("bluster")`.
+- The clustering purity, as implemented in the `clusterPurity()` function. 
   The purity is defined for each cell as the proportion of neighboring cells that are assigned to the same cluster,
   after some weighting to adjust for differences in the number of cells between clusters.
   This quantifies the degree to which cells from multiple clusters intermingle in expression space.
   Well-separated clusters should exhibit little intermingling and thus high purity values for all member cells.
-- The root mean-squared deviation (RMSD), as implemented in the `clusterRSMD()` function from `r Biocpkg("bluster")`.
+- The root mean-squared deviation (RMSD), as implemented in the `clusterRSMD()` function.
   This is root of the mean of the squared differences from the cluster centroid across across all cells in the cluster.
   It is closely related to the within-cluster sum of squares (WCSS) and is a natural diagnostic for $k$-means clustering.
   A large RMSD suggests that a cluster has some internal structure and should be prioritized for further subclustering.
+- The modularity scores of the communities in the graph, as implemented in the `pairwiseModularity()` function. 
+  For each community,tThis is defined as the difference between the observed and expected number of edges between cells in that community.
+  The expected number of edges is computed from a null model where edges are randomly distributed among cells.
+  Communities with high modularity scores are mostly disconnected from other communities in the graph.
 
 In general, we find these diagnostics to be more helpful for understanding the properties of each cluster than to identify "good" or "bad" clusters.
 For example, a low average silhouette width indicates that the cluster is weakly separated from its nearest neighboring clusters.
 This is not necessarily a bad thing if we're looking at subtypes or states that exhibit relatively subtle changes in expression^[
 In fact, I'd argue that this is where most of the novel biology is, given that any major differences between cell types would be old news.].
-One might be tempted to objectively define a "best" clustering by fiddling with the clustering parameters to optimize one of these metrics, e.g., maximum silhouette width. 
+One might be tempted to objectively define a "best" clustering by adjusting the clustering parameters to optimize one of these metrics, e.g., maximum silhouette width. 
 There's nothing wrong with this approach but it may or may not yield clusters that correspond to our cell types/states of interest.
+Anecdotally, we have observed that these optimal clusterings only consider broad cell types as any attempt to define weakly-separated clusters will be penalized.
+
+<!---
+```{r, echo=FALSE, eval=FALSE}
+# Somewhat irrelevant demonstration with the iris dataset, where optimizing on
+# the silhouette width will not separate virginica and versicolor as they are
+# too close together; this results in a higher silhouette width if we only
+# partition into setosa/non-setosa compared to the true clustering.
+library(bluster)
+sum(approxSilhouette(as.matrix(iris[,1:4]), iris$Species)$width)
+sum(approxSilhouette(as.matrix(iris[,1:4]), iris$Species == "setosa")$width)
+sum(approxSilhouette(as.matrix(iris[,1:4]), iris$Species == "virginica")$width)
+sum(approxSilhouette(as.matrix(iris[,1:4]), iris$Species == "versicolor")$width)
+```
+-->
 
 ## Subclustering
 
