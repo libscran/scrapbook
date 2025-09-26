@@ -475,6 +475,78 @@ If we really want to determine whether some markers are "real", the best approac
 A typical strategy is to use different experimental techniques like FACS, FISH, qPCR or IHC to find a subpopulation that expresses the marker(s) of interest.
 This confirms that the subpopulation actually exists and is not an artifact of the scRNA-seq protocol or the computational analysis.
 
+## Gene set enrichment
+
+We can summarize the biological functions of our top-ranked marker genes with gene set enrichment analyses.
+Here, we extract predefined sets of genes for specific pathways or processes and check if any gene set is overrepresented among our set of top markers.
+This reduces some of the hassle of manually examining the annotation for each gene to assign biological meaning to each cluster. 
+To illustrate, we'll use the gene ontology (GO)'s biological process (BP) subcategory,
+which defines gene sets associated with known biological processes [@ashburner2000gene].
+
+```{r}
+library(msigdbr)
+go.bp.df <- msigdbr(species="Homo sapiens", collection="C5", subcollection="GO:BP")
+go.bp.sets <- split(go.bp.df$ensembl_gene, go.bp.df$gs_name)
+```
+
+We use the hypergeometric test to quantify enrichment of each gene set among the top markers for cluster `r chosen.cluster`.
+The $p$-value of each gene set is determined by the number of shared genes between each GO set and the top markers (relative to the size of the GO set).
+More strongly enriched sets will have lower $p$-values and should be prioritized for interpretation.
+Here, we have chosen the top 100 markers but different values can be used depending on how many markers are of interest.
+
+```{r}
+# Choosing the top 100 genes with positive Cohen's d values.
+top.markers.chosen.10x <- head(rownames(ordered.chosen.10x)[ordered.chosen.10x$cohens.d.mean > 0], 100)
+
+library(scrapper)
+p.enrich.chosen.10x <- testEnrichment(top.markers.chosen.10x, go.bp.sets, universe=rownames(ordered.chosen.10x))
+enrich.chosen.10x <- data.frame(row.names=names(go.bp.sets), p.value=p.enrich.chosen.10x)
+
+# Prioritizing the most enriched gene sets for examination.
+enrich.chosen.10x <- enrich.chosen.10x[order(enrich.chosen.10x$p.value),,drop=FALSE]
+head(enrich.chosen.10x)
+```
+
+If we need more detail about a particular set, we can examine the behavior of its constituent genes.
+
+```{r}
+top.set.10x <- rownames(enrich.chosen.10x)[1]
+overlaps.top.set.10x <- intersect(go.bp.sets[[top.set.10x]], top.markers.chosen.10x)
+head(ordered.chosen.10x[
+    rownames(ordered.chosen.10x) %in% overlaps.top.set.10x,
+    c("symbol", "mean", "detected", "delta.mean.mean"),
+])
+```
+
+Alternatively, we can aggregate the expression profiles of each set's genes into a single per-cell score.
+Scores are defined as the column sums of a rank-1 approximation of the submatrix of the log-expression values corresponding to the genes in the set [@bueno2016comprehensive].
+This effectively uses PCA to collapse the submatrix into a single dimension, enriching for the biological signal associated with the set's annotated function.
+The resulting scores are primarily useful for visualizing set activity (Figure \@ref(fig:marker-tsne-gsea)).
+We tend not to use gene set scores for quantitative analyses as they are difficult to interpret.
+Should the score be higher in a cell that weakly upregulates many genes in the set, or a cell that strongly upregulates a few genes in the set?
+What if two cells have the same score but express different subsets of genes in the set?
+These complications can be minimized by operating on individual genes whenever possible -
+for example, instead of testing for differences in gene set scores between subpopulations,
+we could examine the distribution of effect sizes for the same comparison across all genes in the set,
+which is easier to interpret and more informative.
+
+```{r marker-tsne-gsea, fig.cap=paste0("$t$-SNE plot of the cells in the PBMC dataset, colored by the activity of the `", top.set.10x, "` gene set.")}
+library(scater)
+top.set.score.10x <- scoreGeneSet(logcounts(sce.qc.10x), go.bp.sets[[top.set.10x]])
+plotReducedDim(sce.qc.10x, "TSNE", colour_by=I(top.set.score.10x$scores))
+```
+
+It's worth noting that many packages implement methods for quantifying gene set enrichment, e.g., `r Biocpkg("fgsea")`, `r Biocpkg("goseq")`, `r Biocpkg("limma")`, to name a few.
+We like the hypergeometric test as it is simple and focuses on the top markers, but any function can be used if it can accept a ranking of genes.
+However, in all cases, the enrichment $p$-values have little statistical merit and should only be used for ranking the gene sets.
+Many of these methods will assume that genes are independent under the null hypothesis to compute a $p$-value;
+in a biological system with highly coordinated pathways and processes, this is unlikely to be true.
+
+<!---
+Focusing on the top markers add some robustness as changes in rank among lower-ranked genes has no effect on the result.
+By comparison, other methods care about the entire ranking so if a mild shift in the ranking of mostly-irrelevant genes can affect the p-value.
+-->
+
 ## Session information {-}
 
 ```{r}
