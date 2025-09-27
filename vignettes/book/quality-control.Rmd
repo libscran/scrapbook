@@ -355,9 +355,9 @@ qc.keep.10x.relaxed <- filterRnaQcMetrics(qc.thresh.10x, qc.metrics.10x)
 summary(qc.keep.10x.relaxed)
 ```
 
-## Considering experimental factors {#qc-batch}
+## Handling multiple batches {#qc-batch}
 
-More complex studies may involve batches of cells generated with different experimental parameters, e.g., sequencing depth.
+More complex studies may involve multiple batches of cells generated with different experimental parameters, e.g., sequencing depth.
 In such cases, it makes little sense to compute medians and MADs from a mixture distribution containing samples from multiple batches.
 For example, if the sequencing coverage is lower in one batch compared to the others, it will drag down the median and inflate the MAD.
 This will reduce the suitability of the adaptive threshold for the other batches.

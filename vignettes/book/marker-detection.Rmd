@@ -322,12 +322,14 @@ Weakly expressed genes will often have low log-fold changes due to the pseudo-co
 and genes that separate closely-related clusters will usually have smaller log-fold changes.
 Prematurely using a large threshold will prevent the detection of these potentially interesting genes.
 
-## Handling blocking factors {#marker-batch}
+## Handling multiple batches {#marker-batch}
 
-Uninteresting factors of variation in our dataset can interfere with marker gene detection.
-They can inflate the variance within each cluster but also distort the log-fold changes if the cluster composition varies across levels of the factor(s).
-To avoid these issues, we block on any uninteresting factors when computing the effect sizes.
-Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two microwell plates:
+Larger datasets may contain multiple batches with uninteresting differences between batches.
+These batch effects can interfere with marker gene detection by 
+(i) inflating the variance within each cluster and
+(ii) distorting the log-fold changes if the cluster composition varies between batches.
+To avoid these issues, we block on the batch of origin for each cell when computing the effect sizes.
+Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two batches:
 
 ```{r}
 library(scRNAseq)
@@ -364,10 +366,10 @@ sce.qc.tropho$clusters <- louvain.tropho$membership
 
 We set `block=` to instruct `scoreMarkers()` to perform the pairwise comparisons separately in each batch.
 Specifically, for a comparison between two clusters, we compute one effect size per batch where we only use cells in that batch.
-This cancels out any batch effects so that they are not conflated with biological differences between clusters and cannot inflate variances within clusters.
-The effect sizes are then averaged across batches to obtain a single value per comparison,
+By performing comparisons within each batch, we cancel out any batch effects so that they do not interfere with our effect sizes.
+The per-batch effect sizes are then averaged across batches to obtain a single value per comparison,
 using a weighted mean that accounts for the number of cells involved in the comparison in each batch.
-A similar calculation is applied to the mean log-expression and proportion of detected cells. 
+A similar average across batches is computed for the mean log-expression and proportion of detected cells. 
 
 ```{r}
 # Scoring markers while blocking on the plate of origin.

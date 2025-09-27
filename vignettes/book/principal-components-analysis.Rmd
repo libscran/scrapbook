@@ -117,9 +117,8 @@ This allows us explore other perspectives of the data at different trade-offs be
 
 ## Handling multiple batches
 
-In the presence of multiple batches, we want to ensure that batch effects do not dominate the PCA.
-We don't want to waste our top PCs on capturing uninteresting technical differences between batches. 
-Instead, we want our PCA to focus on the biological structure within each batch.
+Larger datasets typically consist of multiple batches of cells with uninteresting differences between batches, i.e. batch effects.
+We don't want to waste our top PCs on capturing these batch effects - instead, we want our PCA to focus on the biological structure within each batch.
 To demonstrate, let's use a dataset consisting of two plates of wild-type and oncogene-induced 416B cells [@lun2017assessing].
 Differences in expression due to the plate of origin are obviously technical and should be ignored;
 for the sake of this section, we will pretend that oncogene induction is also an uninteresting experimental factor^[

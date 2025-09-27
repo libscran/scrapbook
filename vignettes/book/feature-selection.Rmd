@@ -130,7 +130,7 @@ length(hvgs.all.10x)
 pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.all.10x,])
 ```
 
-## Handling batch effects {#variance-batch}
+## Handling multiple batches {#variance-batch}
 
 Larger datasets may contain multiple batches that exhibit uninteresting differences in gene expression, i.e., batch effects.
 We are not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
