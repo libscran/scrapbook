@@ -1,3 +1,9 @@
+---
+output:
+  html_document
+bibliography: ref.bib
+---
+
 # Marker gene detection {#marker-detection}
 
 ```{r, echo=FALSE}
@@ -356,12 +362,12 @@ louvain.tropho <- clusterGraph(snn.tropho, method="multilevel")
 sce.qc.tropho$clusters <- louvain.tropho$membership
 ```
 
-We set `block=` to instruct `scoreMarkers()` to perform the pairwise comparisons separately in each plate.
-By comparing within each batch, we cancel out any batch effects so that they are not conflated with biological differences between clusters.
-This also involves inflation of variances within clusters by not combining cells from multiple batches. 
+We set `block=` to instruct `scoreMarkers()` to perform the pairwise comparisons separately in each batch.
+Specifically, for a comparison between two clusters, we compute one effect size per batch where we only use cells in that batch.
+This cancels out any batch effects so that they are not conflated with biological differences between clusters and cannot inflate variances within clusters.
 The effect sizes are then averaged across batches to obtain a single value per comparison,
 using a weighted mean that accounts for the number of cells involved in the comparison in each batch.
-A similar correction is applied to the mean log-expression and proportion of detected cells. 
+A similar calculation is applied to the mean log-expression and proportion of detected cells. 
 
 ```{r}
 # Scoring markers while blocking on the plate of origin.
