@@ -507,8 +507,7 @@ Here, we have chosen the top 100 markers but different values can be used depend
 top.markers.chosen.10x <- head(rownames(ordered.chosen.10x)[ordered.chosen.10x$cohens.d.mean > 0], 100)
 
 library(scrapper)
-p.enrich.chosen.10x <- testEnrichment(top.markers.chosen.10x, go.bp.sets, universe=rownames(ordered.chosen.10x))
-enrich.chosen.10x <- data.frame(row.names=names(go.bp.sets), p.value=p.enrich.chosen.10x)
+enrich.chosen.10x <- testEnrichment(top.markers.chosen.10x, go.bp.sets, universe=rownames(ordered.chosen.10x))
 
 # Prioritizing the most enriched gene sets for examination.
 enrich.chosen.10x <- enrich.chosen.10x[order(enrich.chosen.10x$p.value),,drop=FALSE]
