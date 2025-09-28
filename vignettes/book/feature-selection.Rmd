@@ -358,7 +358,7 @@ sce.zeisel$ERCC_proportion <- qc.metrics.zeisel$subsets$ERCC
 sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
 
 # Computing log-normalized expression values. This time, we do it for both the
-# endogenous genes and the spike-ins.
+# endogenous genes and the spike-ins with their respective size factors.
 lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
 logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
 spike.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$ERCC_sum)
@@ -367,7 +367,12 @@ logcounts(altExp(sce.qc.zeisel, "ERCC")) <- normalizeCounts(counts(altExp(sce.qc
 
 We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
 At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
-This assumes that the spike-ins and endogenous genes are both affected by the same technical factors.
+This assumes that an endogenous gene is subject to the same technical noise as a spike-in transcript of the same abundance.
+Also note that we use two different sets of size factors - the spike-in factors for the spike-in transcripts and the library size factors for the endogenous genes - 
+as we are not interested in changes in total RNA content.
+We ensure that means are still comparable between genes and spike-ins by centering both sets of size factors to preserve the scale of the original counts. 
+(This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
+for brevity, we won't show that here.)
 
 ```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)."}
 var.gene.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
