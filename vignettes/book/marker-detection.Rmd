@@ -334,6 +334,7 @@ Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated a
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
+sce.tropho$block <- factor(sce.tropho$block)
 table(sce.tropho$block) # plate of origin, which is our batch.
 
 # Computing the QC metrics. For brevity, we'll skip the spike-ins. 
@@ -377,13 +378,20 @@ markers.tropho <- scoreMarkers(logcounts(sce.qc.tropho), sce.qc.tropho$clusters,
 
 # Looking at the top markers for cluster 1.
 markers.1.tropho <- reportGroupMarkerStatistics(markers.tropho, "1")
-head(
-    markers.1.tropho[
-        order(markers.1.tropho$cohens.d.mean, decreasing=TRUE),
-        c("mean", "detected", "delta.mean.mean", "cohens.d.mean")
-    ],
-    10
-)
+ordered.markers.1.tropho <- markers.1.tropho[order(markers.1.tropho$cohens.d.mean, decreasing=TRUE),]
+head(ordered.markers.1.tropho[,c("mean", "detected", "delta.mean.mean", "cohens.d.mean")], 10)
+```
+
+For simplicity, we do not explicitly penalize genes that behave inconsistently across batches.
+This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all batches.
+That said, it is theoretically possible for a top marker to have highly variable effect sizes across batches, as long as the average is large.
+We can check this by visualizing the expression profile of each gene of interest with respect to the batch (Figure \@ref(fig:markers-violin-batch)).
+Ideally, each gene would behave consistently across batches as this is the easiest to interpret -
+namely, any conclusions about the biological identity of a cluster will be applicable to all batches.
+
+```{r markers-violin-batch, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(ordered.markers.1.tropho)[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each batch (panel).")}
+plotExpression(sce.qc.tropho, features=rownames(ordered.markers.1.tropho)[1], x="clusters", other_fields="block") +
+    facet_grid(~block)
 ```
 
 Blocking assumes that each pair of clusters is present in at least one batch.

@@ -179,7 +179,9 @@ for (block in names(var.tropho$per.block)) {
 
 `modelGeneVariances()` will report the average statistics across batches for feature selection.
 This ensures that each batch contributes some information about the variability of each gene. 
-Here, we select the top 2000 HVGs based on the average residuals across the two batches:
+We can then use the average residuals to select our top HVGs, as shown below.
+An alternative approach is to take the intersection or union of the HVGs from each block, but this does not scale well,
+i.e., it becomes too stringent or too relaxed, respectively, as the number of blocks increases.
 
 ```{r}
 hvgs.tropho <- chooseHighlyVariableGenes(var.tropho$statistics$residual, top=2000)
