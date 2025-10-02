@@ -112,13 +112,16 @@ qc.thresh.416b <- suggestRnaQcThresholds(qc.metrics.416b)
 qc.thresh.416b
 ```
 
-This function will compute a MAD-based outlier threshold for each metric.
-For the library sizes and number of expressed genes, a lower threshold is defined after log-transforming the metrics.
-This improves resolution at small values, avoids negative thresholds that would be meaningless for a non-negative metric,
-and improves the normality of right-skewed distributions to justify the 99% rationale mentioned above.
-(Note that only the MAD calculations are on the log-scale - the thresholds reported by `suggestRnaQcThresholds()` are always on the original scale.)
-For the mitochondrial/spike-in proportions, an upper threshold is defined without any transformation to preserve resolution at large values.
-We use these thresholds to filter for high-quality cells where the relevant metrics are above/below their respective lower/upper thresholds:
+This function computes a MAD-based outlier threshold for each metric.
+
+- For the library sizes and number of expressed genes, a lower threshold is defined after log-transforming the metrics.
+  This improves the normality of right-skewed distributions to justify the 99% rationale mentioned above.
+  It also avoids defining a negative threshold that would be meaningless for a non-negative metric.
+  Note that only the MAD calculations are on the log-scale - the thresholds reported by `suggestRnaQcThresholds()` are always on the original scale.
+- For the mitochondrial/spike-in proportions, an upper threshold is defined without any transformation of the metrics.
+  In particular, we do not log-transform as this would inflate the MAD by converting near-zero proportions to large negative log-values.
+
+We apply these thresholds to filter for high-quality cells where the relevant metrics are above/below their respective lower/upper thresholds:
 
 ```{r}
 qc.keep.416b <- filterRnaQcMetrics(qc.thresh.416b, qc.metrics.416b)
