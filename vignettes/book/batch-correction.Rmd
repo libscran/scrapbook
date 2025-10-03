@@ -6,7 +6,7 @@ bibliography: ref.bib
 
 # Batch correction 
 
-```{r setup, echo=FALSE, results="asis"}
+```{r setup, echo=FALSE}
 library(BiocStyle)
 knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 ```
@@ -48,7 +48,7 @@ The difference between the cells in each MNN pair defines the direction and magn
 allowing us to correct, e.g., $B_2$ to $B_1$ by subtracting that difference from each cell in $B_2$.
 To demonstrate, let's use several PBMC datasets from 10X Genomics [@zheng2017massively]:
 
-```{r, results='asis', echo=FALSE}
+```{r}
 library(TENxPBMCData)
 sce.pbmc3k <- TENxPBMCData('pbmc3k')
 sce.pbmc4k <- TENxPBMCData('pbmc4k')
