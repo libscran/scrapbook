@@ -1,0 +1,326 @@
+---
+output:
+  html_document
+bibliography: ref.bib
+---
+
+# Protein multiomics
+
+```{r setup, echo=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+So far, we've concerned ourselves with scRNA-seq data.
+However, `r Biocpkg("scrapper")` also provides some functions to analyze single-cell proteomics data,
+specifically from cellular indexing of transcriptomes and epitopes by sequencing (CITE-seq).
+CITE-seq is a technique that quantifies both gene expression and the abundance of selected surface proteins in each cell simultaneously [@stoeckius2017simultaneous].
+First, we create antibodies against the proteins of interest and conjugate them to synthetic RNA tags, i.e., antibody-derived tags (ADTs)^[
+In theory, we could conjugate RNA to almost anything that sticks to a cell, e.g., cholersterol, peptides, small molecule drugs.
+These tags are treated in the same way as ADTs, so we'll refer to all of them as ADTs for convenience.].
+Cells are labelled with these antibodies and then processed with single-cell technologies like 10X Genomics.
+For each cell, both ADTs and endogenous transcripts are reverse-transcribed into cDNA and sequenced.
+This yields a set of counts for the ADTs, to quantify the abundance of each selected protein; and another set of counts for the genes, as in scRNA-seq.
+We can then examine aspects of the proteome (e.g., post-translational modifications) and other cellular features that would normally be invisible to transcriptomic studies.
+
+Analysis of CITE-seq data is fairly similar to that of scRNA-seq.
+In fact, the RNA modality can be analyzed as if it came from an scRNA-seq experiment.
+The required steps for the ADT modality are broadly similar, i.e., quality control, normalization, PCA,
+albeit with some tweaks to account for the differences between the ADT and RNA counts.
+For example, the ADT data has fewer features as the proteins of interest were chosen by the reseacher,
+and the coverage of each ADT is much deeper as the sequencing resources are concentrated into a smaller number of features.
+At some point, we will also want to combine the ADT and RNA data so that information in both modalities are used in downstream steps like clustering.
+
+## Quality control
+
+As in the RNA-based analysis, we want to remove cells that have failed to capture/sequence the ADTs.
+This involves similar QC metrics to those described in Chapter \@ref(quality-control), specifically:
+
+- The number of features detected (i.e., with non-zero counts) in each cell.
+  We expect non-zero counts for most ADTs in each cell, even if the corresponding protein target is not present on the cell surface.
+  This is due to deeper sequencing coverage that detects up free-floating antibodies in the ambient solution or antibodies that are non-specifically bound to the cell membrance.
+  An unusually low number of detected features is indicative of a failure in library preparation or sequencing.
+- The sum of counts for isotype control (IgG) antibodies.
+  IgG controls lack a specific target in the cell but otherwise have similar properties to the primary antibodies against proteins of interest.
+  The coverage of these control ADTs serves as a measure of non-specific binding in each cell.
+  A large sum for the controls is indicative of a problem with specificity, possibly even the formation of undesirable protein aggregates.
+
+We demonstrate using a PBMC dataset from 10X Genomics [@zheng2017massively] that contains quantified abundances for a number of interesting surface proteins.
+
+```{r}
+library(DropletTestFiles)
+path.pbmc <- getTestFile("tenx-3.0.0-pbmc_10k_protein_v3/1.0.0/filtered.tar.gz")
+dir.pbmc <- tempfile()
+untar(path.pbmc, exdir=dir.pbmc)
+
+# Loading it in as a SingleCellExperiment object.
+library(DropletUtils)
+sce.pbmc <- read10xCounts(file.path(dir.pbmc, "filtered_feature_bc_matrix"))
+
+# Splitting off the ADTs into an alternative experiment for separate
+# processing, otherwise they'd be treated as genes.
+sce.pbmc <- splitAltExps(sce.pbmc, rowData(sce.pbmc)$Type)
+sce.pbmc
+
+# Taking a sneak peak at the ADT counts.
+counts(altExp(sce.pbmc))[,1:10]
+```
+
+We compute each of the QC metrics described above from the ADT count matrix.
+We also compute the sum of counts across all ADTs for each cell, but this is strictly for informational purposes only as it is not an effective QC metric.
+The presence of a targeted protein can lead to a several-fold increase in the total ADT count, given the binary nature of most surface markers.
+Removing cells with low total ADT counts could inadvertently eliminate cell types that do not express many - or indeed, any - of the selected protein targets.
+Similarly, we prefer to use the sum of IgG counts instead of the proportion as the latter relies on the total count and is more affected by the biology.
+For example, a cell that does not express any of the targets would have a lower total and thus a higher IgG proportion, making it unfairly susceptible to removal.
+
+```{r}
+library(scrapper)
+is.igg.pbmc <- which(grepl("^IgG", rownames(altExp(sce.pbmc))))
+qc.metrics.adt.pbmc <- computeAdtQcMetrics(counts(altExp(sce.pbmc)), subsets=list(IgG=is.igg.pbmc))
+summary(qc.metrics.adt.pbmc$sum)
+summary(qc.metrics.adt.pbmc$detected)
+summary(qc.metrics.adt.pbmc$subsets$IgG)
+```
+
+We compute thresholds using the outlier-based strategy described in Section \@ref(quality-control-outlier) (Figure \@ref(fig:qc-dist-adt-pbmc)).
+We use a log-transformation for the number of detected features and the IgG sum to avoid negative thresholds and improve normality.
+We also perform a minor adjustment to relax the threshold for the number of detected ADTs if the MAD is zero.
+
+```{r qc-dist-adt-pbmc, fig.wide=TRUE, fig.cap="Distribution of ADT-based QC metrics in the PBMC dataset. Each point represents a cell, while dashed lines represent thresholds for each metric."}
+qc.thresh.adt.pbmc <- suggestAdtQcThresholds(qc.metrics.adt.pbmc)
+qc.thresh.adt.pbmc
+
+altExp(sce.pbmc)$detected <- qc.metrics.adt.pbmc$detected
+altExp(sce.pbmc)$IgG_sum <- qc.metrics.adt.pbmc$subsets$IgG
+
+library(scater)
+gridExtra::grid.arrange(
+    plotColData(altExp(sce.pbmc), y="detected") +
+        geom_hline(yintercept=qc.thresh.adt.pbmc$detected, linetype="dashed", color="red") +
+        ggtitle("Detected features"),
+    plotColData(altExp(sce.pbmc), y="IgG_sum") + 
+        geom_hline(yintercept=qc.thresh.adt.pbmc$subsets["IgG"], linetype="dashed", color="red") +
+        scale_y_log10() +
+        ggtitle("IgG sum"),
+    ncol=2
+)
+```
+
+We then apply these thresholds to our metrics to identify high-quality cells.
+If we wanted to use custom thresholds, we could modify our thresholds in the same manner as described in Section \@ref(fixed-qc).
+Similarly, if our dataset contained multiple batches, we could use the same blocking approach as described in Section \@ref(qc-batch).
+
+```{r}
+qc.keep.adt.pbmc <- filterAdtQcMetrics(qc.thresh.adt.pbmc, qc.metrics.adt.pbmc)
+summary(qc.keep.adt.pbmc)
+```
+
+If we were only interested in the ADT data, we could subset our `SingleCellExperiment` with `qc.keep.adt.pbmc` and proceed to the next step.
+However, we performed CITE-seq because we wanted to examine both protein abundance and gene expression for the same cell.
+Thus, we still need to apply quality control to the RNA counts as described in Chapter \@ref(quality-control).
+We only keep cells that are considered to be of high quality for both their ADT and RNA modalities. 
+
+```{r}
+is.mito.pbmc <- which(grepl("^MT-", rowData(sce.pbmc)$Symbol))
+qc.metrics.rna.pbmc <- computeRnaQcMetrics(counts(sce.pbmc), subsets=list(MT=is.mito.pbmc))
+sce.pbmc$sum <- qc.metrics.rna.pbmc$sum
+sce.pbmc$detected <- qc.metrics.rna.pbmc$detected
+sce.pbmc$MT_proportion <- qc.metrics.rna.pbmc$subsets$MT
+
+qc.thresh.rna.pbmc <- suggestRnaQcThresholds(qc.metrics.rna.pbmc)
+qc.keep.rna.pbmc <- filterRnaQcMetrics(qc.thresh.rna.pbmc, qc.metrics.rna.pbmc)
+
+# Seeing how many cells pass both, one or neither QC filters. 
+table(RNA=qc.keep.rna.pbmc, ADT=qc.keep.adt.pbmc)
+
+# Only keeping cells that pass both filters.
+qc.keep.combined.pbmc <- qc.keep.rna.pbmc & qc.keep.adt.pbmc
+sce.qc.pbmc <- sce.pbmc[,qc.keep.combined.pbmc]
+```
+
+## Normalization
+
+As with RNA, we performing scaling normalization to remove cell-specific biases due to differences in library preparation and sequencing efficiency (Chapter \@ref(normalization)).
+Unfortunately, we can't just take the size factors for the RNA counts and re-use them for the ADTs.
+The two modalities will be subject to different biases due to differences in biophysical properties between endogenous transcripts and the (much shorter) ADTs.
+Some aspects of the library preparation and sequencing are also unique to each modality, providing more opportunities for differences in the biases.
+So, instead, we need to compute ADT-specific size factors to normalize the ADT counts.
+
+The simplest choice of size factor is to use the total sum of ADT counts, i.e., the library size for the ADTs.
+Unfortunately, this is highly susceptible to composition biases caused by differences in protein abundance between cells.
+Composition biases are much more pronounced in ADT data compared to RNA due to (i) the binary nature of target protein abundances,
+where any increase in protein abundance manifests as a large increase to the total ADT count;
+and (ii) the _a priori_ selection of interesting protein targets, which enriches for features that are more likely to be differentially abundant across the population.
+These composition biases are strong enough to interfere with interpretation of fold-changes in protein abundance between clusters.
+
+Instead, we use the geometric mean of all counts as the size factor for each cell [@stoeckius2017simultaneous].
+This is based on the centered log-ratio (CLR) transformation for handling compositional data.
+The geometric mean is a reasonable estimator of the scaling biases for large counts,
+with the added benefit that it mitigates the effects of composition biases by dampening the impact of one or two highly abundant ADTs.
+`r Biocpkg("scrapper")` implements a slightly more accurate variant of this approach named ["CLRm1"](https://github.com/libscran/clrm1/),
+which accounts for the effect of adding a pseudo-count before computing the mean (which is required to avoid a mean of zero).
+We also center the size factors to ensure that the scaling normalization preserves the magnitude of the original counts.
+
+```{r}
+clrm1.sf.adt.pbmc <- computeClrm1Factors(counts(altExp(sce.qc.pbmc)))
+clrm1.sf.adt.pbmc <- centerSizeFactors(clrm1.sf.adt.pbmc)
+sizeFactors(altExp(sce.qc.pbmc)) <- clrm1.sf.adt.pbmc
+```
+
+We see little correlation between the CLRm1 size factors and the library size-derived factors for the ADT data (Figure \@ref(fig:cite-sf)). 
+This is consistent with the presence of strong composition biases in the latter that are dampened in the former.
+Of course, the geometric mean is not foolproof and will progressively become less accurate with more upregulated ADTs in each cell.
+It is also more sensitive to noise at low counts, though this should be less problematic for ADT data due to its deeper sequencing coverage compared to RNA.
+
+```{r cite-sf, fig.cap="Comparison between the CLRm1 size factors and the library size-derived factors for the ADT modality of the PBMC dataset."}
+lib.sf.adt.pbmc <- centerSizeFactors(sce.qc.pbmc$sum)
+plot(clrm1.sf.adt.pbmc, lib.sf.adt.pbmc, log="xy")
+```
+
+Once we have our (centered) size factors, we can compute log-normalized abundance values for ADTs as described in Section \@ref(normalization-transformation).
+
+```{r}
+log.adt.pbmc <- normalizeCounts(counts(altExp(sce.qc.pbmc)), clrm1.sf.adt.pbmc)
+logcounts(altExp(sce.qc.pbmc)) <- log.adt.pbmc
+```
+
+## Feature selection and PCA
+
+We don't really need to do feature selection for ADTs as it was already performed during the design of the antibody panel.
+The manual choice of target proteins means that all ADTs already correspond to "interesting" features.
+In addition, there is little scope for further filtering when the number of ADTs is low.
+Here, we have fewer than 20 ADTs, and even for the larger datasets, the panel will usually have less than 200 features.
+These are small numbers compared to our previous selections of 1000-5000 HVGs in Chapter \@ref(feature-selection).
+
+We might consider removing the IgG controls as we know that they will not be biologically interesting.
+This probably won't make much of a differences as the controls are unlikely to exhibit strong variation that might intefere with downstream steps.
+But it probably won't hurt either, so we might as well do it:
+
+```{r}
+selected.adt.pbmc <- !grepl("^IgG", rownames(altExp(sce.qc.pbmc)))
+summary(selected.adt.pbmc)
+```
+
+We can also perform a PCA on the ADT log-abundance matrix as described in Chapter \@ref(principal-components-analysis). 
+This is mostly useful for datasets with larger panels to compact the data from ~200 ADTs to 10-20 PCs.
+PCA is unnecessary for smaller datasets as the number of ADTs is comparable to the typical number of PCs.
+Regardless, it doesn't hurt to run a PCA in such cases -
+if the number of ADTs is lower than the requested number of PCs, the PC scores will simply be a rotation of the log-abundance data.
+
+```{r}
+pcs.adt.pbmc <- runPca(logcounts(altExp(sce.qc.pbmc))[selected.adt.pbmc,], number=25)
+reducedDim(altExp(sce.qc.pbmc), "PCA") <- t(pcs.adt.pbmc$components)
+```
+
+If we didn't do a PCA, we can directly use the log-normalized abundance matrix in downstream analyses.
+This may require a manual coercion to an ordinary matrix via `as.matrix()` as most functions expect a dense representation at this point.
+
+## The rest of the analysis {#cite-rest}
+
+Once we have the PCs, we can use them for clustering and visualization in the same manner as described in Chapters \@ref(visualization) and \@ref(clustering). 
+This summarizes the heterogeneity specific to the ADT modality (Figure \@ref(cite-tsne)).
+
+```{r cite-tsne, fig.cap="$t$-SNE plot generated from the log-normalized abundance of each ADT in the PBMC dataset. Each point is a cell and is colored according to its assigned cluster."}
+graph.adt.pbmc <- buildSnnGraph(pcs.adt.pbmc$components)
+clusters.adt.pbmc <- clusterGraph(graph.adt.pbmc)
+altExp(sce.qc.pbmc)$clusters <- clusters.adt.pbmc$membership
+table(clusters.adt.pbmc$membership)
+
+library(scater)
+reducedDim(altExp(sce.qc.pbmc), "TSNE") <- runTsne(pcs.adt.pbmc$components)
+plotReducedDim(altExp(sce.qc.pbmc), "TSNE", colour_by="clusters")
+```
+
+We then identify markers from the log-abundance matrix, as described in Chapter \@ref(marker-detection).
+For the top ADTs, we usually observe very large effect sizes due to the binary nature of surface targets.
+However, there are also strong composition biases in this data so some caution is required when interpreting the smaller log-fold changes.
+
+```{r}
+markers.adt.pbmc <- scoreMarkers(logcounts(altExp(sce.qc.pbmc)), clusters.adt.pbmc$membership)
+
+# Looking at the marker tags for cluster 1.
+markers.1.adt.pbmc <- reportGroupMarkerStatistics(markers.adt.pbmc, "1")
+ordered.markers.1.adt.pbmc <- markers.1.adt.pbmc[order(markers.1.adt.pbmc$cohens.d.mean, decreasing=TRUE),]
+head(ordered.markers.1.adt.pbmc[,c("mean", "detected", "cohens.d.mean", "delta.mean.mean")])
+```
+
+We can also use the ADT-derived clusters to identify marker genes from the log-expression matrix for the RNA modality.
+This is analogous to performing FACS to isolate cell types before profiling their transcriptomes with bulk RNA-seq.
+
+```{r}
+# Computing log-normalized expression values from the RNA counts.
+lib.sf.rna.pbmc <- centerSizeFactors(sce.qc.pbmc$sum)
+logcounts(sce.qc.pbmc) <- normalizeCounts(counts(sce.qc.pbmc), lib.sf.rna.pbmc)
+
+markers.adt2rna.pbmc <- scoreMarkers(logcounts(sce.qc.pbmc), clusters.adt.pbmc$membership)
+
+# Looking at the marker genes for cluster 1.
+markers.1.adt2rna.pbmc <- reportGroupMarkerStatistics(markers.adt2rna.pbmc, "1")
+markers.1.adt2rna.pbmc <- cbind(symbol=rowData(sce.qc.pbmc)$Symbol, markers.1.adt2rna.pbmc)
+ordered.markers.1.adt2rna.pbmc <- markers.1.adt2rna.pbmc[order(markers.1.adt2rna.pbmc$cohens.d.mean, decreasing=TRUE),]
+head(ordered.markers.1.adt2rna.pbmc[,c("symbol", "mean", "detected", "cohens.d.mean", "delta.mean.mean")])
+```
+
+Conversely, we could use the RNA-derived clusters to score the ADTs.
+This is most relevant when the ADTs represent some kind of functional readout (e.g., binding activity) instead of cell type identity.
+
+## Combining modalities
+
+A possibly more effective use of our data would consider heterogeneity in both modalities simultaneously.
+In other words, the ADT and RNA data are combined in some manner prior to clustering and visualisations.
+This ensures that any unique variation in either modality will be captured in the cluster definitions.
+For example, if the antibody panel captures transient post-translation modifications like phosphorylation, this will not show up in the RNA data;
+conversely, biological processes without a surface target will not be represented in the ADT data.
+To demonstrate, let's continue the analysis of the RNA modality of our PBMC dataset:
+
+```{r}
+var.rna.pbmc <- modelGeneVariances(logcounts(sce.qc.pbmc))
+hvg.rna.pbmc <- chooseHighlyVariableGenes(var.rna.pbmc$residuals, top=3000)
+pcs.rna.pbmc <- runPca(logcounts(sce.qc.pbmc)[hvg.rna.pbmc,], number=20)
+reducedDim(sce.qc.pbmc, "PCA") <- t(pcs.rna.pbmc$components)
+```
+
+Possibly the simplest method to combine modalities involves literally combining the matrices of ADT- and RNA-derived PC scores.
+(Or if no PCA was performed for the ADTs, the log-abundance matrix can be used instead.)
+The combined matrix contains both sets of PCs, ensuring that information from both modalities will be used, e.g., when computing distances and finding neighbors.
+However, naively combining the two matrices is not ideal as the number of genes is typically at several orders of magnitude greater than the number of ADTs.
+This would cause the RNA modality to dominate the variance in the combined matrix, effectively sidelining any contributions from the ADT modality.
+
+Instead, we weight the modalities to balance their contributions to the combined matrix with the `scaleByNeighbors()` function.
+For each modality, we compute the median distance from each cell to its $k$ nearest neighbor, which serves as a proxy for the uninteresting variation within subpopulations. 
+Each matrix of PCs is then scaled according to its median distance, equalizing the magnitude of uninteresting variation across modalities.
+This ensures that high baseline variation in one modality will not drown out interesting biological variation in another modality in the combined matrix.
+We do not force modalities to have the same total variance, as the biological variation may genuinely differ across modalities.
+
+```{r}
+scaled.combined.pbmc <- scaleByNeighbors(list(RNA=pcs.rna.pbmc$components, ADT=pcs.adt.pbmc))
+scaled.combined.pbmc$scaling
+dim(scaled.combined.pbmc$combined)
+```
+
+The combined matrix is convenient as it can be directly used in clustering or visualization (Figure \@ref(fig:cite-combined)) as if we were dealing with our usual matrix of PCs.
+
+```{r cite-combined, fig.cap="$t$-SnE plot of the PBMC data generated from combined ADT and RNA PCs. Each point is a cell and is colored according to the assigned cluster."}
+graph.combined.pbmc <- buildSnnGraph(scaled.combined.pbmc$combined)
+clusters.combined.pbmc <- clusterGraph(graph.combined.pbmc)
+sce.qc.pbmc$clusters.combined <- clusters.combined.pbmc$membership
+table(clusters.combined.pbmc$membership)
+
+reducedDim(sce.qc.pbmc, "TSNE.combined") <- runTsne(scaled.combined.pbmc$combined)
+plotReducedDim(sce.main, "TSNE.combined", colour_by="clusters.combined")
+```
+
+In practice, the RNA and ADT modalities are often strongly correlated when the antibody panel targets cell type-related proteins.
+Using a combined matrix does not offer much benefit in these cases - in fact, we would say that a well-designed panel is more than enough for cell type identification^[
+At least for blood, which has been FACS'd to death.], without any help from gene expression at all.
+Combining modalities may even be detrimental if one of the modalities has little biological variation, e.g., if no antibodies are bound, the ADT matrix will only be contributing noise.
+So, what should we do?
+Well, our usual advice for single-cell analysis applies, a.k.a., see if we get interesting results and try something else if we don't.
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+``` 
