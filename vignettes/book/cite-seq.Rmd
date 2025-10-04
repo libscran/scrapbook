@@ -277,7 +277,7 @@ To demonstrate, let's continue the analysis of the RNA modality of our PBMC data
 
 ```{r}
 var.rna.pbmc <- modelGeneVariances(logcounts(sce.qc.pbmc))
-hvg.rna.pbmc <- chooseHighlyVariableGenes(var.rna.pbmc$residuals, top=3000)
+hvg.rna.pbmc <- chooseHighlyVariableGenes(var.rna.pbmc$statistics$residuals, top=3000)
 pcs.rna.pbmc <- runPca(logcounts(sce.qc.pbmc)[hvg.rna.pbmc,], number=20)
 reducedDim(sce.qc.pbmc, "PCA") <- t(pcs.rna.pbmc$components)
 ```
@@ -295,7 +295,7 @@ This ensures that high baseline variation in one modality will not drown out int
 We do not force modalities to have the same total variance, as the biological variation may genuinely differ across modalities.
 
 ```{r}
-scaled.combined.pbmc <- scaleByNeighbors(list(RNA=pcs.rna.pbmc$components, ADT=pcs.adt.pbmc))
+scaled.combined.pbmc <- scaleByNeighbors(list(RNA=pcs.rna.pbmc$components, ADT=pcs.adt.pbmc$components))
 scaled.combined.pbmc$scaling
 dim(scaled.combined.pbmc$combined)
 ```
@@ -309,7 +309,7 @@ sce.qc.pbmc$clusters.combined <- clusters.combined.pbmc$membership
 table(clusters.combined.pbmc$membership)
 
 reducedDim(sce.qc.pbmc, "TSNE.combined") <- runTsne(scaled.combined.pbmc$combined)
-plotReducedDim(sce.main, "TSNE.combined", colour_by="clusters.combined")
+plotReducedDim(sce.qc.pbmc, "TSNE.combined", colour_by="clusters.combined")
 ```
 
 In practice, the RNA and ADT modalities are often strongly correlated when the antibody panel targets cell type-related proteins.
