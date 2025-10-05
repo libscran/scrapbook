@@ -455,7 +455,7 @@ filtered.markers.chosen.10x <- markers.chosen.10x[
 head(filtered.markers.chosen.10x$symbol)
 ```
 
-## Invalidity of $p$-values {#p-value-invalidity}
+## Invalidity of $p$-values {#marker-p-value-invalidity}
 
 In the past, we used to report $p$-values along with the effect sizes for the detected markers.
 After all, Cohen's $d$ and the AUC are closely related to $t$-tests and the Wilcoxon ranked sum test, respectively.

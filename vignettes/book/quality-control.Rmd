@@ -95,11 +95,11 @@ In heterogeneous datasets, this assumption is unlikely to be true:
   The obvious example is that of neurons, which are easily damaged during dissociation and often have poorer values for the QC metrics.
 
 Major violations of this assumption could result in the loss of entire cell types prior to downstream analysis.
-We can check for such violations using diagnostic plots described in Section \@ref(quality-control-plots).
+We can check for such violations using diagnostic plots described in Section \@ref(qc-plots).
 
 ## Identifying low-quality cells
 
-### With adaptive thresholds {#quality-control-outlier}
+### With adaptive thresholds {#qc-outlier}
 
 Here, we assume that most of our dataset consists of high-quality cells.
 This is usually reasonable and can be experimentally supported in some situations by visually checking that the cells are intact, e.g., on the microwell plate.
@@ -145,7 +145,7 @@ Of course, what is acceptable or not is rather context-dependent,
 e.g., small library sizes for embryonic stem cells might be problematic but the same distribution would be perfectly satisfactory for a dataset of naive T cells. 
 In practice, this assumption is convenient as it ensures that we always retain some cells for our downstream analyses.
 
-### With fixed thresholds {#fixed-qc}
+### With fixed thresholds {#qc-fixed}
 
 A simpler approach to identify low-quality cells involves applying fixed thresholds to the QC metrics.
 For example, we might consider cells to be low quality if they have library sizes below 100000 reads;
@@ -170,7 +170,7 @@ Thresholds for read count-based data are not applicable for UMI-based data, and 
 Differences in mitochondrial activity or total RNA content require constant adjustment of the mitochondrial and spike-in thresholds, respectively, for different biological systems.
 Even with the same protocol and system, the appropriate threshold can vary between runs due to fluctuations in cDNA capture efficiency and sequencing depth per cell.
 
-## Creating diagnostic plots {#quality-control-plots}
+## Creating diagnostic plots {#qc-plots}
 
 It's often a good idea to inspect the distributions of QC metrics (Figure \@ref(fig:qc-dist-416b)) to identify possible problems.
 In the most ideal case, we would see normal distributions that would justify the 3 MAD threshold used in outlier detection.

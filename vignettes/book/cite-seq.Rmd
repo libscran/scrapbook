@@ -84,7 +84,7 @@ summary(qc.metrics.adt.pbmc$detected)
 summary(qc.metrics.adt.pbmc$subsets$IgG)
 ```
 
-We compute thresholds using the outlier-based strategy described in Section \@ref(quality-control-outlier) (Figure \@ref(fig:qc-dist-adt-pbmc)).
+We compute thresholds using the outlier-based strategy described in Section \@ref(qc-outlier) (Figure \@ref(fig:qc-dist-adt-pbmc)).
 We use a log-transformation for the number of detected features and the IgG sum to avoid negative thresholds and improve normality.
 We also perform a minor adjustment to relax the threshold for the number of detected ADTs if the MAD is zero.
 
@@ -109,7 +109,7 @@ gridExtra::grid.arrange(
 ```
 
 We then apply these thresholds to our metrics to identify high-quality cells.
-If we wanted to use custom thresholds, we could modify our thresholds in the same manner as described in Section \@ref(fixed-qc).
+If we wanted to use custom thresholds, we could modify our thresholds in the same manner as described in Section \@ref(qc-fixed).
 Similarly, if our dataset contained multiple batches, we could use the same blocking approach as described in Section \@ref(qc-batch).
 
 ```{r}
@@ -179,7 +179,7 @@ lib.sf.adt.pbmc <- centerSizeFactors(sce.qc.pbmc$sum)
 plot(clrm1.sf.adt.pbmc, lib.sf.adt.pbmc, log="xy")
 ```
 
-Once we have our (centered) size factors, we can compute log-normalized abundance values for ADTs as described in Section \@ref(normalization-transformation).
+Once we have our (centered) size factors, we can compute log-normalized abundance values for ADTs as described in Section \@ref(norm-transformation).
 
 ```{r}
 log.adt.pbmc <- normalizeCounts(counts(altExp(sce.qc.pbmc)), clrm1.sf.adt.pbmc)
@@ -220,7 +220,7 @@ This may require a manual coercion to an ordinary matrix via `as.matrix()` as mo
 ## The rest of the analysis {#cite-rest}
 
 Once we have the PCs, we can use them for clustering and visualization in the same manner as described in Chapters \@ref(visualization) and \@ref(clustering). 
-This summarizes the heterogeneity specific to the ADT modality (Figure \@ref(cite-tsne)).
+This summarizes the heterogeneity specific to the ADT modality (Figure \@ref(fig:cite-tsne)).
 
 ```{r cite-tsne, fig.cap="$t$-SNE plot generated from the log-normalized abundance of each ADT in the PBMC dataset. Each point is a cell and is colored according to its assigned cluster."}
 graph.adt.pbmc <- buildSnnGraph(pcs.adt.pbmc$components)

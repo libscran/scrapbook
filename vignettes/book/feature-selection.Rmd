@@ -89,7 +89,7 @@ while the residuals represent the "interesting" variation for each gene and can 
 If we just used the total variance without any trend, the choice of HVGs would be driven more by the gene's abundance than its biological heterogeneity. 
 
 Once we have our top HVGs, we can use them in downstream steps like principal components analysis.
-We'll discuss this more in Chapter \@ref(dimensionality-reduction), but it is as simple as using only the subset of HVGs in the analysis:
+We'll discuss this more in Chapter \@ref(principal-components-analysis), but it is as simple as using only the subset of HVGs in the analysis:
 
 ```{r}
 pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.10x,])

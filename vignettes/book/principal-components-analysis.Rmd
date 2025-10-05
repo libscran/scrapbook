@@ -115,7 +115,7 @@ If we really must try to guess the "best" number of PCs^[Probably because a revi
 But if we're really concerned about the number of PCs, it's probably just better to repeat the analysis with different number of PCs.
 This allows us explore other perspectives of the data at different trade-offs between biological signal and technical noise.
 
-## Handling multiple batches
+## Handling multiple batches {#pca-batch}
 
 Larger datasets typically consist of multiple batches of cells with uninteresting differences between batches, i.e. batch effects.
 We don't want to waste our top PCs on capturing these batch effects - instead, we want our PCA to focus on the biological structure within each batch.
