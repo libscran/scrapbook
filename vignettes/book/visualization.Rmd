@@ -168,7 +168,7 @@ gridExtra::grid.arrange(
 
 The choice between UMAP or $t$-SNE is mostly down to personal preference.
 It seems that most people find the UMAP to be nicer to look at, possiblly because of the cleaner separation between clusters.
-Perhaps UMAP also has an advantage in that its default initialization (derived from the nearest-neighbors graph) is better at capturing the global structure [@kobak2021initialiation];
+Perhaps UMAP also has an advantage in that its default initialization (derived from the nearest-neighbors graph) is better at capturing the global structure [@kobak2021initialization];
 however, this is not applicable when distant subpopulations are completely disconnected in the graph.
 From a practical perspective, UMAP is often faster than $t$-SNE, which is an important consideration for large datasets.
 In any case, much of the same skepticism that we expressed for $t$-SNE is still applicable to UMAP, as a great deal of information is lost when flattening the data into two dimensions.

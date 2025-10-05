@@ -68,7 +68,7 @@ hist(log10(lib.factors.zeisel), xlab="Log10[Size factor]", col='grey80')
 Strictly speaking, the use of library size factors assumes that there is no "imbalance" in the differentially expressed (DE) genes between any pair of cells.
 That is, any upregulation for a subset of genes is cancelled out by the same magnitude of downregulation in a different subset of genes.
 This avoids composition biases where upregulation of some genes reduces the sequencing resources available for other genes.
-If balanced DE is not present, more sophisticated methods for computing size factors may be required [@robinson2010scaling,@anders2010differential,@lun2018pooling].
+If balanced DE is not present, more sophisticated methods for computing size factors may be required [@robinson2010scaling,@anders2010differential,@lun2016pooling].
 In practice, library size factors perform well for exploratory scRNA-seq data analyses despite their theoretical inaccuracy:
 
 - Gene expression profiles often contain constitutively-expressed genes with large counts, e.g., histones, ribosomal proteins^[And maybe even my favorite gene, _MALAT1_].
@@ -107,7 +107,7 @@ Log-transformation focuses on the former by promoting contributions from genes w
 
 During the log-transformation, `normalizeCounts()` will add a pseudo-count to avoid undefined values at zero counts.
 This addition has the side effect of shrinking log-fold changes between cells towards zero for low-abundance genes.
-Such shrinkage is desirable as the log-differences are not reliable when the counts are low due to random sampling noise [@marioni2008rnaseq].
+Such shrinkage is desirable as the log-differences are not reliable when the counts are low due to random sampling noise. 
 So, if we were to use a pseudo-count of 1, the log-fold change between normalized expression values of 1 and 2 would be $log_2((2 + 1)/(1 + 1)) \approx 0.58$,
 while the log-fold change between normalized expression values of 10 and 20 would be $log_2((20 + 1)/(10 + 1)) \approx 0.93$,
 i.e., larger counts will contribute more to the distances between cells.
@@ -217,7 +217,7 @@ but it usually needs to be followed by more sophisticated methods (Chapter \@ref
 
 ## Normalization by spike-ins
 
-Occasionally, we might come across an scRNA-seq dataset with spike-in counts, which gives us the opportunity to perform spike-in normalization [@lun2016assessing],
+Occasionally, we might come across an scRNA-seq dataset with spike-in counts, which gives us the opportunity to perform spike-in normalization [@lun2017assessing],
 This assumes that (i) the same amount of spike-in RNA was added to each cell and (ii) the spike-in transcripts respond to experimental biases in the same relative manner as endogenous genes.
 Thus, any systematic difference in the coverage of the spike-in transcripts can attributed to cell-specific biases, e.g., in capture efficiency or sequencing depth.
 To remove these biases, we equalize spike-in coverage across cells by scaling with "spike-in size factors".

@@ -200,7 +200,7 @@ The peak represents the point at which these two competing effects cancel each o
 
 ## Refining the trend fit
 
-The trend fit in `modelGeneVariances()` uses the LOWESS non-parametric smoother [@cleveland1979lowess] by default.
+The trend fit in `modelGeneVariances()` uses the LOWESS non-parametric smoother [@cleveland1979robust] by default.
 This slides a window across the x-coordinates and performs a linear regression within each window to obtain the fitted value for the point at the window's center.
 The size of the window varies between points, expanding or contracting until it contains some proportion of all points in the dataset (by default, 30%).
 This mostly works well but can be suboptimal in very sparse intervals of the x-axis.

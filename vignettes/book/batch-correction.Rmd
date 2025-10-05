@@ -401,7 +401,7 @@ Once we have a consistent definition of clusters across all our samples, we can 
 In effect, we treat the scRNA-seq data as a kind of _in silico_ "super-FACS" -
 just like FACS is used to experimentally isolate cell types of interest before bulk RNA-seq or quantifying abundance,
 we do the same with scRNA-seq but our putative cell types are defined by clustering instead.
-To illustrate, we'll pull out some pancreas data generated from normal donors and patients with type II diabetes [@segerstolpe2016pancreas]:
+To illustrate, we'll pull out some pancreas data generated from normal donors and patients with type II diabetes [@segerstolpe2016singlecell]:
 
 ```{r}
 library(scRNAseq)
