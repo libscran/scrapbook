@@ -12,6 +12,7 @@ github-repo: libscran/scrapbook
 
 ```{r, echo=FALSE}
 .gh_url <- file.path('https://github.com', rmarkdown::metadata[['github-repo']])
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 curpath <- getwd()
 while (curpath != (nextpath <- dirname(curpath))) {
@@ -38,4 +39,44 @@ url: "`r .gh_url`"
 
 <a href="https://bioconductor.org"><img src="`r rmarkdown::metadata[["cover-image"]]`" width="200" alt="Bioconductor Sticker" align="right" style="margin: 0 1em 0 1em" /></a> 
 
-Something something something.
+Single-cell RNA-sequencing (scRNA-seq) - the name says it all, really.
+Long story short, we isolate single cells and we sequence their transcriptomes to quantify the expression of each gene in each cell [@kolodziejczyk2015technology].
+This allows us to explore heterogeneity in a cell population at the resolution of individual cells,
+typically to identify subpopulations or states that would not be apparent from population-level (bulk) assays.
+Since around 2014, scRNA-seq has emerged as one of the premier techniques for publishing papers in genomics and biomedicine.
+Occasionally, it is even used to do some actual science.
+
+This book describes a computational workflow for analyzing scRNA-seq data based on [R/Bioconductor](https://bioconductor.org) packages.
+Each chapter is devoted to a particular step in the analysis where we provide the theoretical rationale^[If any exists.],
+the associated code, and some typical results from real public datasets.
+Truth be told, you don't actually have to read this book if you don't care about how/why things are done.
+If you just want to get those pretty pictures for your upcoming submission to _Nature_, just copy and paste the following into your R session:
+
+```{r}
+# Pulling out an example dataset.
+library(scRNAseq)
+sce.zeisel <- ZeiselBrainData()
+
+# Running the full analysis pipeline.
+library(scrapper)
+is.mito.zeisel <- grep("^mt-", rownames(sce.zeisel))
+res.zeisel <- analyze(counts(sce.zeisel), rna.subsets=list(MT=is.mito.zeisel))
+sce.res.zeisel <- convertAnalyzeResults(res.zeisel)
+
+# Visualizing the cluster assignments for each cell:
+library(scater)
+plotReducedDim(sce.res.zeisel, "tsne", colour_by="clusters")
+
+# Looking at the top markers for cluster 1:
+markers.1.zeisel <- reportGroupMarkerStatistics(res.zeisel$rna.markers, "1")
+markers.1.zeisel <- markers.1.zeisel[order(markers.1.zeisel$cohens.d.mean, decreasing=TRUE),]
+head(markers.1.zeisel[,c("mean", "detected", "cohens.d.mean")])
+```
+
+And that's it.
+Now we can get onto the real work, a.k.a., filling out the manuscript submission checklist and schmoozing the editor over a nice dinner.
+But if you want to really look under the hood, the rest of this book will go over all of the individual steps in the mysterious `analyze()` function.
+It's not a bad idea to keep reading as you might get some ideas for tweaking parameters to get "better" results^[
+As you will soon find out, the definition of "better" can be quite subjective in the scRNA-seq world.].
+If nothing else, we have been told that our writing style performs well as a sleeping aid,
+so if you don't find our technical descriptions worthwhile, hopefully the extra REM cycles will make up for it.
