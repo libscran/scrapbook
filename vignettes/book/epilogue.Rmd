@@ -1,0 +1,32 @@
+# Closing remarks {-}
+
+Well, it's over.
+Congratulations on making it to the end.
+Hopefully, you now have a better idea of the inner workings of an scRNA-seq analysis.
+
+We note that "interesting" is a load-bearing word in many chapters.
+Much of scRNA-seq data analysis is exploratory, and much of exploratory data analysis is guided by the analyst's own curiosity or biases.
+This subjectivity might be uncomfortable to folks who are more accustomed to executing a pre-defined analysis plan to test a specific hypothesis.
+However, it is inevitable when we don't have a concrete hypothesis in mind -
+even a simple question like "which cell types change in expression upon drug treatment" requires a definition for each cell type, which is difficult to formulate _a priori_.
+We would embrace the subjective nature of this analysis by realizing that it is a consequence of the freedom to formulate new questions and hypotheses from the data.
+
+To reconcile the laissez-faire attitude of our scRNA-seq analysis with rigorous science, we should make sure to validate any conclusions from the former.
+This involves generating data from independent replicates (donors, animals, etc.) to avoid statistical problems from data dredging.
+Ideally, we would also use a different assay technique, i.e., not sequencing, to ensure that our conclusions are not based on technical artifacts.
+For example, if a cluster corresponds to a novel cell type or state, we could attempt to isolate that subpopulation using FACS on its marker genes. 
+Independent validation is merely the price of the freedom that we were afforded during data exploration -
+sure, we can generate as many crazy new hypotheses as we like, but at some point we have to test them^[
+Many people (e.g., busy collaborators, cheapskate PIs) don't want to do more experiments and will pressure you into conjuring up a $p$-value from the same dataset.
+Try to resist this.].
+
+One more piece of advice is to realize that scRNA-seq data exploration can be quite time-consuming.
+We are rarely satisfied by our first analysis with default parameters.
+Often, it raises additional questions that prompt us to re-examine the dataset from a new perspective (e.g., different clustering resolutions, different HVGs).
+Indeed, there are dozens of parameters that we could fiddle with until some interesting phenomenon reveals itself.
+We have observed colleagues spending months to years in this rabbit hole of data exploration. 
+If that's happening to you, make sure you are rewarded commensurately for your time^[
+For comparison, consider DE analyses of bulk RNA-seq data where the null hypothesis is well-defined and the interpretation of the results is simple.
+I hand over a list of DE genes to my collaborators and they can pore over it while I go fishing.
+For a few minutes' worth of work, even a median authorship would represent a good credit-to-effort ratio.].
+For us, it's joint first/corresponding authorship or they can take their data somewhere else.

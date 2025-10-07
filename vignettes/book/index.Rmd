@@ -51,8 +51,16 @@ This book describes a computational workflow for analyzing scRNA-seq data using 
 Most of the heavy lifting is performed using the `r Biocpkg("scrapper")` package, while `r Biocpkg("scater")` handles the plotting.
 We rely heavily on Bioconductor data structures like the `SingleCellExperiment` class,
 so readers should check out the `r Biocpkg("SingleCellExperiment", "intro.html", label="associated documentation")` if they haven't already.
-Each chapter is devoted to a particular step in the analysis where we provide the theoretical rationale^[If any exists.],
-the associated code, and some typical results from real public datasets.
+Each chapter is devoted to a particular step in the analysis where we provide its theoretical rationale, the associated code, and some typical results from real public datasets.
+This includes:
+
+- Quality control, to filter out cells that were damaged or not properly sequenced.
+- Normalization, to remove cell-specific biases. 
+- Feature selection, to identify genes with interesting biologial variation.
+- Principal components analysis, to compact and denoise the data.
+- Visualization, to generate the all-important Figure 1 of our manuscript.
+- Clustering, to summarize the data into groups of similar cells. 
+- Marker detection, to assign biological meaning to each cluster based on its upregulated genes.
 
 Truth be told, you don't actually have to read this book if you don't care about how/why things are done.
 If you just want to get those pretty pictures for your upcoming submission to _Nature_, just copy and paste the following into your R session:
@@ -79,18 +87,5 @@ head(markers.1.zeisel[,c("mean", "detected", "cohens.d.mean")])
 ```
 
 And that's it.
-Now we can get onto the real work, a.k.a., filling out the manuscript submission checklist and schmoozing the editor over a nice dinner.
-But if you want to really look under the hood, the rest of this book will go over all of the individual steps in the mysterious `analyze()` function, such as:
-
-- Quality control, to filter out cells that were damaged or not properly sequenced.
-- Normalization, to remove cell-specific biases. 
-- Feature selection, to identify genes with interesting biologial variation.
-- Principal components analysis, to compact and denoise the data.
-- Visualization, to generate the all-important Figure 1 of our manuscript.
-- Clustering, to summarize the data into groups of similar cells. 
-- Marker detection, to assign biological meaning to each cluster based on its upregulated genes.
-
-It's not a bad idea to keep reading as you might get some ideas for tweaking parameters to get "better" results^[
-As you will soon find out, the definition of "better" can be quite subjective in the scRNA-seq world.].
-If nothing else, we have been told that our writing style performs well as a sleeping aid,
-so if you don't find our technical descriptions worthwhile, hopefully the extra REM cycles will make up for it.
+But if you want to look under the hood, it's worthwhile to keep reading as you might get some ideas for tweaking parameters to get better results.
+Any questions can be posted at [Bioconductor support site](https://support.bioconductor.org) or the [GitHub page for this book](https://github.com/libscran/scrapbook).
