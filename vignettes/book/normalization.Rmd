@@ -106,9 +106,10 @@ For example, Figure \@ref(fig:zeisel-demo-snap25) shows that interneurons have a
 this roughly translates to an original count of 30-60 UMIs in each cell, which gives us some confidence that it is actually expressed.
 This relationship to the original data would be less obvious if the centering were not performed.
 
-```{r zeisel-demo-snap25, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
+```{r zeisel-demo-snap25, fig.wide=TRUE, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
 library(scater)
-plotExpression(sce.norm.zeisel, x="level1class", features="Snap25", colour="level1class")
+plotExpression(sce.norm.zeisel, x="level1class", features="Snap25", colour="level1class") +
+    scale_x_discrete(guide = guide_axis(angle = 45))
 ```
 
 Centering also ensures that the effect of the pseudo-count decreases with greater sequencing coverage across the dataset. 
