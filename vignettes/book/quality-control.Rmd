@@ -293,9 +293,6 @@ sce.10x <- sce.10x[,which(ed.10x$FDR <= 0.001)]
 # Applying our default QC with outlier-based thresholds.
 is.mito.10x <- grepl("^MT-", rowData(sce.10x)$Symbol)
 sce.qc.10x <- quickRnaQc.se(sce.10x, subsets=list(MT=is.mito.10x))
-qc.thresh.10x <- metadata(sce.qc.10x)$qc$thresholds
-qc.thresh.10x
-summary(sce.qc.10x$keep)
 
 # Aggregating counts for cells that are either retained or discarded.
 aggregate.10x <- aggregateAcrossCells.se(
@@ -304,7 +301,6 @@ aggregate.10x <- aggregateAcrossCells.se(
 )
 sums.10x <- assay(aggregate.10x, "sums")
 colnames(sums.10x) <- aggregate.10x$factor.status
-head(sums.10x)
 
 # Computing log-fold changes between retained and discarded pools.
 library(edgeR)
@@ -378,41 +374,21 @@ library(scater)
 sce.batch.416b$combined.batch <- batch.416b
 gridExtra::grid.arrange(
     plotColData(sce.batch.416b, y="sum", x="combined.batch", colour_by="keep") +
-        scale_y_log10() +
-        geom_segment(
-            aes(x=as.numeric(batch) - 0.2, xend=as.numeric(batch) + 0.2, y=sum, yend=sum),
-            data=data.frame(batch=factor(names(qc.thresh.batch.416b$sum)), sum=qc.thresh.batch.416b$sum),
-            linetype="dashed",
-            color="red"
-        ) +
+        categoricalHlinesNamed(qc.thresh.batch.416b$sum, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
+        scale_y_log10() +
         ggtitle("Total count"),
     plotColData(sce.batch.416b, y="detected", x="combined.batch", colour_by="keep") +
-        scale_y_log10() +
-        geom_segment(
-            aes(x=as.numeric(batch) - 0.2, xend=as.numeric(batch) + 0.2, y=detected, yend=detected),
-            data=data.frame(batch=factor(names(qc.thresh.batch.416b$detected)), detected=qc.thresh.batch.416b$detected),
-            linetype="dashed",
-            color="red"
-        ) +
+        categoricalHlinesNamed(qc.thresh.batch.416b$detected, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
+        scale_y_log10() +
         ggtitle("Detected features"),
     plotColData(sce.batch.416b, y="subset.proportion.MT", x="combined.batch", colour_by="keep") + 
-        geom_segment(
-            aes(x=as.numeric(batch) - 0.2, xend=as.numeric(batch) + 0.2, y=prop, yend=prop),
-            data=data.frame(batch=factor(names(qc.thresh.batch.416b$subset.proportion$MT)), prop=qc.thresh.batch.416b$subset.proportion$MT),
-            linetype="dashed",
-            color="red"
-        ) +
+        categoricalHlines(qc.thresh.batch.416b$subset.proportion.MT, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("Mito proportion"),
     plotColData(sce.batch.416b, y="subset.proportion.ERCC", x="combined.batch", colour_by="keep") + 
-        geom_segment(
-            aes(x=as.numeric(batch) - 0.2, xend=as.numeric(batch) + 0.2, y=prop, yend=prop),
-            data=data.frame(batch=factor(names(qc.thresh.batch.416b$subset.proportion$ERCC)), prop=qc.thresh.batch.416b$subset.proportion$ERCC),
-            linetype="dashed",
-            color="red"
-        ) +
+        categoricalHlines(qc.thresh.batch.416b$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("ERCC proportion"),
     ncol=2
@@ -435,12 +411,7 @@ qc.thresh.batch.grun
 summary(sce.batch.grun$keep)
 
 plotColData(sce.batch.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
-    geom_segment(
-        aes(x=as.numeric(donor) - 0.2, xend=as.numeric(donor) + 0.2, y=prop, yend=prop),
-        data=data.frame(donor=factor(names(qc.thresh.batch.grun$subset.proportion$ERCC)), prop=qc.thresh.batch.grun$subset.proportion$ERCC),
-        linetype="dashed",
-        color="red"
-    ) +
+    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
     ggtitle("ERCC prop")
 ```
 
@@ -467,12 +438,7 @@ sce.fixed.grun <- quickRnaQc.se(
 )
 
 plotColData(sce.fixed.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
-    geom_segment(
-        aes(x=as.numeric(donor) - 0.2, xend=as.numeric(donor) + 0.2, y=prop, yend=prop),
-        data=data.frame(donor=factor(names(qc.thresh.fixed.grun$subset.proportion$ERCC)), prop=qc.thresh.fixed.grun$subset.proportion$ERCC),
-        linetype="dashed",
-        color="red"
-    ) +
+    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
     ggtitle("ERCC prop")
 ```
 
