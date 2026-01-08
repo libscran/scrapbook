@@ -303,7 +303,7 @@ for which clonal expression introduces (possibly irrelevant) population structur
 
 ```{r}
 # Identifying ribosomal proteins:
-ribo.discard <- grepl("^RP[SL]\\d+", rownames(sce.10x))
+ribo.discard <- grepl("^RP[SL]\\d+", rowData(sce.10x)$Symbol)
 sum(ribo.discard)
 
 # A more curated approach for identifying ribosomal protein genes:
