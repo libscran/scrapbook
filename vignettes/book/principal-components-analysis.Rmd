@@ -37,39 +37,29 @@ library(scRNAseq)
 sce.zeisel <- ZeiselBrainData()
 is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
 
-# Performing some QC to set up the dataset prior to normalization. We'll skip
-# calculation of spike-in proportions for brevity.
+# Performing some QC to set up the dataset prior to normalization. 
 library(scrapper)
-qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
-qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
-qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
-sce.zeisel$sum <- qc.metrics.zeisel$sum
-sce.zeisel$detected <- qc.metrics.zeisel$detected
-sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
-sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+sce.qc.zeisel <- quickRnaQc.se(sce.zeisel, subsets=list(MT=is.mito.zeisel), altexp.proportions="ERCC")
+sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 
 # Computing log-normalized expression values.
-lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
-logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
+sce.norm.zeisel <- normalizeRnaCounts.se(sce.qc.zeisel, size.factors=sce.qc.zeisel$sum)
 
 # Computing the variances.
-var.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
+sce.var.zeisel <- chooseRnaHvgs.se(sce.norm.zeisel, more.var.args=list(use.min.width=TRUE))
 ```
 
-To perform the PCA, we call `runPca()` on our HVG-filtered log-normalized expression matrix.
-While PCA is robust to random noise, too much of it may cause the earlier PCs to capture noise instead of meaningful structure [@johnstone2009consistency].
-This effect can be mitigated by restricting the PCA to a subset of HVGs, as discussed in Chapter \@ref(feature-selection).
-Here, we take the top 2000 HVGs and compact them into the top 25 PCs.
-The `components` matrix contains the "PC scores", i.e., the coordinates for each cell in the new low-dimensional space, which can be used in clustering, visualization, etc.
+We run the PCA on our HVG-filtered log-normalized expression matrix, compacting the dataset into the top 25 PCs.
+This yields a matrix of "PC scores", i.e., the coordinates for each cell in the new low-dimensional space, which can be used in clustering, visualization, etc.
+As discussed in Chapter \@ref(feature-selection), we restrict this step to the top HVGs to reduce the impact of random noise. 
+While PCA is robust to noise, too much of it may cause the earlier PCs to ignore meaningful structure [@johnstone2009consistency].
 
 ```{r}
-hvgs.zeisel <- chooseHighlyVariableGenes(var.zeisel$statistics$residuals, top=2000)
-pcs.zeisel <- runPca(logcounts(sce.qc.zeisel)[hvgs.zeisel,], number=25)
-dim(pcs.zeisel$components)
+hvgs.zeisel <- rowData(sce.var.zeisel)$hvg
+summary(hvgs.zeisel)
 
-# Storing the components back inside the SingleCellExperiment so we can pull it
-# out later in our downstream analyses. 
-reducedDim(sce.qc.zeisel, "PCA") <- t(pcs.zeisel$components)
+sce.pca.zeisel <- runPca.se(sce.var.zeisel, features=hvgs.zeisel, number=25)
+dim(reducedDim(sce.pca.zeisel, "PCA"))
 ```
 
 ## How many PCs?
@@ -90,9 +80,10 @@ In fact, the main consequence of using more PCs is simply that downstream calcul
 but most PC-related calculations are fast enough that this is not a practical concern.
 
 ```{r zeisel-scree, fig.cap="Percentage of variance explained by successive PCs in the Zeisel dataset, shown on a log-scale."}
-pcs.more.zeisel <- runPca(logcounts(sce.qc.zeisel)[hvgs.zeisel,], number=50)
-percent.var <- pcs.more.zeisel$variance.explained / pcs.more.zeisel$total.variance * 100
-plot(percent.var, log="y", xlab="PC", ylab="Variance explained (%)")
+sce.more.zeisel <- runPca.se(sce.var.zeisel, features=hvgs.zeisel, number=50)
+pca.meta <- metadata(sce.more.zeisel)$PCA
+percent.var <- pca.meta$variance.explained / pca.meta$total.variance * 100
+plot(percent.var, log="y", xlab="PC", ylab="Variance explained (%)", type="b")
 ```
 
 ```{r, echo=FALSE}
@@ -133,68 +124,84 @@ plate.416b <- sce.416b$block # i.e., the plate of origin.
 pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
 sce.416b$batch <- factor(paste0(pheno.416b, "-", plate.416b))
 
-# Computing the QC metrics. For brevity, we'll skip the spike-ins. 
+# Computing the QC metrics.
 library(scrapper)
-location.416b <- rowRanges(sce.416b)
-is.mito.416b <- which(any(seqnames(location.416b)=="MT"))
-qc.metrics.416b <- computeRnaQcMetrics(counts(sce.416b), subsets=list(MT=is.mito.416b))
-sce.416b$sum <- qc.metrics.416b$sum
-qc.thresh.416b <- suggestRnaQcThresholds(qc.metrics.416b, block=sce.416b$batch)
-qc.keep.416b <- filterRnaQcMetrics(qc.thresh.416b, qc.metrics.416b, block=sce.416b$batch)
-sce.qc.416b <- sce.416b[,qc.keep.416b]
+is.mito.416b <- which(any(seqnames(rowRanges(sce.416b)) == "MT"))
+sce.qc.416b <- quickRnaQc.se(
+    sce.416b,
+    subsets=list(MT=is.mito.416b),
+    altexp.proportions="ERCC",
+    block=sce.416b$batch
+)
+sce.qc.416b <- sce.qc.416b[,sce.qc.416b$keep]
 
 # Computing log-normalized expression values.
-lib.factor.416b <- centerSizeFactors(sce.qc.416b$sum, block=sce.qc.416b$batch)
-logcounts(sce.qc.416b) <- normalizeCounts(counts(sce.qc.416b), lib.factor.416b)
+sce.norm.416b <- normalizeRnaCounts.se(
+    sce.qc.416b,
+    size.factors=sce.qc.416b$sum,
+    block=sce.qc.416b$batch
+)
 
 # Choosing the topHVGs after blocking on the uninteresting factors.
-var.416b <- modelGeneVariances(logcounts(sce.qc.416b), block=sce.qc.416b$batch)
-hvg.416b <- chooseHighlyVariableGenes(var.416b$statistics$residuals, top=1000)
+sce.var.416b <- chooseRnaHvgs.se(
+    sce.norm.416b,
+    more.choose.args=list(top=1000), # just picking a cool-looking number of top genes here.
+    block=sce.norm.416b$batch
+)
 ```
 
 We set `block=` to instruct `runPca()` to focus on the variation within each batch.
 This is equivalent to centering each batch at the origin and then finding the axes of largest variation among the residuals.
-The non-centered expression values for each cell are then projected onto these axes to obtain that cell's PC scores.
+The expression values for each cell are then projected onto these axes to obtain that cell's PC scores.
 Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),
 allowing our subsequent analyses to focus on heterogeneity within each subpopulation.
 
 ```{r pca-416b, fig.asp=1.5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
-pcs.raw.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20)
-reducedDim(sce.qc.416b, "PCA.unblocked") <- t(pcs.raw.416b$components)
-pcs.blocked.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20, block=sce.qc.416b$batch)
-reducedDim(sce.qc.416b, "PCA.blocked") <- t(pcs.blocked.416b$components)
+is.hvg.416b <- rowData(sce.var.416b)$hvg
+sce.pca.416b <- runPca.se(sce.var.416b, features=is.hvg.416b, number=20)
+sce.block.416b <- runPca.se(
+    sce.var.416b,
+    features=is.hvg.416b,
+    number=20,
+    block=sce.var.416b$batch
+)
 
 library(scater)
 gridExtra::grid.arrange(
-    plotReducedDim(sce.qc.416b, dimred="PCA.unblocked", colour_by="batch") +
+    plotReducedDim(sce.pca.416b, dimred="PCA", colour_by="batch") +
         ggtitle("Without blocking"),
-    plotReducedDim(sce.qc.416b, dimred="PCA.blocked", colour_by="batch") +
+    plotReducedDim(sce.block.416b, dimred="PCA", colour_by="batch") +
         ggtitle("Blocked"),
     ncol=1
 )
 ```
 
-Note that blocking during PCA is usually not sufficient for batch correction.
 If we're lucky, all of the uninteresting batch effects are orthogonal to the major biological variation,
 such that taking the first few PCs will focus on the latter and remove the former.
-In practice, most batch effects tend to have some biological component that might be captured by the first few PCs.
+In practice, blocking during PCA is usually not sufficient for batch correction.
+Most batch effects tend to have some biological component that will be retained within the first few PCs.
 This requires some additional effort to remove (see Chapter \@ref(batch-correction)) prior to downstream steps like clustering.
-Nonetheless, blocking is still helpful as it eliminates some of the batch effects and preserves more biological signal in the top PCs.
+Nonetheless, blocking is still helpful as it eliminates at least some of the batch effect and preserves more biological signal in the top PCs.
 
-It's worth mentioning one exception to the above statement, which is to directly compute the PC scores from the residuals.
-Setting `components.from.residuals=TRUE` yields corrected scores that do not require any further processing to remove the batch effect.
-However, this approach is only correct when the batch effect is a simple shift in the high-dimensional expression space.
-This effectively assumes that all batches have the same subpopulation composition and the batch effect is consistent for all cell subpopulations.
+To be more precise, the default behavior of `block=` is to use the residuals to compute the rotation matrix but not the PC scores.
+This reduces the influence of the batch effect on the low-dimensional embedding but does not explicitly remove it.
+In contrast, setting `components.from.residuals=TRUE` yields PC scores that are also derived from the residuals.
+This serves as a batch correction step but is only correct in very limiting circumstances,
+e.g., assuming all batches have the same subpopulation composition and the batch effect is consistent for all cell subpopulations.
 Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
 In our 416B example, the two subpopulations are now forced together (Figure \@ref(fig:pca-residuals-416b)) for better or worse.
 
 ```{r pca-residuals-416b, fig.cap="First two PCs for the 416B dataset with blocking, where PC scores are computed from residuals. Each point represents a cell, colored by its combination of experimental factors."}
-pcs.residuals.416b <- runPca(logcounts(sce.qc.416b)[hvg.416b,], number=20,
-    block=sce.qc.416b$batch, components.from.residuals=TRUE)
-reducedDim(sce.qc.416b, "PCA.residuals") <- t(pcs.residuals.416b$components)
+sce.resid.416b <- runPca.se(
+    sce.var.416b,
+    features=is.hvg.416b,
+    number=20,
+    block=sce.var.416b$batch,
+    more.pca.args=list(components.from.residuals=TRUE)
+)
 
 library(scater)
-plotReducedDim(sce.qc.416b, dimred="PCA.residuals", colour_by="batch")
+plotReducedDim(sce.resid.416b, dimred="PCA", colour_by="batch")
 ```
 
 As with HVGs, we should only use `block=` for experimental factors that are not interesting.
@@ -213,11 +220,15 @@ For example, examination of the top 4 PCs is still insufficient to resolve all s
 
 ```{r zeisel-pca-multi, fig.wide=TRUE, fig.asp=1, fig.cap="PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors."}
 library(scater)
-plotReducedDim(sce.qc.zeisel, dimred="PCA", ncomponents=4,
-    colour_by="level1class")
+plotReducedDim(
+    sce.pca.zeisel,
+    dimred="PCA",
+    ncomponents=4,
+    colour_by="level1class"
+)
 ```
 
-The problem is that PCA is a linear technique, i.e., only variation along a line in high-dimensional space is captured by each PC.
+The problem here is that PCA is a linear technique, i.e., only variation along a line in high-dimensional space is captured by each PC.
 As such, it cannot efficiently represent high-dimensional differences in the first 2 PCs.
 If the first PC is devoted to resolving the biggest difference between subpopulations, and the second PC is devoted to resolving the next biggest difference,
 then the remaining differences will not be visible in the plot.
