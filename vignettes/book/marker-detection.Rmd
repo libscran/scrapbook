@@ -108,6 +108,7 @@ Different effect sizes or summary statistics can yield alternative rankings that
 For each pairwise comparison, we compute several effect sizes to quantify the magnitude of differential expression.
 The choice of effect size influences the types of markers that are prioritized in rankings based on that effect size.
 To demonstrate, we'll look at the different rankings obtained for cluster `r chosen.cluster` with each effect size.
+(For consistency and simplicity, we will use the `.mean` summary in each example.)
 
 Cohen's $d$ is defined as the difference in the mean between groups divided by the average standard deviation across groups.
 In other words, it is the number of standard deviations that separate the means of the two groups.
