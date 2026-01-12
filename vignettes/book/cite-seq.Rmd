@@ -256,7 +256,7 @@ sce.norm.pbmc <- normalizeRnaCounts.se(sce.qc.pbmc)
 markers.adt2rna.pbmc <- scoreMarkers.se(sce.norm.pbmc, sce.nn.adt.pbmc$clusters, extra.columns="Symbol")
 
 # Now looking at the top marker genes for cluster 1.
-previewMarkers(markers.adt2rna.pbmc[["1"]], columns=c("Symbol", "mean", "detected", lfc = "delta.mean.mean"))
+previewMarkers(markers.adt2rna.pbmc[["1"]], pre.columns="Symbol")
 ```
 
 Conversely, we could use the RNA-derived clusters to score the ADTs.
