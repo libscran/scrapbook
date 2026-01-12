@@ -131,6 +131,16 @@ out <- clusterGraph(g)$membership
 table(out, rep(1:2, c(nrow(a), nrow(b))))
 ```
 
+On a practical note, the `runAllNeighborSteps.se()` function performs graph-based clustering alongside the $t$-SNE and UMAP.
+This is more efficient than calling each function separately, though results may be slightly different due to how the neighbor search results are shared. 
+We can sacrifice some speed for exact equality to the `clusterGraph.se()` results by setting `collapse.search=FALSE`.
+
+```{r}
+sce.nn.10x <- runAllNeighborSteps.se(sce.pca.10x)
+table(sce.nn.10x$clusters)
+reducedDimNames(sce.nn.10x)
+```
+
 ## $k$-means clustering {#clustering-kmeans}
 
 $k$-means clustering is a classic technique for partitioning cells into a pre-specified number of clusters.
