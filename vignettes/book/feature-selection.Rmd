@@ -154,7 +154,7 @@ sce.norm.tropho <- normalizeRnaCounts.se(
 )
 ```
 
-Setting `block=` in `modelGeneVariances()` will compute the mean and variance for each gene within each batch.
+Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each batch.
 This ensures that any differences between batches will not inflate the variance estimates.
 It will also fit a separate trend for each batch, which accommodates differences in the mean-variance relationships between batches.
 This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.

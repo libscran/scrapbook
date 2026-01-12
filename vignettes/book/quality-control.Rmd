@@ -319,7 +319,7 @@ stopifnot(all(logFC.10x[platelet] > 3))
 ```
 
 If we suspect that cell types have been incorrectly discarded by our QC procedure, the most direct solution is to relax the QC filters.
-This is easily achieved for the outlier-based thresholds by increasing `num.mads=` in the `suggestRnaQcThresholds()` call.
+This is easily achieved for the outlier-based thresholds by increasing `num.mads=` in the `quickRnaQc.se()` call.
 Alternatively, we can disable filtering for particular metrics by setting the threshold to `Inf` or `-Inf` for upper and lower thresholds, respectively.
 We might even think about skipping the filtering altogether^[
 At this point, you might get the impression that the QC step involves many arbitrary and _ad hoc_ decisions.

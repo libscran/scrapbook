@@ -30,7 +30,7 @@ The simplest definition of a size factor is based on the library size for each c
 Larger library sizes are attributed to technical differences in library preparation or sequencing that should be equalized across cells.
 Alternatively, a cell may have a larger library size because it contains more total RNA;
 this is also treated as an uninteresting biological effect that should be normalized away.
-To demonstrate, let's pull out at our old friend, the @zeisel2015brain dataset:
+To demonstrate, let's fetch our old friend, the @zeisel2015brain dataset:
 
 ```{r}
 library(scRNAseq)
@@ -45,7 +45,7 @@ sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 sce.qc.zeisel
 ```
 
-We compute library size factors from the column sums of the count matrix.
+We use the `normalizeRnaCounts.se()` function to derive library size factors from the column sums of the count matrix.
 Specifically, we center the library sizes so that the mean size factor across all cells is equal to 1.
 This definition ensures that the normalized expression values are on the same scale as the original counts, which is useful for interpretation.
 We see that the library size factors differ by up to 10-fold across cells (Figure \@ref(fig:norm-histlib)), which is typical of the variability in coverage in scRNA-seq data. 
@@ -90,7 +90,7 @@ Or in other words, which is more interesting - a gene that is expressed at an av
 or a gene that is expressed at an average count of 1100 in $A$ and 1000 in $B$?
 Log-transformation focuses on the former by promoting contributions from genes with strong relative differences.
 
-During the log-transformation, `normalizeCounts()` will add a pseudo-count to avoid undefined values at zero counts.
+During the log-transformation, `normalizeRnaCounts.se()` will add a pseudo-count to avoid undefined values at zero counts.
 This addition has the side effect of shrinking log-fold changes between cells towards zero for low-abundance genes.
 Such shrinkage is desirable as the log-differences are not reliable when the counts are low due to random sampling noise. 
 So, if we were to use a pseudo-count of 1, the log-fold change between normalized expression values of 1 and 2 would be $log_2((2 + 1)/(1 + 1)) \approx 0.58$,
@@ -213,7 +213,7 @@ To remove these biases, we equalize spike-in coverage across cells by scaling wi
 
 Let's demonstrate on a scRNA-seq dataset of T cells after stimulation with T cell receptor ligands of varying affinity [@richard2018tcell].
 Specifically, we compute the total count across all spike-in transcripts in each cell and center them to a mean of 1 across all cells (see Section \@ref(norm-centering)).
-These size factors can then be plugged into `normalizeCounts()` to obtain normalized expression values for endogenous genes.
+These size factors can then be plugged into `normalizeRnaCounts.se()` to obtain normalized expression values for endogenous genes.
 
 ```{r norm-histlib-spike, fig.cap="Distribution of size factors derived from the library size in the Richard T cell dataset."}
 library(scRNAseq)
@@ -224,8 +224,11 @@ sce.qc.richard <- sce.richard[,sce.richard$`single cell quality`=="OK"]
 sce.qc.richard
 
 # Pulling the spike-in counts out of the alternative experiment.
+sce.ercc.richard <- altExp(sce.qc.richard, "ERCC")
+sce.ercc.richard
+
 library(scrapper)
-ercc.sums.richard <- colSums(counts(altExp(sce.qc.richard, "ERCC")))
+ercc.sums.richard <- colSums(counts(sce.ercc.richard))
 spike.factor.richard <- centerSizeFactors(ercc.sums.richard)
 summary(spike.factor.richard)
 hist(log10(spike.factor.richard), xlab="Log10[Size factor]", col='grey80')

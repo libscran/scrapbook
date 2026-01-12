@@ -283,7 +283,7 @@ The combined matrix contains both sets of PCs, ensuring that information from bo
 However, naively combining the two matrices is not ideal as the number of genes is typically at several orders of magnitude greater than the number of ADTs.
 This would cause the RNA modality to dominate the variance in the combined matrix, effectively sidelining any contributions from the ADT modality.
 
-Instead, we scale the modalities to balance their contributions to the combined matrix with the `scaleByNeighbors()` function.
+Instead, we scale the modalities to balance their contributions to the combined matrix with the `scaleByNeighbors.se()` function.
 For each modality, we compute the median distance from each cell to its $k$ nearest neighbor, which we treat as a proxy for the uninteresting variation within subpopulations. 
 Each matrix of PCs is then scaled according to its median distance, equalizing the magnitude of uninteresting variation across modalities.
 This ensures that high baseline variation in one modality will not drown out interesting biological variation in another modality in the combined matrix.

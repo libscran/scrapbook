@@ -150,7 +150,7 @@ sce.var.416b <- chooseRnaHvgs.se(
 )
 ```
 
-We set `block=` to instruct `runPca()` to focus on the variation within each batch.
+We set `block=` to instruct `runPca.se()` to focus on the variation within each batch.
 This is equivalent to centering each batch at the origin and then finding the axes of largest variation among the residuals.
 The expression values for each cell are then projected onto these axes to obtain that cell's PC scores.
 Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),

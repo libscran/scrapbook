@@ -174,7 +174,7 @@ Here's a non-exhaustive list of other visualization methods in R/Bioconductor pa
 - Interpolation-based $t$-SNE [@linderman2019fitsne] from the `r Biocpkg("snifter")` package.
 - Density-preserving $t$-SNE and UMAP [@narayan2021densvis] from the `r Biocpkg("densvis")` package.
 
-All of these packages will happily accept a matrix of PC scores and are plug-and-play replacements for `runTsne()` and `runUmap()`.
+All of these packages will happily accept a matrix of PC scores and are plug-and-play replacements for `runTsne.se()` and `runUmap.se()`.
 
 ## Session information {-}
 
