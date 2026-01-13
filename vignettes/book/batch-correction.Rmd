@@ -56,7 +56,7 @@ sce.pbmc8k <- TENxPBMCData('pbmc8k')
 
 # Finding a common set of genes across all batches to allow us to combine
 # everything into a single object. This is only necessary if the different
-# batches were aligned to different genomes with different annotation.
+# batches were processed with different genome annotations.
 common.pbmc <- Reduce(
     intersect,
     list(
@@ -84,25 +84,33 @@ counts(sce.pbmc) <- as(counts(sce.pbmc), "dgCMatrix")
 # Quality control, blocking on the batch of origin for each cell.
 is.mito.pbmc <- grep("MT", rowData(sce.pbmc)$Symbol)
 library(scrapper)
-qc.metrics.pbmc <- computeRnaQcMetrics(counts(sce.pbmc), subsets=list(MT=is.mito.pbmc))
-sce.pbmc$sum <- qc.metrics.pbmc$sum
-sce.pbmc$detected <- qc.metrics.pbmc$detected
-sce.pbmc$MT_proportion <- qc.metrics.pbmc$subsets$MT
-qc.thresh.pbmc <- suggestRnaQcThresholds(qc.metrics.pbmc, block=sce.pbmc$batch)
-qc.keep.pbmc <- filterRnaQcMetrics(qc.thresh.pbmc, qc.metrics.pbmc, block=sce.pbmc$batch)
-sce.qc.pbmc <- sce.pbmc[,qc.keep.pbmc]
+sce.qc.pbmc <- quickRnaQc.se(
+    sce.pbmc,
+    subsets=list(MT=is.mito.pbmc),
+    block=sce.pbmc$batch
+)
+sce.qc.pbmc <- sce.pbmc[,sce.qc.pbmc$keep]
 
 # Normalization, blocking on the batch of origin for each cell.
-lib.sf.pbmc <- centerSizeFactors(sce.qc.pbmc$sum, block=sce.qc.pbmc$batch)
-logcounts(sce.qc.pbmc) <- normalizeCounts(counts(sce.qc.pbmc), lib.sf.pbmc)
+sce.norm.pbmc <- normalizeRnaCounts.se(
+    sce.qc.pbmc,
+    size.factors=sce.qc.pbmc$sum,
+    block=sce.qc.pbmc$batch
+)
 
 # We now choose the top HVGs, with blocking.
-var.pbmc <- modelGeneVariances(logcounts(sce.qc.pbmc), block=sce.qc.pbmc$batch)
-hvgs.pbmc <- chooseHighlyVariableGenes(var.pbmc$statistics$residual, top=4000)
+sce.var.pbmc <- chooseRnaHvgs.se(
+    sce.norm.pbmc, 
+    block=sce.norm.pbmc$batch
+)
 
 # Running the PCA on the HVG submatrix, with blocking.
-pcs.pbmc <- runPca(logcounts(sce.qc.pbmc)[hvgs.pbmc,], number=25, block=sce.qc.pbmc$batch)
-reducedDim(sce.qc.pbmc, "PCA") <- t(pcs.pbmc$components)
+sce.pca.pbmc <- runPca.se(
+    sce.var.pbmc,
+    features=rowData(sce.var.pbmc)$hvg,
+    number=25,
+    block=sce.var.pbmc$batch
+)
 ```
 
 If we examine the distribution of cells without any batch correction, we observe some batch-specific substructure (Figure \@ref(fig:batch-pbmc-uncorrected)).
@@ -113,9 +121,9 @@ or changes in the computational piplines for alignment and quantification.
 Regardless of their origins, we consider these differences to be uninteresting as all batches are assaying the same PBMC population and should be replicates of each other. 
 
 ```{r batch-pbmc-uncorrected, fig.cap="$t$-SNE plot of the cells from the PBMC dataset, without any batch correction. Each cell is colored according to its batch of origin."}
-reducedDim(sce.qc.pbmc, "TSNE.uncorrected") <- runTsne(pcs.pbmc$components)
+sce.unc.tsne.pbmc <- runTsne.se(sce.pca.pbmc)
 library(scater)
-plotReducedDim(sce.qc.pbmc, "TSNE.uncorrected", colour_by="batch")
+plotReducedDim(sce.unc.tsne.pbmc, "TSNE", colour_by="batch") + ggtitle("uncorrected")
 ```
 
 To remove the batch effects, we use `correctMnn()` to apply MNN correction to the PC scores for all cells.
@@ -124,14 +132,9 @@ This yields a set of corrected scores that can be used in place of the original 
 We observe greater intermingling between batches in Figure \@ref(fig:batch-pbmc-corrected), indicating that we have successfully mitigated the batch effect. 
 
 ```{r batch-pbmc-corrected, fig.cap="$t$-SNE plot of the cells from the PBMC dataset after MNN correction. Each cell is colored according to its batch of origin."}
-mnn.pbmc <- correctMnn(pcs.pbmc$components, sce.qc.pbmc$batch)
-
-# Storing the MNN-corrected PCs as their own reduced dim entry.
-reducedDim(sce.qc.pbmc, "MNN") <- t(mnn.pbmc$corrected)
-
-# Also computing a new t-SNE based on the corrected PCs.
-reducedDim(sce.qc.pbmc, "TSNE.corrected") <- runTsne(mnn.pbmc$corrected)
-plotReducedDim(sce.qc.pbmc, "TSNE.corrected", colour_by="batch")
+sce.mnn.pbmc <- correctMnn.se(sce.pca.pbmc, sce.pca.pbmc$batch)
+sce.mnn.tsne.pbmc <- runTsne.se(sce.mnn.pbmc, reddim.type="MNN")
+plotReducedDim(sce.mnn.tsne.pbmc, "TSNE", colour_by="batch") + ggtitle("After correction")
 ```
 
 Similarly, we use the corrected PCs in clustering to ensure that cells from the same underlying population are assigned to the same cluster.
@@ -142,15 +145,14 @@ If a cluster has contributions from multiple batches, it probably represents a c
 We expect that all of our PBMC clusters are more-or-less evenly distributed across batches as each batch is a replicate of the others.
 
 ```{r}
-graph.corrected.pbmc <- buildSnnGraph(mnn.pbmc$corrected)
-clusters.corrected.pbmc <- clusterGraph(graph.corrected.pbmc)
-cluster.by.batch.corrected.pbmc <- table(clusters.corrected.pbmc$membership, sce.qc.pbmc$batch)
+sce.mnn.graph.pbmc <- clusterGraph.se(sce.mnn.pbmc, reddim.type="MNN")
+cluster.batch.mnn.pbmc <- table(sce.mnn.graph.pbmc$clusters, sce.mnn.graph.pbmc$batch)
 
 # First, we divide each column by the number of cells in each batch to account
 # for differences between batches. Then we divide by the row sums to get the
 # distribution of cells across batches in each cluster.
-cluster.by.batch.corrected.pbmc <- t(t(cluster.by.batch.corrected.pbmc) / colSums(cluster.by.batch.corrected.pbmc))
-cluster.by.batch.corrected.pbmc / rowSums(cluster.by.batch.corrected.pbmc)
+cluster.batch.mnn.pbmc <- t(t(cluster.batch.mnn.pbmc) / colSums(cluster.batch.mnn.pbmc))
+cluster.batch.mnn.pbmc / rowSums(cluster.batch.mnn.pbmc)
 ```
 
 If a cluster has no contribution from a batch, this either represents a unique subpopulation or it indicates that batch correction was not completely successful.
@@ -158,17 +160,16 @@ Indeed, clustering on the uncorrected PCs yields some batch-specific clusters in
 These are unlikely to represent unique types/states given that the batches should be replicates.
 
 ```{r}
-graph.uncorrected.pbmc <- buildSnnGraph(pcs.pbmc$components)
-clusters.uncorrected.pbmc <- clusterGraph(graph.uncorrected.pbmc)
-cluster.by.batch.uncorrected.pbmc <- table(clusters.uncorrected.pbmc$membership, sce.qc.pbmc$batch)
+sce.unc.graph.pbmc <- clusterGraph.se(sce.pca.pbmc)
+cluster.batch.unc.pbmc <- table(sce.unc.graph.pbmc$clusters, sce.unc.graph.pbmc$batch)
 
-cluster.by.batch.uncorrected.pbmc <- t(t(cluster.by.batch.uncorrected.pbmc) / colSums(cluster.by.batch.uncorrected.pbmc))
-cluster.by.batch.uncorrected.pbmc / rowSums(cluster.by.batch.uncorrected.pbmc)
+cluster.batch.unc.pbmc <- t(t(cluster.batch.unc.pbmc) / colSums(cluster.batch.unc.pbmc))
+cluster.batch.unc.pbmc / rowSums(cluster.batch.unc.pbmc)
 ```
 
 ```{r, echo=FALSE}
-stopifnot(all(cluster.by.batch.corrected.pbmc != 0))
-stopifnot(any(cluster.by.batch.uncorrected.pbmc == 0))
+stopifnot(all(cluster.batch.mnn.pbmc != 0))
+stopifnot(any(cluster.batch.unc.pbmc == 0))
 ```
 
 Compared to linear regression, MNN correction does not assume that the population composition is the same or known beforehand.
@@ -285,39 +286,47 @@ library(scRNAseq)
 sce.grun <- GrunPancreasData()
 sce.muraro <- MuraroPancreasData()
 
-# Taking the intersection of features for both endogenous genes and spike-ins.
+# Taking the intersection of features for both endogenous genes...
 common.pancreas <- intersect(rownames(sce.grun), rownames(sce.muraro))
 sce.grun <- sce.grun[common.pancreas,]
 sce.muraro <- sce.muraro[common.pancreas,]
+
+# And spike-ins, for completeness...
 common.ercc.pancreas <- intersect(rownames(altExp(sce.grun, "ERCC")), rownames(altExp(sce.muraro, "ERCC")))
 altExp(sce.grun, "ERCC") <- altExp(sce.grun, "ERCC")[common.ercc.pancreas,]
 altExp(sce.muraro, "ERCC") <- altExp(sce.muraro, "ERCC")[common.ercc.pancreas,]
+
+# Before combining both datasets into a single SCE object. 
 sce.pancreas <- combineCols(sce.grun, sce.muraro)
 sce.pancreas$batch <- rep(c("grun", "muraro"), c(ncol(sce.grun), ncol(sce.muraro)))
 
 # Quality control, blocking on the batch of origin for each cell. We don't
 # have mitochondrial genes here so we'll use the spike-ins instead.
 library(scrapper)
-qc.metrics.pancreas <- computeRnaQcMetrics(counts(sce.pancreas), subsets=NULL)
-ercc.metrics.pancreas <- computeRnaQcMetrics(counts(altExp(sce.pancreas, "ERCC")), subsets=NULL)
-qc.metrics.pancreas$subsets$ERCC <- ercc.metrics.pancreas$sum / (ercc.metrics.pancreas$sum + qc.metrics.pancreas$sum)
-sce.pancreas$sum <- qc.metrics.pancreas$sum
-sce.pancreas$detected <- qc.metrics.pancreas$detected
-qc.thresh.pancreas <- suggestRnaQcThresholds(qc.metrics.pancreas, block=sce.pancreas$batch)
-qc.keep.pancreas <- filterRnaQcMetrics(qc.thresh.pancreas, qc.metrics.pancreas, block=sce.pancreas$batch)
-sce.qc.pancreas <- sce.pancreas[,qc.keep.pancreas]
+sce.qc.pancreas <- quickRnaQc.se(
+    sce.pancreas,
+    subsets=NULL,
+    altexp.proportions="ERCC",
+    block=sce.pancreas$batch
+)
+sce.qc.pancreas <- sce.qc.pancreas[,sce.qc.pancreas$keep]
 
 # Normalization, blocking on the batch of origin for each cell.
-lib.sf.pancreas <- centerSizeFactors(sce.qc.pancreas$sum, block=sce.qc.pancreas$batch)
-logcounts(sce.qc.pancreas) <- normalizeCounts(counts(sce.qc.pancreas), lib.sf.pancreas)
+sce.norm.pancreas <- normalizeRnaCounts.se(
+    sce.qc.pancreas,
+    size.factors=sce.qc.pancreas$sum,
+    block=sce.qc.pancreas$batch
+)
 
 # We now choose the top HVGs, with blocking.
-var.pancreas <- modelGeneVariances(logcounts(sce.qc.pancreas), block=sce.qc.pancreas$batch)
-hvgs.pancreas <- chooseHighlyVariableGenes(var.pancreas$statistics$residual, top=4000)
+sce.var.pancreas <- chooseRnaHvgs.se(sce.norm.pancreas, block=sce.norm.pancreas$batch)
 
 # Running the PCA on the HVG submatrix, with blocking.
-pcs.pancreas <- runPca(logcounts(sce.qc.pancreas)[hvgs.pancreas,], number=25, block=sce.qc.pancreas$batch)
-reducedDim(sce.qc.pancreas, "PCA") <- t(pcs.pancreas$components)
+sce.pca.pancreas <- runPca.se(
+    sce.var.pancreas,
+    features=rowData(sce.var.pancreas)$hvg,
+    block=sce.var.pancreas$batch
+)
 ```
 
 We use `correctMnn()` to obtain MNN-corrected PCs for clustering and visualization.
@@ -325,24 +334,20 @@ Both batches contribute to each cluster and are intermingled in Figure \@ref(fig
 which is expected given that both datasets are measuring the same pancreatic cell types.
 
 ```{r batch-pancreas-corrected, fig.cap="$t$-SNE plot of the Grun and Muraro pancreas datasets after MNN correction. Each point is a cell, colored according to its assigned batch."}
-mnn.pancreas <- correctMnn(pcs.pancreas$components, sce.qc.pancreas$batch)
-reducedDim(sce.qc.pancreas, "MNN") <- t(mnn.pancreas$corrected)
+sce.mnn.pancreas <- correctMnn.se(sce.pca.pancreas, sce.qc.pancreas$batch)
+sce.nn.mnn.pancreas <- runAllNeighborSteps.se(sce.mnn.pancreas, reddim.type="MNN")
 
-graph.corrected.pancreas <- buildSnnGraph(mnn.pancreas$corrected)
-clusters.corrected.pancreas <- clusterGraph(graph.corrected.pancreas)
-sce.qc.pancreas$cluster <- clusters.corrected.pancreas$membership
-cluster.by.batch.corrected.pancreas <- table(clusters.corrected.pancreas$membership, sce.qc.pancreas$batch)
-cluster.by.batch.corrected.pancreas <- t(t(cluster.by.batch.corrected.pancreas) / colSums(cluster.by.batch.corrected.pancreas))
-cluster.by.batch.corrected.pancreas / rowSums(cluster.by.batch.corrected.pancreas)
+cluster.batch.mnn.pancreas <- table(sce.nn.mnn.pancreas$clusters, sce.nn.mnn.pancreas$batch)
+cluster.batch.mnn.pancreas <- t(t(cluster.batch.mnn.pancreas) / colSums(cluster.batch.mnn.pancreas))
+cluster.batch.mnn.pancreas / rowSums(cluster.batch.mnn.pancreas)
 
 library(scater)
-reducedDim(sce.qc.pancreas, "TSNE") <- runTsne(mnn.pancreas$corrected)
-plotReducedDim(sce.qc.pancreas, "TSNE", colour_by="batch")
+plotReducedDim(sce.nn.mnn.pancreas, "TSNE", colour_by="batch")
 ```
 
 ```{r, echo=FALSE}
 # Check that there are indeed contirbutions from both batches to each cluster.
-stopifnot(all(cluster.by.batch.corrected.pancreas / rowSums(cluster.by.batch.corrected.pancreas) > 0.01))
+stopifnot(all(cluster.batch.mnn.pancreas / rowSums(cluster.batch.mnn.pancreas) > 0.01))
 ```
 
 We recover "corrected expression values" for any given gene by multiplying the corrected PCs with the corresponding row of the rotation matrix.
@@ -357,22 +362,18 @@ we would not detect differential expression due to treatment from the corrected 
 
 ```{r batch-corrected-insigf2, fig.wide=TRUE, fig.asp=2.5, fig.cap="Expression of _INS-IGF2_ across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom)."}
 current.insigf2 <- "INS-IGF2__chr11"
+rotation.insigf2 <- metadata(sce.nn.mnn.pancreas)$PCA$rotation[current.insigf2,]
+lowrank.unc.insigf2 <- reducedDim(sce.nn.mnn.pancreas, "PCA") %*% rotation.insigf2
+lowrank.mnn.insigf2 <- reducedDim(sce.nn.mnn.pancreas, "MNN") %*% rotation.insigf2
 
-lowrank.insigf2 <- pcs.pancreas$rotation[current.insigf2,] %*% pcs.pancreas$components
-sce.qc.pancreas$uncorrected.insigf2 <- lowrank.insigf2
-
-reconstructed.insigf2 <- pcs.pancreas$rotation[current.insigf2,] %*% mnn.pancreas$corrected
-sce.qc.pancreas$corrected.insigf2 <- reconstructed.insigf2
-
-# TODO: make this nicer to avoid having to slap on coldata.
 gridExtra::grid.arrange(
-    plotExpression(sce.qc.pancreas, x="cluster", features=current.insigf2, other_fields="batch") + 
+    plotExpression(sce.nn.mnn.pancreas, x="clusters", features=current.insigf2, other_fields="batch") + 
         facet_grid(~batch) +
         ggtitle("original expression"),
-    plotColData(sce.qc.pancreas, x="cluster", y="uncorrected.insigf2", other_fields="batch") + 
+    plotXY(sce.nn.mnn.pancreas$clusters, lowrank.unc.insigf2, other_fields=list(batch=sce.nn.mnn.pancreas$batch)) + 
         facet_grid(~batch) +
         ggtitle("reconstruction without correction"),
-    plotColData(sce.qc.pancreas, x="cluster", y="corrected.insigf2", other_fields="batch") +
+    plotXY(sce.nn.mnn.pancreas$clusters, lowrank.mnn.insigf2, other_fields=list(batch=sce.nn.mnn.pancreas$batch)) +
         facet_grid(~batch) +
         ggtitle("reconstruction with correction"),
     ncol=1
@@ -387,11 +388,22 @@ This was done purely for aesthetics and was probably not worth the extra hassle,
 given that we had to check that the corrected values gave the same conclusions as the original expression values.
 
 ```{r batch-markers-pancreas, fig.wide=TRUE, fig.cap="Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch."}
-markers.pancreas <- scoreMarkers(logcounts(sce.qc.pancreas), sce.qc.pancreas$cluster, block=sce.qc.pancreas$block)
-markers.1.pancreas <- reportGroupMarkerStatistics(markers.pancreas, "1")
-best.markers.1.pancreas <- rownames(markers.1.pancreas)[order(markers.1.pancreas$cohens.d.mean, decreasing=TRUE)[1]]
-best.markers.1.pancreas
-plotExpression(sce.qc.pancreas, x="cluster", features=best.markers.1.pancreas, other_fields="batch") + facet_grid(~batch)
+markers.pancreas <- scoreMarkers.se(
+    sce.nn.mnn.pancreas,
+    sce.nn.mnn.pancreas$clusters,
+    block=sce.nn.mnn.pancreas$block
+)
+
+# Looking at the top markers for cluster 1.
+chosen.markers.pancreas <- markers.pancreas[["1"]]
+previewMarkers(chosen.markers.pancreas)
+
+plotExpression(
+    sce.nn.mnn.pancreas,
+    x="clusters",
+    features=rownames(chosen.markers.pancreas)[1],
+    other_fields="batch"
+) + facet_grid(~batch)
 ```
 
 ## Multi-condition analysis
@@ -429,10 +441,9 @@ We use the sum of counts for several reasons:
   e.g., if the treatment effect is consistent across replicates but heterogeneous within each sample.
 
 ```{r}
-library(scrapper)
-pseudo.bulk.seger <- scrapper::aggregateAcrossCells(counts(sce.seger), colData(sce.seger)[,c("individual","cell type")])
-dim(pseudo.bulk.seger$sum)
-head(pseudo.bulk.seger$combinations)
+pseudo.bulk.seger <- aggregateAcrossCells.se(sce.seger, colData(sce.seger)[,c("individual","cell type")])
+pseudo.bulk.seger
+colData(pseudo.bulk.seger)[,c("factor.individual", "factor.cell type", "counts")]
 ```
 
 Once we have the pseudo-bulk count matrix, we test for differences between conditions (in this case, disease status) within each cell type.
@@ -455,15 +466,14 @@ We test for disease-associated DE genes in beta cells using `voom()` with additi
 Perhaps unsurprisingly, the top DE gene is _INS_.
 
 ```{r}
-beta.seger <- which(pseudo.bulk.seger$combinations[,"cell type"] == "beta cell")
+pseudo.beta.seger <- pseudo.bulk.seger[,which(pseudo.bulk.seger$`factor.cell type` == "beta cell")]
 
 # We can have a look at the number of cells contributing to each profile, in
 # case we want to remove low-abundance profiles.
-pseudo.bulk.seger$counts[beta.seger]
+pseudo.beta.seger$counts
 
 library(edgeR)
-y.beta.seger <- DGEList(pseudo.bulk.seger$sum[,beta.seger], samples=pseudo.bulk.seger$combinations[beta.seger,])
-y.beta.seger$samples$disease <- sce.seger$disease[match(y.beta.seger$samples$individual, sce.seger$individual)]
+y.beta.seger <- DGEList(assay(pseudo.beta.seger, "sums"), samples=as.data.frame(colData(pseudo.beta.seger)))
 
 keep.beta.seger <- filterByExpr(y.beta.seger, group=y.beta.seger$samples$disease)
 y.beta.seger <- y.beta.seger[keep.beta.seger,]
