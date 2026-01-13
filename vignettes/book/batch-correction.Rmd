@@ -146,13 +146,18 @@ We expect that all of our PBMC clusters are more-or-less evenly distributed acro
 
 ```{r}
 sce.mnn.graph.pbmc <- clusterGraph.se(sce.mnn.pbmc, reddim.type="MNN")
-cluster.batch.mnn.pbmc <- table(sce.mnn.graph.pbmc$clusters, sce.mnn.graph.pbmc$batch)
 
-# First, we divide each column by the number of cells in each batch to account
-# for differences between batches. Then we divide by the row sums to get the
-# distribution of cells across batches in each cluster.
-cluster.batch.mnn.pbmc <- t(t(cluster.batch.mnn.pbmc) / colSums(cluster.batch.mnn.pbmc))
-cluster.batch.mnn.pbmc / rowSums(cluster.batch.mnn.pbmc)
+# This is a normalized matrix of cell counts for each group (row) and block
+# (column). We divide each column by the number of cells in each batch to
+# account for differences between batches. Then we divide by the row sums to
+# get the distribution of cells across batches in each cluster.
+cluster.batch.mnn.pbmc <- countGroupsByBlock(
+    sce.mnn.graph.pbmc$clusters,
+    sce.mnn.graph.pbmc$batch,
+    normalize.groups=TRUE,
+    normalize.block=TRUE
+)
+print(cluster.batch.mnn.pbmc, digits=2, zero.print=".")
 ```
 
 If a cluster has no contribution from a batch, this either represents a unique subpopulation or it indicates that batch correction was not completely successful.
@@ -161,10 +166,13 @@ These are unlikely to represent unique types/states given that the batches shoul
 
 ```{r}
 sce.unc.graph.pbmc <- clusterGraph.se(sce.pca.pbmc)
-cluster.batch.unc.pbmc <- table(sce.unc.graph.pbmc$clusters, sce.unc.graph.pbmc$batch)
-
-cluster.batch.unc.pbmc <- t(t(cluster.batch.unc.pbmc) / colSums(cluster.batch.unc.pbmc))
-cluster.batch.unc.pbmc / rowSums(cluster.batch.unc.pbmc)
+cluster.batch.unc.pbmc <- countGroupsByBlock(
+    sce.unc.graph.pbmc$clusters,
+    sce.unc.graph.pbmc$batch,
+    normalize.groups=TRUE,
+    normalize.block=TRUE
+)
+print(cluster.batch.unc.pbmc, digits=2, zero.print=".")
 ```
 
 ```{r, echo=FALSE}
@@ -337,9 +345,13 @@ which is expected given that both datasets are measuring the same pancreatic cel
 sce.mnn.pancreas <- correctMnn.se(sce.pca.pancreas, sce.qc.pancreas$batch)
 sce.nn.mnn.pancreas <- runAllNeighborSteps.se(sce.mnn.pancreas, reddim.type="MNN")
 
-cluster.batch.mnn.pancreas <- table(sce.nn.mnn.pancreas$clusters, sce.nn.mnn.pancreas$batch)
-cluster.batch.mnn.pancreas <- t(t(cluster.batch.mnn.pancreas) / colSums(cluster.batch.mnn.pancreas))
-cluster.batch.mnn.pancreas / rowSums(cluster.batch.mnn.pancreas)
+cluster.batch.mnn.pancreas <- countGroupsByBlock(
+    sce.nn.mnn.pancreas$clusters,
+    sce.nn.mnn.pancreas$batch,
+    normalize.groups=TRUE,
+    normalize.block=TRUE
+)
+print(cluster.batch.mnn.pancreas, digits=2, zero.print=".")
 
 library(scater)
 plotReducedDim(sce.nn.mnn.pancreas, "TSNE", colour_by="batch")
@@ -500,7 +512,7 @@ For our pancreas dataset, we create a count matrix of the number of cells assign
 which performs a DA analysis without requiring explicit assignment of each cells to clusters.)
 
 ```{r}
-ab.count.seger <- table(colData(sce.seger)[,"cell type"], colData(sce.seger)$individual)
+ab.count.seger <- countGroupsByBlock(colData(sce.seger)[,"cell type"], colData(sce.seger)$individual)
 ab.count.seger <- unclass(ab.count.seger) # get rid of the weird table class.
 ab.count.seger
 ```
