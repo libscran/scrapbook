@@ -8,11 +8,25 @@ Description:
     This includes quality control, normalization, feature selection, various forms of dimensionality reduction, clustering into subpopulations, and detection of marker genes.
     It is intended for users who already have some familiarity with R and want to get hands-on with some basic single-cell analyses.
 Depends:
-    scRNAseq,
+    AnnotationHub,
+    BiocStyle,
+    bluster,
+    cluster,
+    DropletTestFiles,
+    DropletUtils,
+    dynamicTreeCut,
+    edgeR,
+    ggplot2,
+    gridExtra,
+    msigdbr,
+    pheatmap,
+    scater,
     scrapper,
-    scater
+    scRNAseq,
+    TENxPBMCData
 Suggests: 
     rmarkdown,
+    bookdown,
     knitr
 VignetteBuilder: knitr
 License: MIT + file LICENSE

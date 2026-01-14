@@ -266,7 +266,7 @@ gridExtra::grid.arrange(
 
 We can also check for inappropriate removal of cell types by comparing the expression profiles of the discarded and retained cells.
 If the discarded pool is enriched for a certain cell type, we should observe increased expression of the corresponding marker genes.
-To illustrate, we'll use a classic PBMC dataset from 10X Genomics [@zheng2017massively] where we perform some additional QC after cell calling.
+To illustrate, we'll use the classic PBMC dataset from 10X Genomics [@zheng2017massively] where we perform some additional QC after cell calling.
 Examination of the upregulated genes in Figure \@ref(fig:discardplotpbmc) reveals _PF4_, _PPBP_ and _SDPR_,
 which (spoiler alert!) indicates that there is a platelet subpopulation that was removed by our QC filter.
 
@@ -329,7 +329,7 @@ as discussed in Section \@ref(qc-skip).
 
 ```{r}
 # Effectively just filtering on the mitochondrial proportions.
-relaxed.thresh.10x <- qc.thresh.10x
+relaxed.thresh.10x <- metadata(sce.qc.10x)$qc$thresholds
 relaxed.thresh.10x$sum <- -Inf
 relaxed.thresh.10x$detected <- -Inf
 sce.relaxed.10x <- quickRnaQc.se(
@@ -384,11 +384,11 @@ gridExtra::grid.arrange(
         scale_y_log10() +
         ggtitle("Detected features"),
     plotColData(sce.batch.416b, y="subset.proportion.MT", x="combined.batch", colour_by="keep") + 
-        categoricalHlines(qc.thresh.batch.416b$subset.proportion.MT, levels=NULL, linetype="dashed", color="red") +
+        categoricalHlinesNamed(qc.thresh.batch.416b$subset.proportion$MT, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("Mito proportion"),
     plotColData(sce.batch.416b, y="subset.proportion.ERCC", x="combined.batch", colour_by="keep") + 
-        categoricalHlines(qc.thresh.batch.416b$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
+        categoricalHlinesNamed(qc.thresh.batch.416b$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("ERCC proportion"),
     ncol=2
@@ -411,7 +411,7 @@ qc.thresh.batch.grun
 summary(sce.batch.grun$keep)
 
 plotColData(sce.batch.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
-    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
+    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
     ggtitle("ERCC prop")
 ```
 
@@ -438,7 +438,7 @@ sce.fixed.grun <- quickRnaQc.se(
 )
 
 plotColData(sce.fixed.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
-    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion.ERCC, levels=NULL, linetype="dashed", color="red") +
+    categoricalHlinesNamed(qc.thresh.fixed.grun$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
     ggtitle("ERCC prop")
 ```
 
