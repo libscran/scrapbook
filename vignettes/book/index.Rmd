@@ -42,9 +42,9 @@ url: "`r .gh_url`"
 
 Single-cell RNA-sequencing (scRNA-seq) - the name says it all, really.
 Long story short, we isolate single cells and we sequence their transcriptomes to quantify the expression of each gene in each cell [@kolodziejczyk2015technology].
-This allows us to explore heterogeneity in a cell population at the resolution of individual cells,
+Our aim is to explore heterogeneity in a cell population at the resolution of individual cells,
 typically to identify subpopulations or states that would not be apparent from population-level (bulk) assays.
-Since around 2014, scRNA-seq has emerged as one of the premier techniques for publishing papers in genomics and biomedicine.
+Since its inception, scRNA-seq has emerged as one of the premier techniques for publishing genomics papers.
 Occasionally, it is even used to do some actual science.
 
 This book describes a computational workflow for analyzing scRNA-seq data using the [R/Bioconductor](https://bioconductor.org) ecosystem.
@@ -63,7 +63,7 @@ This includes:
 - Marker detection, to assign biological meaning to each cluster based on its upregulated genes.
 
 Truth be told, you don't actually have to read this book if you don't care about how/why things are done.
-If you just want to get those pretty pictures for your upcoming submission to _Nature_, just copy and paste the following into your R session:
+Just copy and paste the following into your R session:
 
 ```{r}
 # Pulling out an example dataset.
@@ -73,19 +73,17 @@ sce.zeisel <- ZeiselBrainData()
 # Running the full analysis pipeline.
 library(scrapper)
 is.mito.zeisel <- grep("^mt-", rownames(sce.zeisel))
-res.zeisel <- analyze(counts(sce.zeisel), rna.subsets=list(MT=is.mito.zeisel))
-sce.res.zeisel <- convertAnalyzeResults(res.zeisel)
+res.zeisel <- analyze.se(sce.zeisel, rna.qc.subsets=list(MT=is.mito.zeisel))
 
 # Visualizing the cluster assignments for each cell:
 library(scater)
-plotReducedDim(sce.res.zeisel, "tsne", colour_by="clusters")
+plotReducedDim(res.zeisel$x, "TSNE", colour_by="graph.cluster")
 
 # Looking at the top markers for cluster 1:
-markers.1.zeisel <- reportGroupMarkerStatistics(res.zeisel$rna.markers, "1")
-markers.1.zeisel <- markers.1.zeisel[order(markers.1.zeisel$cohens.d.mean, decreasing=TRUE),]
-head(markers.1.zeisel[,c("mean", "detected", "cohens.d.mean")])
+previewMarkers(res.zeisel$markers$rna[["1"]])
 ```
 
 And that's it.
-But if you want to look under the hood, it's worthwhile to keep reading as you might get some ideas for tweaking parameters to get better results.
+Sometimes, ignorance is bliss.
+But if you want to look under the hood, then keep reading to understand the rationale behind each step.
 Any questions can be posted at [Bioconductor support site](https://support.bioconductor.org) or the [GitHub page for this book](https://github.com/libscran/scrapbook).

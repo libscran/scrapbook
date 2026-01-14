@@ -42,15 +42,12 @@ sce.10x <- read10xCounts(fname.10x, col.names=TRUE)
 # Applying our default QC with outlier-based thresholds.
 library(scrapper)
 is.mito.10x <- grepl("^MT-", rowData(sce.10x)$Symbol)
-qc.metrics.10x <- computeRnaQcMetrics(counts(sce.10x), subsets=list(MT=is.mito.10x))
-sce.10x$sum <- qc.metrics.10x$sum
-qc.thresh.10x <- suggestRnaQcThresholds(qc.metrics.10x)
-qc.keep.10x <- filterRnaQcMetrics(qc.thresh.10x, qc.metrics.10x)
-sce.qc.10x <- sce.10x[,qc.keep.10x]
+sce.qc.10x <- quickRnaQc.se(sce.10x, subsets=list(MT=is.mito.10x))
+sce.qc.10x <- sce.qc.10x[,sce.qc.10x$keep]
 
 # Computing log-normalized expression values.
-lib.factor.10x <- centerSizeFactors(sce.qc.10x$sum)
-logcounts(sce.qc.10x) <- normalizeCounts(counts(sce.qc.10x), lib.factor.10x)
+sce.norm.10x <- normalizeRnaCounts.se(sce.qc.10x, size.factors=sce.qc.10x$sum)
+sce.norm.10x
 ```
 
 We compute the variance of the log-normalized expression values for each gene across all cells [@lun2016step].
@@ -60,25 +57,23 @@ We use the variances in the log-values to ensure that the feature selection is b
 Genes with the largest variances will contribute most to the distances between cells during procedures like clustering and dimensionality reduction.
 
 ```{r trend-plot-pbmc, fig.cap="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene, colored according to whether it was chosen as a HVG. The blue line represents the trend fitted to all genes."}
-library(scrapper)
-var.10x <- modelGeneVariances(logcounts(sce.qc.10x))
+sce.var.10x <- chooseRnaHvgs.se(sce.norm.10x)
 
 # Let's have a peek at the statistics for the top HVGs.
-var.10x$statistics$symbol <- rowData(sce.qc.10x)$Symbol # for easier reading.
-ordered.residual.10x <- order(var.10x$statistics$residual, decreasing=TRUE)
-var.10x$statistics[head(ordered.residual.10x),]
+rd.10x <- rowData(sce.var.10x)
+ordered.residual.10x <- order(rd.10x$residuals, decreasing=TRUE)
+rd.10x[head(ordered.residual.10x),c("Symbol", "means", "variances", "fitted", "residuals", "hvg")]
 
-# We now choose the top HVGs.
-hvgs.10x <- chooseHighlyVariableGenes(var.10x$statistics$residual, top=4000)
-length(hvgs.10x)
+# Look at the number of top HVGs.
+is.hvg.10x <- rowData(sce.var.10x)$hvg
+sum(is.hvg.10x)
 
-is.hvg.10x <- seq_len(nrow(var.10x$statistics)) %in% hvgs.10x
-plot(var.10x$statistics$means, var.10x$statistics$variances,
+plot(rd.10x$means, rd.10x$variances,
     col=ifelse(is.hvg.10x, "black", "grey"), pch=16, cex=1,
     xlab="Mean of log-expression", ylab="Variance of log-expression")
 legend("topright", col=c("black", "grey"), pch=16, legend=c("non-HVG", "HVG"))
 
-trend.10x <- approxfun(var.10x$statistics$means, var.10x$statistics$fitted)
+trend.10x <- approxfun(rd.10x$means, rd.10x$fitted)
 curve(trend.10x, add=TRUE, col="dodgerblue", lwd=2)
 ```
 
@@ -92,7 +87,7 @@ Once we have our top HVGs, we can use them in downstream steps like principal co
 We'll discuss this more in Chapter \@ref(principal-components-analysis), but it is as simple as using only the subset of HVGs in the analysis:
 
 ```{r}
-pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.10x,])
+sce.pcs.10x <- runPca.se(sce.var.10x, features=is.hvg.10x)
 ```
 
 ### Choosing the number of HVGs
@@ -121,13 +116,12 @@ The obvious cost is that more noise is also captured, which can reduce the resol
 and we need to perform more computational work in each downstream step, as more genes are involved.
 
 ```{r}
-# TODO: set bound = 0 by default.
 # Setting top=Inf to select all genes with positive residuals.
-hvgs.all.10x <- chooseHighlyVariableGenes(var.10x$statistics$residual, top=Inf, bound=0)
+hvgs.all.10x <- chooseHighlyVariableGenes(rd.10x$residuals, top=Inf)
 length(hvgs.all.10x)
 
 # This can be used just like our other HVGs.
-pcs.10x <- runPca(logcounts(sce.qc.10x)[hvgs.all.10x,])
+sce.all.10x <- runPca.se(sce.var.10x, features=hvgs.all.10x)
 ```
 
 ## Handling multiple batches {#variance-batch}
@@ -141,33 +135,42 @@ library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
 table(sce.tropho$block) # plate of origin, which is our batch.
 
-# Computing the QC metrics. For brevity, we'll skip the spike-ins. 
+# Computing the QC metrics.
 library(scrapper)
-location.tropho <- rowRanges(sce.tropho)
-is.mito.tropho <- which(any(seqnames(location.tropho)=="MT"))
-qc.metrics.tropho <- computeRnaQcMetrics(counts(sce.tropho), subsets=list(MT=is.mito.tropho))
-sce.tropho$sum <- qc.metrics.tropho$sum
-qc.thresh.tropho <- suggestRnaQcThresholds(qc.metrics.tropho, block=sce.tropho$block)
-qc.keep.tropho <- filterRnaQcMetrics(qc.thresh.tropho, qc.metrics.tropho, block=sce.tropho$block)
-sce.qc.tropho <- sce.tropho[,qc.keep.tropho]
+is.mito.tropho <- which(any(seqnames(rowRanges(sce.tropho))=="MT"))
+sce.qc.tropho <- quickRnaQc.se(
+    sce.tropho,
+    subsets=list(MT=is.mito.tropho),
+    altexp.proportions="ERCC",
+    block=sce.tropho$block
+)
+sce.qc.tropho <- sce.qc.tropho[,sce.qc.tropho$keep]
 
 # Computing log-normalized expression values.
-lib.factor.tropho <- centerSizeFactors(sce.qc.tropho$sum, block=sce.qc.tropho$block)
-logcounts(sce.qc.tropho) <- normalizeCounts(counts(sce.qc.tropho), lib.factor.tropho)
+sce.norm.tropho <- normalizeRnaCounts.se(
+    sce.qc.tropho,
+    size.factors=sce.qc.tropho$sum,
+    block=sce.qc.tropho$block
+)
 ```
 
-Setting `block=` in `modelGeneVariances()` will compute the mean and variance for each gene within each batch.
+Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each batch.
 This ensures that any differences between batches will not inflate the variance estimates.
 It will also fit a separate trend for each batch, which accommodates differences in the mean-variance relationships between batches.
 This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.
 In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
 
 ```{r trend-plot-tropho, fig.width=10, fig.asp=0.5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
-var.tropho <- modelGeneVariances(logcounts(sce.qc.tropho), block=sce.qc.tropho$block)
+sce.var.tropho <- chooseRnaHvgs.se(
+    sce.norm.tropho,
+    block=sce.qc.tropho$block,
+    include.per.block=TRUE # only needed for plotting.
+)
 
+per.block <- rowData(sce.var.tropho)$per.block
 par(mfrow=c(1,2))
-for (block in names(var.tropho$per.block)) {
-    current <- var.tropho$per.block[[block]]
+for (block in colnames(per.block)) {
+    current <- per.block[[block]]
     plot(current$means, current$variances,
         xlab="Mean of log-expression",
         ylab="Variance of log-expression",
@@ -184,7 +187,8 @@ An alternative approach is to take the intersection or union of the HVGs from ea
 i.e., it becomes too stringent or too relaxed, respectively, as the number of blocks increases.
 
 ```{r}
-hvgs.tropho <- chooseHighlyVariableGenes(var.tropho$statistics$residual, top=2000)
+hvgs.tropho <- rowData(sce.var.tropho)$hvg
+sum(hvgs.tropho)
 ```
 
 It is generally expected that `block=` will be used for uninteresting factors of variation.
@@ -220,17 +224,10 @@ sce.seger <- sce.seger[!duplicated(rownames(sce.seger)),]
 # Running QC. Seems like they don't have any data for the mitochondrial genes,
 # unfortunately, but they do have spike-ins so we'll just use those instead.
 library(scrapper)
-qc.metrics.seger <- computeRnaQcMetrics(counts(sce.seger), subsets=NULL)
-sce.seger$sum <- qc.metrics.seger$sum
-ercc.metrics.seger <- computeRnaQcMetrics(counts(altExp(sce.seger, "ERCC")), subsets=NULL)
-qc.metrics.seger$subsets$ERCC <- ercc.metrics.seger$sum / (ercc.metrics.seger$sum + qc.metrics.seger$sum)
-qc.thresh.seger <- suggestRnaQcThresholds(qc.metrics.seger)
-qc.keep.seger <- filterRnaQcMetrics(qc.thresh.seger, qc.metrics.seger)
-sce.qc.seger <- sce.seger[,qc.keep.seger]
+sce.qc.seger <- quickRnaQc.se(sce.seger, subsets=list(), altexp.proportions="ERCC")
 
 # Computing log-normalized expression values.
-lib.factor.seger <- centerSizeFactors(sce.qc.seger$sum)
-logcounts(sce.qc.seger) <- normalizeCounts(counts(sce.qc.seger), lib.factor.seger)
+sce.norm.seger <- normalizeRnaCounts.se(sce.qc.seger, size.factors=sce.qc.seger$sum)
 ```
 
 There are very few genes at high abundances, which forces the LOWESS window to expand to contain more points.
@@ -240,14 +237,17 @@ In particular, setting `use.min.width=TRUE` will switch to a different strategy 
 which improves sensitivity in sparse intervals at the risk of overfitting.
 
 ```{r trend-plot-seger, fig.cap="Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the lines represent trends fitted with different parameters."}
-var.default.seger <- modelGeneVariances(logcounts(sce.qc.seger))
-var.minw.seger <- modelGeneVariances(logcounts(sce.qc.seger), use.min.width=TRUE)
+sce.default.seger <- chooseRnaHvgs.se(sce.norm.seger)
+sce.minw.seger <- chooseRnaHvgs.se(sce.norm.seger, more.var.args=list(use.min.width=TRUE))
 
-plot(var.default.seger$statistics$means, var.default.seger$statistics$variances,
+rd.default.seger <- rowData(sce.default.seger)
+plot(rd.default.seger$means, rd.default.seger$variances,
     xlab="Mean of log-expression", ylab="Variance of log-expression", pch=16, cex=0.5)
-trend.default.seger <- approxfun(var.default.seger$statistics$means, var.default.seger$statistics$fitted)
+trend.default.seger <- approxfun(rd.default.seger$means, rd.default.seger$fitted)
 curve(trend.default.seger, add=TRUE, col="dodgerblue", lwd=2)
-trend.minw.seger <- approxfun(var.minw.seger$statistics$means, var.minw.seger$statistics$fitted)
+
+rd.minw.seger <- rowData(sce.minw.seger)
+trend.minw.seger <- approxfun(rd.minw.seger$means, rd.minw.seger$fitted)
 curve(trend.minw.seger, add=TRUE, col="salmon", lwd=2)
 legend("topright", lwd=2, col=c("dodgerblue", "salmon"), legend=c("default", "min-width"))
 ```
@@ -303,7 +303,7 @@ for which clonal expression introduces (possibly irrelevant) population structur
 
 ```{r}
 # Identifying ribosomal proteins:
-ribo.discard <- grepl("^RP[SL]\\d+", rownames(sce.10x))
+ribo.discard <- grepl("^RP[SL]\\d+", rowData(sce.10x)$Symbol)
 sum(ribo.discard)
 
 # A more curated approach for identifying ribosomal protein genes:
@@ -347,24 +347,14 @@ is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
 
 # Performing some QC to set up the dataset prior to normalization.
 library(scrapper)
-qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
-ercc.metrics.zeisel <- computeRnaQcMetrics(counts(altExp(sce.zeisel, "ERCC")), subsets=NULL)
-qc.metrics.zeisel$subsets$ERCC <- ercc.metrics.zeisel$sum / (qc.metrics.zeisel$sum + ercc.metrics.zeisel$sum)
-qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
-qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
-sce.zeisel$sum <- qc.metrics.zeisel$sum
-sce.zeisel$ERCC_sum <- ercc.metrics.zeisel$sum
-sce.zeisel$detected <- qc.metrics.zeisel$detected
-sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
-sce.zeisel$ERCC_proportion <- qc.metrics.zeisel$subsets$ERCC
-sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+sce.qc.zeisel <- quickRnaQc.se(sce.zeisel, subsets=list(MT=is.mito.zeisel), altexp.proportions="ERCC")
+sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 
 # Computing log-normalized expression values. This time, we do it for both the
 # endogenous genes and the spike-ins with their respective size factors.
-lib.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
-logcounts(sce.qc.zeisel) <- normalizeCounts(counts(sce.qc.zeisel), lib.factor.zeisel)
-spike.factor.zeisel <- centerSizeFactors(sce.qc.zeisel$ERCC_sum)
-logcounts(altExp(sce.qc.zeisel, "ERCC")) <- normalizeCounts(counts(altExp(sce.qc.zeisel, "ERCC")), spike.factor.zeisel)
+sce.norm.zeisel <- normalizeRnaCounts.se(sce.qc.zeisel, size.factors=sce.qc.zeisel$sum)
+sce.ercc <- altExp(sce.norm.zeisel, "ERCC")
+sce.norm.ercc <- normalizeRnaCounts.se(sce.ercc, size.factors=sce.ercc$sum)
 ```
 
 We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
@@ -377,16 +367,18 @@ We ensure that means are still comparable between genes and spike-ins by centeri
 for brevity, we won't show that here.)
 
 ```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)."}
-var.gene.zeisel <- modelGeneVariances(logcounts(sce.qc.zeisel), use.min.width=TRUE)
-var.spike.zeisel <- modelGeneVariances(logcounts(altExp(sce.qc.zeisel, "ERCC")))
+sce.var.zeisel <- chooseRnaHvgs.se(sce.norm.zeisel, more.var.args=list(use.min.width=TRUE))
+sce.var.ercc <- chooseRnaHvgs.se(sce.norm.ercc)
 
-plot(var.gene.zeisel$statistics$means, var.gene.zeisel$statistics$variances,
+var.zeisel <- rowData(sce.var.zeisel)
+plot(var.zeisel$means, var.zeisel$variances,
     xlab="Mean of log-expression", ylab="Variance of log-expression", pch=16, cex=0.5)
-trend.gene.zeisel <- approxfun(var.gene.zeisel$statistics$means, var.gene.zeisel$statistics$fitted)
+trend.gene.zeisel <- approxfun(var.zeisel$means, var.zeisel$fitted)
 curve(trend.gene.zeisel, add=TRUE, col="dodgerblue", lwd=2)
 
-points(var.spike.zeisel$statistics$means, var.spike.zeisel$statistics$variances, pch=4)
-trend.spike.zeisel <- approxfun(var.spike.zeisel$statistics$means, var.spike.zeisel$statistics$fitted, rule=2)
+var.ercc <- rowData(sce.var.ercc)
+points(var.ercc$means, var.ercc$variances, pch=4)
+trend.spike.zeisel <- approxfun(var.ercc$means, var.ercc$fitted, rule=2)
 curve(trend.spike.zeisel, add=TRUE, col="salmon", lwd=2, lty=2)
 
 legend("topright", c("gene", "spike-in"), pch=c(16, 4))
@@ -398,10 +390,10 @@ We could then use the biological component to select HVGs via `chooseHighlyVaria
 In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
 
 ```{r}
-tech.var.zeisel <- trend.spike.zeisel(var.gene.zeisel$statistics$means)
+tech.var.zeisel <- trend.spike.zeisel(var.zeisel$means)
 summary(tech.var.zeisel)
 
-bio.var.zeisel <- var.gene.zeisel$statistics$variances - tech.var.zeisel
+bio.var.zeisel <- var.zeisel$variances - tech.var.zeisel
 summary(bio.var.zeisel)
 ```
 

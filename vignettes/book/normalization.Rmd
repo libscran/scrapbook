@@ -30,7 +30,7 @@ The simplest definition of a size factor is based on the library size for each c
 Larger library sizes are attributed to technical differences in library preparation or sequencing that should be equalized across cells.
 Alternatively, a cell may have a larger library size because it contains more total RNA;
 this is also treated as an uninteresting biological effect that should be normalized away.
-To demonstrate, let's pull out at our old friend, the @zeisel2015brain dataset:
+To demonstrate, let's fetch our old friend, the @zeisel2015brain dataset:
 
 ```{r}
 library(scRNAseq)
@@ -40,29 +40,22 @@ is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
 # Performing some QC to set up the dataset prior to normalization. We'll skip
 # calculation of spike-in proportions for brevity.
 library(scrapper)
-qc.metrics.zeisel <- computeRnaQcMetrics(counts(sce.zeisel), subsets=list(MT=is.mito.zeisel))
-qc.thresh.zeisel <- suggestRnaQcThresholds(qc.metrics.zeisel)
-qc.keep.zeisel <- filterRnaQcMetrics(qc.thresh.zeisel, qc.metrics.zeisel)
-sce.zeisel$sum <- qc.metrics.zeisel$sum
-sce.zeisel$detected <- qc.metrics.zeisel$detected
-sce.zeisel$MT_proportion <- qc.metrics.zeisel$subsets$MT
-
-# Filtering out the low-quality cells.
-sce.qc.zeisel <- sce.zeisel[,qc.keep.zeisel]
+sce.qc.zeisel <- quickRnaQc.se(sce.zeisel, subsets=list(MT=is.mito.zeisel))
+sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 sce.qc.zeisel
 ```
 
-The library size factors are easily calculated from the column sums of the count matrix.
+We use the `normalizeRnaCounts.se()` function to derive library size factors from the column sums of the count matrix.
 Specifically, we center the library sizes so that the mean size factor across all cells is equal to 1.
 This definition ensures that the normalized expression values are on the same scale as the original counts, which is useful for interpretation.
 We see that the library size factors differ by up to 10-fold across cells (Figure \@ref(fig:norm-histlib)), which is typical of the variability in coverage in scRNA-seq data. 
 
 ```{r norm-histlib, fig.cap="Distribution of size factors derived from the library size in the Zeisel brain dataset."}
 # As it happens, we get the library sizes for free from the QC metrics, but if
-# we didn't, we could just do 'colSums(counts(sce.qc.zeisel))'.
-lib.factors.zeisel <- centerSizeFactors(sce.qc.zeisel$sum)
-summary(lib.factors.zeisel)
-hist(log10(lib.factors.zeisel), xlab="Log10[Size factor]", col='grey80')
+# we didn't, we could set size.factors=NULL and the function will compute it for us.
+sce.norm.zeisel <- normalizeRnaCounts.se(sce.qc.zeisel, size.factors=sce.qc.zeisel$sum)
+summary(sce.norm.zeisel$sizeFactor)
+hist(log10(sce.norm.zeisel$sizeFactor), xlab="Log10[Size factor]", col='grey80')
 ```
 
 Strictly speaking, the use of library size factors assumes that there is no "imbalance" in the differentially expressed (DE) genes between any pair of cells.
@@ -82,20 +75,12 @@ In practice, library size factors perform well for exploratory scRNA-seq data an
 
 ### Scaling and log-transforming {#norm-transformation}
 
-Once we've computed the size factors, we can use them to compute normalized expression values.
-This is done by dividing all counts for each cell with the corresponding size factor and then applying a log-transformation.
+The `normalizeRnaCounts.se()` function uses the size factors to compute normalized expression values from the count matrix.
+This is done by dividing all counts for each cell with its corresponding size factor and then applying a log-transformation.
 These (log-transformed) normalized expression values will be the basis of our downstream analyses in the following chapters.
 
 ```{r}
-logcounts.zeisel <- normalizeCounts(counts(sce.qc.zeisel), lib.factors.zeisel)
-
-# Storing the log-normalized counts back inside the SingleCellExperiment so
-# we can pull it out later in our downstream analyses. 
-logcounts(sce.qc.zeisel) <- logcounts.zeisel
-
-# We can also store the size factors in the column data. Conventionally, we put
-# it in the 'sizeFactor' column, also available via the sizeFactors() function:
-sizeFactors(sce.qc.zeisel) <- lib.factors.zeisel
+logcounts(sce.norm.zeisel)
 ```
 
 The log-transformation is useful as differences in the log-values represent log-fold changes in expression.
@@ -105,7 +90,7 @@ Or in other words, which is more interesting - a gene that is expressed at an av
 or a gene that is expressed at an average count of 1100 in $A$ and 1000 in $B$?
 Log-transformation focuses on the former by promoting contributions from genes with strong relative differences.
 
-During the log-transformation, `normalizeCounts()` will add a pseudo-count to avoid undefined values at zero counts.
+During the log-transformation, `normalizeRnaCounts.se()` will add a pseudo-count to avoid undefined values at zero counts.
 This addition has the side effect of shrinking log-fold changes between cells towards zero for low-abundance genes.
 Such shrinkage is desirable as the log-differences are not reliable when the counts are low due to random sampling noise. 
 So, if we were to use a pseudo-count of 1, the log-fold change between normalized expression values of 1 and 2 would be $log_2((2 + 1)/(1 + 1)) \approx 0.58$,
@@ -121,9 +106,10 @@ For example, Figure \@ref(fig:zeisel-demo-snap25) shows that interneurons have a
 this roughly translates to an original count of 30-60 UMIs in each cell, which gives us some confidence that it is actually expressed.
 This relationship to the original data would be less obvious if the centering were not performed.
 
-```{r zeisel-demo-snap25, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
+```{r zeisel-demo-snap25, fig.wide=TRUE, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
 library(scater)
-plotExpression(sce.qc.zeisel, x="level1class", features="Snap25", colour="level1class")
+plotExpression(sce.norm.zeisel, x="level1class", features="Snap25", colour="level1class") +
+    scale_x_discrete(guide = guide_axis(angle = 45))
 ```
 
 Centering also ensures that the effect of the pseudo-count decreases with greater sequencing coverage across the dataset. 
@@ -135,7 +121,7 @@ For comparison, consider the situation where we applied a constant pseudo-count 
 The accuracy of the subsequent log-fold changes would never improve regardless of how much additional sequencing was performed;
 scaling to a constant library size of a million means that the pseudo-count will have the same shrinkage effect for all datasets.
 The same criticism applies to popular metrics like the "counts-per-10K" used in, e.g., `r CRANpkg("seurat")`.
-Personally, we^[That is to say, I.] rarely use CPM-like measures in scRNA-seq analyses;
+Personally, I rarely use CPM-like measures in scRNA-seq analyses;
 they are occasionally convenient for rough comparisons between datasets that were processed separately,
 but in such cases, normalization is the least of our problems (Chapter \@ref(batch-correction)).
 
@@ -147,7 +133,7 @@ We might see a variety of other transformations in the wild:
   This is motivated by the observation that sequencing noise is typically Poisson-distributed [@marioni2008rnaseq]. 
   In practice, this transformation gives too much weight to small differences at high-abundance genes.
 - The inverse hyperbolic sine (arcsinh), which is very similar to the log-transformation on non-negative values.
-  This is commonly used in flow cytometry^[Technically also a single-cell technology, but with much less hype.] as it handles negative values after compensation.
+  This is commonly used in flow cytometry^[Technically also a single-cell technology, but no one gets hyped up about it anymore.] as it handles negative values after compensation.
   The main practical difference for scRNA-seq is a larger initial jump from zero to non-zero values.
 - Variance-stabilizing transformations such as `DESeq2::vst()` or `r CRANpkg("sctransform")`, which aim to remove the mean-variance dependency in (sc)RNA-seq count data.
   This ensures that genes of varying abundance contribute equally to downstream analyses.
@@ -176,15 +162,11 @@ sce.brain <- combineCols(sce.zeisel[common.brain,], sce.tasic[common.brain,])
 sce.brain$study <- rep(c("zeisel", "tasic"), c(ncol(sce.zeisel), ncol(sce.tasic)))
 
 # Batch-specific filters, as discussed in the QC chapter.
+# Tasic doesn't have mitochondrial genes so we'll skip that. 
 library(scrapper)
-qc.metric.brain <- computeRnaQcMetrics(counts(sce.brain), subsets=list())
-qc.thresh.brain <- suggestRnaQcThresholds(qc.metric.brain, block=sce.brain$study)
-keep.brain <- filterRnaQcMetrics(qc.thresh.brain, qc.metric.brain, block=sce.brain$study)
+sce.qc.brain <- quickRnaQc.se(sce.brain, subsets=list(), block=sce.brain$study)
+sce.qc.brain <- sce.qc.brain[,sce.qc.brain$keep]
 
-sce.brain$sum <- qc.metric.brain$sum
-sce.brain$detected <- qc.metric.brain$detected
-
-sce.qc.brain <- sce.brain[,keep.brain]
 library(scater)
 plotColData(sce.qc.brain, x='study', y='sum') + scale_y_log10()
 ```
@@ -204,9 +186,16 @@ Size factors << 1 also inflate the biases due to log-transformation, while size 
 So scaling down also reduces inconsistencies between datasets due to differences in the transformation bias at different size factors.
 --->
 
-```{r}
-lib.factors.brain <- centerSizeFactors(sce.qc.brain$sum, block=sce.qc.brain$study)
-sizeFactors(sce.qc.brain) <- lib.factors.brain
+```{r norm-batch-sf, fig.cap="Distribution of block-centered size factors for the Tasic and Zeisel brain datasets. Each point represents a cell, separated by the study of origin."}
+sce.norm.brain <- normalizeRnaCounts.se(
+    sce.qc.brain, 
+    size.factors=sce.qc.brain$sum,
+    block=sce.qc.brain$study
+)
+
+plotColData(sce.norm.brain, x='study', y='sizeFactor') + 
+    geom_hline(yintercept=1, linetype="dashed", color="red") +
+    scale_y_log10()
 ```
 
 Note that our batch-aware normalization is not the same as batch correction.
@@ -224,7 +213,7 @@ To remove these biases, we equalize spike-in coverage across cells by scaling wi
 
 Let's demonstrate on a scRNA-seq dataset of T cells after stimulation with T cell receptor ligands of varying affinity [@richard2018tcell].
 Specifically, we compute the total count across all spike-in transcripts in each cell and center them to a mean of 1 across all cells (see Section \@ref(norm-centering)).
-These size factors can then be plugged into `normalizeCounts()` to obtain normalized expression values for endogenous genes.
+These size factors can then be plugged into `normalizeRnaCounts.se()` to obtain normalized expression values for endogenous genes.
 
 ```{r norm-histlib-spike, fig.cap="Distribution of size factors derived from the library size in the Richard T cell dataset."}
 library(scRNAseq)
@@ -235,8 +224,11 @@ sce.qc.richard <- sce.richard[,sce.richard$`single cell quality`=="OK"]
 sce.qc.richard
 
 # Pulling the spike-in counts out of the alternative experiment.
+sce.ercc.richard <- altExp(sce.qc.richard, "ERCC")
+sce.ercc.richard
+
 library(scrapper)
-ercc.sums.richard <- colSums(counts(altExp(sce.qc.richard, "ERCC")))
+ercc.sums.richard <- colSums(counts(sce.ercc.richard))
 spike.factor.richard <- centerSizeFactors(ercc.sums.richard)
 summary(spike.factor.richard)
 hist(log10(spike.factor.richard), xlab="Log10[Size factor]", col='grey80')
@@ -279,18 +271,16 @@ This can manifest as shifts in the magnitude and direction of DE between conditi
 as shown below for _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
 
 ```{r norm-effect-malat, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
-logcounts.lib.richard <- normalizeCounts(counts(sce.qc.richard), lib.factor.richard)
-assay(sce.qc.richard, "logcounts.lib") <- logcounts.lib.richard
-
-logcounts.spike.richard <- normalizeCounts(counts(sce.qc.richard), spike.factor.richard)
-assay(sce.qc.richard, "logcounts.spike") <- logcounts.spike.richard
+# Setting center=FALSE because we already centered the size factors. 
+sce.lib.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=lib.factor.richard, center=FALSE)
+sce.spike.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=spike.factor.richard, center=FALSE)
 
 library(scater)
 gridExtra::grid.arrange(
-    plotExpression(sce.qc.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341", exprs_values="logcounts.lib") + 
+    plotExpression(sce.lib.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
         theme(axis.text.x = element_text(angle = 90)) + 
         ggtitle("After library size normalization"),
-    plotExpression(sce.qc.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341", exprs_values="logcounts.spike") + 
+    plotExpression(sce.spike.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
         theme(axis.text.x = element_text(angle = 90)) +
         ggtitle("After spike-in normalization"),
     ncol=2
@@ -299,8 +289,8 @@ gridExtra::grid.arrange(
 
 ```{r, echo=FALSE, results="hide"}
 # Checking that Malat1 does indeed change in its DE status in unstimulated vs the rest.
-markers1 <- scoreMarkers(logcounts.lib.richard["ENSMUSG00000092341",,drop=FALSE], sce.qc.richard$stimulus, all.pairwise=TRUE)
-markers2 <- scoreMarkers(logcounts.spike.richard["ENSMUSG00000092341",,drop=FALSE], sce.qc.richard$stimulus, all.pairwise=TRUE)
+markers1 <- scoreMarkers(logcounts(sce.lib.richard)["ENSMUSG00000092341",,drop=FALSE], sce.lib.richard$stimulus, all.pairwise=TRUE)
+markers2 <- scoreMarkers(logcounts(sce.spike.richard)["ENSMUSG00000092341",,drop=FALSE], sce.spike.richard$stimulus, all.pairwise=TRUE)
 diff <- markers1$cohens.d[,"unstimulated",] - markers2$cohens.d[,"unstimulated",]
 diff <- diff[setdiff(names(diff), "unstimulated")]
 stopifnot(all(diff > 0.2))
