@@ -95,7 +95,8 @@ $t$-SNE will inflate dense clusters and compress sparse ones, so we cannot use t
 The algorithm is not obliged to preserve the relative locations of non-neighboring clusters, so we cannot use their positions to determine relationships between distant clusters.
 Many liberties were taken with the data in order to squish it into a two-dimensional representation, so it's worth being skeptical of the fidelity of that representation.
 That said, the $t$-SNE plots are pretty and historically popular so get used to seeing them^[
-Personally, I like $t$-SNE plots because they look a bit like histology slides, which can trick the casual reader into thinking that I'm a real biologist.].
+Personally, we like $t$-SNE plots because they look a bit like histology slides, which can trick those who don't know us into thinking that we're a real biologist.
+This, in turn, helps us sneak into conferences where we can disseminate our _MALAT1_ propaganda on an unsuspecting audience.].
 
 ### Uniform manifold approximation and projection
 
@@ -164,13 +165,13 @@ Thus, if we see multiple cell types or clusters in a single unbroken "island" in
 
 Less can be said about non-neighboring cells/clusters as there is no guarantee that large distances are faithfully recapitulated in the embedding.
 We can conclude that cells in distinct visual clusters are indeed different, but comparing distances between clusters is usually pointless^[
-I've seen people do this with a ruler, to "prove" that one cell type is more closely related to another.].
+We've seen people do this with a ruler, to "prove" that one cell type is more closely related to another.].
 As a thought exercise, imagine a dataset with 4 cell types arranged in three-dimensional space as a regular tetrahedron^[
 A triangular pyramid where all edges are the same length.].
 All cell types are equally distant from each other, but it is impossible to preserve this property in a two-dimensional embedding.
 This can lead to some incorrect conclusions about the relative (dis)similarity of the different cell types if we are not careful with our interpretation of the plot.
 
-Personally, I only use the $t$-SNE/UMAP coordinates for visualization.
+Personally, we only use the $t$-SNE/UMAP coordinates for visualization.
 Other steps like clustering still use the higher-rank representation (i.e., the PCs)
 to leverage all of the information in the data without any of the compromises required to obtain a two-dimensional embedding.
 In theory, we could use the $t$-SNE/UMAP coordinates directly for clustering to ensure that any results are directly consistent with the visualization^[
