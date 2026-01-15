@@ -62,7 +62,7 @@ This includes:
 - Clustering, to summarize the data into groups of similar cells. 
 - Marker detection, to assign biological meaning to each cluster based on its upregulated genes.
 
-Truth be told, you don't actually have to read this book if you don't care about how/why things are done.
+Truth be told, you don't actually need to read this book if you don't care about how/why things are done.
 Just copy and paste the following into your R session:
 
 ```{r}
@@ -84,6 +84,8 @@ previewMarkers(res.zeisel$markers$rna[["1"]])
 ```
 
 And that's it.
-Sometimes, ignorance is bliss.
-But if you want to look under the hood, then keep reading to understand the rationale behind each step.
+Sometimes, ignorance is bliss, and it's better to not know how the sausage is made.
+But hey - you're already here, so why not keep reading?
+Anecdotal studies indicate that exposure to the inner workings of scRNA-seq data analysis leads to only minor deteriorations in mental health.
+
 Any questions can be posted at [Bioconductor support site](https://support.bioconductor.org) or the [GitHub page for this book](https://github.com/libscran/scrapbook).

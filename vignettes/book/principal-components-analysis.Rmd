@@ -13,12 +13,14 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-Principal components analysis (PCA) is commonly used to clean up and compact the HVG-filtered log-normalized expression matrix.
-Consider each HVG as a dimension of our dataset where the cells are the observations,
+Principal components analysis (PCA) is commonly used to clean up and compact the log-normalized expression matrix.
+Consider each gene as a dimension of our dataset where the cells are the observations,
 i.e., each cell's expression profile defines its location in the high-dimensional expression space.
 PCA discovers axes in this high-dimensional space that capture the largest amount of variation [@pearson1901lines].
 Each principal component (PC) corresponds to an axis in this space, where the earliest PCs capture the dominant factors of heterogeneity in our data.
-The idea is to use the first few PCs to approximate our original dataset (which is, in fact, the optimal strategy for obtaining a low-rank approximation). 
+The idea is to use the first few PCs to approximate our original dataset^[
+And in fact, PCA does provide the optimal low-rank approximation, based on its relation to the SVD and the Eckart-Young-Mirsky theorem.
+This is arguably one of the rare cases of mathematical rigor in this entire book.].
 Similarly, the Euclidean distances between cells in the PC space approximate the same distances in the original dataset.
 This effectively compresses multiple genes into a single dimension, e.g., an "eigengene" [@langfelder2007eigengene],
 and allows us to use a much smaller matrix in downstream steps like clustering.
@@ -70,7 +72,7 @@ As with the number of HVGs, it is hard to determine whether an "optimal" choice 
 Sure, technical variation is almost always uninteresting,
 but there is no straightforward way to automatically determine which aspects of biological variation are relevant to a particular scientific question.
 For example, heterogeneity within a population might be interesting when studying continuous processes like metabolic flux or differentiation potential,
-but is comparable to noise in applications that only aim to distinguish between distinct cell types.
+but could be considered noise in applications that only aim to distinguish between distinct cell types.
 
 Most practitioners will simply set $d$ to a "reasonable" but arbitrary value, typically ranging from 10 to 50.
 This is often satisfactory as the later PCs explain so little variance that their inclusion or omission has no major effect.
@@ -90,7 +92,7 @@ plot(percent.var, log="y", xlab="PC", ylab="Variance explained (%)", type="b")
 stopifnot(sum(percent.var[20:40]) < 5)
 ```
 
-If we really must try to guess the "best" number of PCs^[Probably because a reviewer asked us to.], here are a few approaches:
+If we really must try to guess the "best" number of PCs^[Probably because a reviewer asked us to. YOU KNOW WHO YOU ARE.], here are a few approaches:
 
 - We can choose the elbow point in the scree plot (Figure \@ref(fig:zeisel-scree)), e.g., using the `findElbowPoint()` function from the `r Biocpkg("PCAtools")` package.
   The assumption is that there should be a sharp drop in the percentage of variance explained when we move past the last PC corresponding to biological structure.
@@ -205,7 +207,7 @@ plotReducedDim(sce.resid.416b, dimred="PCA", colour_by="batch")
 ```
 
 As with HVGs, we should only use `block=` for experimental factors that are not interesting.
-If we were interested in the effects of oncogene induction, we shouldn't block on it so that the PCA can capture the associated changes in expression.
+If we were interested in the effects of oncogene induction, we should not block on it to ensure that the PCA can capture the associated changes in expression.
 Sometimes, though, it is not obvious whether something is "interesting" or not,
 as we may wish to ignore some biological differences to obtain a consistent set of clusters across treatment conditions, tissues, etc.
 Check out Chapter \@ref(batch-correction) for a more detailed discussion.

@@ -13,14 +13,14 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-Systematic differences in sequencing coverage between libraries are often observed in single-cell RNA sequencing data [@stegle2015computational].
-These are typically caused by inconsistencies in the efficiency of various experimental steps (e.g., cDNA capture, PCR amplification) between cells.
+Large, systematic differences in sequencing coverage between cells are often present in single-cell RNA sequencing datasets [@stegle2015computational].
+These are typically caused by variation in the efficiency of various experimental steps (e.g., cDNA capture, PCR amplification) across libraries.
 Normalization removes these differences such that they do not interfere with comparisons of the expression profiles between cells.
-This ensures that any observed heterogeneity or differential expression within the cell population are driven by biology and not technical biases.
+This ensures that any observed heterogeneity or differential expression within the cell population is driven by biology and not technical biases.
 
 Here, we'll focus on scaling normalization, which is the simplest and most commonly used class of normalization strategies. 
 This involves dividing all counts for each cell by a cell-specific scaling factor, often called a "size factor" [@anders2010differential].
-The assumption here is that any cell-specific bias (e.g., library preparation or sequencing efficiency) affects all genes equally via scaling of the expected mean count for that cell.
+Our assumption is that any cell-specific bias (caused by a change in efficiency of, e.g., library preparation or sequencing) affects all genes equally by scaling the expected count for that cell.
 The size factor for each cell represents the estimate of the relative bias in that cell, so division of its counts by its size factor should remove that bias.
 The resulting "normalized expression values" can then be used for downstream analyses such as clustering and dimensionality reduction.
 
@@ -30,24 +30,27 @@ The simplest definition of a size factor is based on the library size for each c
 Larger library sizes are attributed to technical differences in library preparation or sequencing that should be equalized across cells.
 Alternatively, a cell may have a larger library size because it contains more total RNA;
 this is also treated as an uninteresting biological effect that should be normalized away.
-To demonstrate, let's fetch our old friend, the @zeisel2015brain dataset:
+To demonstrate, let's fetch our old friend, the @zeisel2015brain dataset of the mouse brain:
 
 ```{r}
 library(scRNAseq)
 sce.zeisel <- ZeiselBrainData()
 is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
 
-# Performing some QC to set up the dataset prior to normalization. We'll skip
-# calculation of spike-in proportions for brevity.
+# Performing some QC to set up the dataset prior to normalization. 
 library(scrapper)
-sce.qc.zeisel <- quickRnaQc.se(sce.zeisel, subsets=list(MT=is.mito.zeisel))
+sce.qc.zeisel <- quickRnaQc.se(
+    sce.zeisel,
+    subsets=list(MT=is.mito.zeisel),
+    altexp.proportions="ERCC"
+)
 sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 sce.qc.zeisel
 ```
 
 We use the `normalizeRnaCounts.se()` function to derive library size factors from the column sums of the count matrix.
-Specifically, we center the library sizes so that the mean size factor across all cells is equal to 1.
-This definition ensures that the normalized expression values are on the same scale as the original counts, which is useful for interpretation.
+This involves centering the library sizes so that the mean size factor across all cells is equal to 1.
+Centering ensures that the normalized expression values are on the same scale as the original counts, which is useful for interpretation.
 We see that the library size factors differ by up to 10-fold across cells (Figure \@ref(fig:norm-histlib)), which is typical of the variability in coverage in scRNA-seq data. 
 
 ```{r norm-histlib, fig.cap="Distribution of size factors derived from the library size in the Zeisel brain dataset."}
@@ -61,15 +64,15 @@ hist(log10(sce.norm.zeisel$sizeFactor), xlab="Log10[Size factor]", col='grey80')
 Strictly speaking, the use of library size factors assumes that there is no "imbalance" in the differentially expressed (DE) genes between any pair of cells.
 That is, any upregulation for a subset of genes is cancelled out by the same magnitude of downregulation in a different subset of genes.
 This avoids composition biases where upregulation of some genes reduces the sequencing resources available for other genes.
-If balanced DE is not present, more sophisticated methods for computing size factors may be required [@robinson2010scaling,@anders2010differential,@lun2016pooling].
+If balanced DE is not present, more sophisticated methods for computing size factors may be required [@robinson2010scaling;@anders2010differential;@lun2016pooling].
 In practice, library size factors perform well for exploratory scRNA-seq data analyses despite their theoretical inaccuracy:
 
-- Gene expression profiles often contain constitutively-expressed genes with large counts, e.g., histones, ribosomal proteins^[And maybe even my favorite gene, _MALAT1_].
-  These stabilize the library sizes in the presence of DE.
+- Gene expression profiles often contain constitutively-expressed genes with large counts, e.g., histones, ribosomal proteins^[And maybe even our favorite gene, _MALAT1_].
+  These stabilize the library sizes in the presence of imbalanced DE.
 - Composition biases do not usually affect the partitioning of cells into clusters (Chapter \@ref(clustering)).
   If the DE was strong enough to introduce a significant composition bias, it is also strong enough to separate the cell subpopulations during clustering.
 - Experience from bulk RNA-seq suggests that composition biases are actually quite small, typically introducing a spurious 10-20% difference in expression. 
-  This is negligible compared to the order-of-magnitude fold-changes for the marker genes (Chapter \@(marker-detection)). 
+  This is negligible compared to the order-of-magnitude fold-changes for the marker genes (Chapter \@ref(marker-detection)). 
 
 ## Normalized expression values
 
@@ -83,12 +86,14 @@ These (log-transformed) normalized expression values will be the basis of our do
 logcounts(sce.norm.zeisel)
 ```
 
-The log-transformation is useful as differences in the log-values represent log-fold changes in expression.
-This is important in downstream procedures based on distances between cells, including many forms of clustering and dimensionality reduction.
-By operating on log-transformed data, we ensure that the distances reflect log-fold changes in expression. 
-Or in other words, which is more interesting - a gene that is expressed at an average count of 50 in cell type $A$ and 10 in cell type $B$,
+The log-transformation is useful as the difference between log-values (i.e., from subtraction) is an estimate of the log-fold change in normalized expression.
+When comparing expression values, log-fold changes are usually preferable to absolute differences in expression.
+To illustrate, which one is more interesting - a gene that is expressed at an average count of 50 in cell type $A$ and 10 in cell type $B$,
 or a gene that is expressed at an average count of 1100 in $A$ and 1000 in $B$?
-Log-transformation focuses on the former by promoting contributions from genes with strong relative differences.
+Hopefully, we can all agree that the former is more interesting for explaining differences between $A$ and $B$.
+The interpretation of the difference in log-values is important in downstream procedures based on distances between cells, which includes many clustering and dimensionality reduction algorithms.
+By operating on log-transformed data, we ensure that the distances reflect log-fold changes in expression,
+e.g., the squared Euclidean distance between two cells is the sum of squared log-fold changes across all genes.
 
 During the log-transformation, `normalizeRnaCounts.se()` will add a pseudo-count to avoid undefined values at zero counts.
 This addition has the side effect of shrinking log-fold changes between cells towards zero for low-abundance genes.
@@ -101,9 +106,9 @@ However, larger values can also be used for greater shrinkage if low-abundance g
 
 ### Why center the size factors? {#norm-centering}
 
-As previously mentioned, centering means that the normalized expression values are on roughly the same scale as the original counts for easier interpretation.
-For example, Figure \@ref(fig:zeisel-demo-snap25) shows that interneurons have a median _Snap25_ log-expression from 5-6;
-this roughly translates to an original count of 30-60 UMIs in each cell, which gives us some confidence that it is actually expressed.
+As previously mentioned, centering ensures that the normalized expression values are on roughly the same scale as the original counts for easier interpretation.
+For example, Figure \@ref(fig:zeisel-demo-snap25) shows that interneurons have a median _Snap25_ log-expression from 5 - 6;
+this roughly translates to an original count of 30 - 60 UMIs in each cell, which gives us some confidence that it is actually expressed.
 This relationship to the original data would be less obvious if the centering were not performed.
 
 ```{r zeisel-demo-snap25, fig.wide=TRUE, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
@@ -113,15 +118,15 @@ plotExpression(sce.norm.zeisel, x="level1class", features="Snap25", colour="leve
 ```
 
 Centering also ensures that the effect of the pseudo-count decreases with greater sequencing coverage across the dataset. 
-Because we preserve the scale of the input data, the normalized expression values will increase with more coverage while the pseudo-count remains the same. 
+Because we preserve the scale of the input data, the normalized expression values will increase with deeper coverage while the pseudo-count remains the same. 
 This reduces the shrinkage effect and improves the accuracy of the log-fold changes between cells.
-Which is important, because otherwise, why invest in deeper sequencing if our analysis won't take advantage of it?
+Which is important, because otherwise, why would we invest in deeper sequencing if our analysis won't take advantage of it?
 
 For comparison, consider the situation where we applied a constant pseudo-count to some counts-per-million (CPM)-like measure.
 The accuracy of the subsequent log-fold changes would never improve regardless of how much additional sequencing was performed;
 scaling to a constant library size of a million means that the pseudo-count will have the same shrinkage effect for all datasets.
 The same criticism applies to popular metrics like the "counts-per-10K" used in, e.g., `r CRANpkg("seurat")`.
-Personally, I rarely use CPM-like measures in scRNA-seq analyses;
+Personally, we rarely use CPM-like measures in scRNA-seq analyses;
 they are occasionally convenient for rough comparisons between datasets that were processed separately,
 but in such cases, normalization is the least of our problems (Chapter \@ref(batch-correction)).
 
@@ -150,7 +155,7 @@ This sacrifices some of the information in high-coverage batches to make them mo
 By comparison, scaling up the low-coverage batches just amplifies noise as they don't have the available information to match the high-coverage batches.
 
 Differences in coverage between batches are most obvious when attempting to analyze datasets involving both read and UMI counts^[A very unfortunate position to be in.].
-For two brain datasets generated with different technologies [@zeisel2015brain,@tasic2016adult], library sizes differ by several orders of magnitude (Figure \@ref(fig:norm-batch)).
+For two brain datasets generated with different technologies [@zeisel2015brain;@tasic2016adult], library sizes differ by several orders of magnitude (Figure \@ref(fig:norm-batch)).
 If we scaled up the Zeisel counts by ~100-fold, we would overstate the reliability of low-abundance genes by reducing the pseudo-count shrinkage (Section \@ref(norm-transformation)).
 This inflates the sampling noise and masks biological signal from higher-abundance genes.
 
@@ -206,7 +211,8 @@ but it usually needs to be followed by more sophisticated methods (Chapter \@ref
 
 ## Normalization by spike-ins
 
-Occasionally, we might come across an scRNA-seq dataset with spike-in counts, which gives us the opportunity to perform spike-in normalization [@lun2017assessing],
+Occasionally, we might come across an scRNA-seq dataset with spike-in counts, which gives us the opportunity to perform spike-in normalization [@lun2017assessing]^[
+And to brazenly rack up some gratuitous self-citations to boost our $h$-index.].
 This assumes that (i) the same amount of spike-in RNA was added to each cell and (ii) the spike-in transcripts respond to experimental biases in the same relative manner as endogenous genes.
 Thus, any systematic difference in the coverage of the spike-in transcripts can attributed to cell-specific biases, e.g., in capture efficiency or sequencing depth.
 To remove these biases, we equalize spike-in coverage across cells by scaling with "spike-in size factors".
@@ -268,7 +274,7 @@ These differences have real consequences for downstream interpretation.
 If the spike-in size factors were applied to the counts, the expression values in unstimulated cells would be scaled up while expression in stimulated cells would be scaled down.
 However, the opposite would occur if the deconvolution size factors were used. 
 This can manifest as shifts in the magnitude and direction of DE between conditions when we switch between normalization strategies,
-as shown below for _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
+as shown below for our most beloved gene _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
 
 ```{r norm-effect-malat, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
 # Setting center=FALSE because we already centered the size factors. 
@@ -278,10 +284,10 @@ sce.spike.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=spike.fa
 library(scater)
 gridExtra::grid.arrange(
     plotExpression(sce.lib.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
-        theme(axis.text.x = element_text(angle = 90)) + 
+        theme(axis.text.x = element_text(angle = 40)) + 
         ggtitle("After library size normalization"),
     plotExpression(sce.spike.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
-        theme(axis.text.x = element_text(angle = 90)) +
+        theme(axis.text.x = element_text(angle = 40)) +
         ggtitle("After spike-in normalization"),
     ncol=2
 )
