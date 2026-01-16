@@ -13,23 +13,23 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-Large scRNA-seq projects usually need to generate data across multiple batches due to logistical constraints.
+In large scRNA-seq projects, data generation is split across multiple batches due to logistical constraints.
 However, the processing of different batches is often subject to uncontrollable differences,
 e.g., small changes in incubation times, differences in reagent concentration/quality.
 This may introduce systematic differences in the observed expression in cells from different batches, a.k.a., batch effects.
 Batch effects are problematic as they can be major drivers of heterogeneity in the data,
 masking relevant biological differences and complicating interpretation of the results.
 
-Batch correction involves removing the batch effects to simplify downstream procedures like clustering.
+Batch correction aims to remove batch effects to simplify downstream procedures like clustering.
 The aim is to merge cells from different batches that represent the same biological subpopulation,
 ensuring that they are assigned to the same cluster for easier interpretation.
 Otherwise, cells may cluster by their batch of origin, which would be quite uninteresting.
 Note that this step is quite different from the blocking discussed in most of the previous chapters,
-as the latter just ignores the batch effect instead of actively removing it.
+as setting `block=` just instructs those functions to ignore the batch effect instead of actively removing it.
 
 Historically, we used linear regression for batch correction of RNA-seq data [@ritchie2015limma;@leek2012sva].
-(We can achieve the same effect with our PCA if we compute the components from the residuals, see Section \@ref(pca-batch)).
-However, these methods assume that the composition of cell subpopulations is either known, and can be used as a covariate in the model;
+(We can achieve the same effect with our PCA if we compute the components from the residuals, see Section \@ref(pca-batch).)
+However, this assumes that the composition of cell subpopulations is either known, and can be used as a covariate in the model;
 or the composition is the same across batches, with a consistent batch effect in each subpopulation.
 Such assumptions are usually inappropriate for single-cell studies.
 Instead, we use bespoke methods for single-cell data [@haghverdi2018batch;@butler2018integrating;@lin2019scmerge] that do not require these strong assumptions^[
@@ -57,7 +57,7 @@ sce.pbmc8k <- TENxPBMCData('pbmc8k')
 # Finding a common set of genes across all batches to allow us to combine
 # everything into a single object. This is only necessary if the different
 # batches were processed with different genome annotations.
-common.pbmc <- Reduce(
+inter.pbmc <- Reduce(
     intersect,
     list(
         rownames(sce.pbmc3k),
@@ -66,9 +66,9 @@ common.pbmc <- Reduce(
     )
 )
 sce.pbmc <- combineCols(
-    sce.pbmc3k[common.pbmc,],
-    sce.pbmc4k[common.pbmc,],
-    sce.pbmc8k[common.pbmc,]
+    sce.pbmc3k[inter.pbmc,],
+    sce.pbmc4k[inter.pbmc,],
+    sce.pbmc8k[inter.pbmc,]
 )
 sce.pbmc$batch <- rep(
     c("3k", "4k", "8k"),
@@ -115,7 +115,7 @@ sce.pca.pbmc <- runPca.se(
 
 If we examine the distribution of cells without any batch correction, we observe some batch-specific substructure (Figure \@ref(fig:batch-pbmc-uncorrected)).
 Such batch effects could have any number of causes -
-biological differences in the underlying cell population, e.g., between donors,
+biological differences in the underlying cell population between donors,
 differences in the technology used for cell capture and/or sequencing,
 or changes in the computational piplines for alignment and quantification.
 Regardless of their origins, we consider these differences to be uninteresting as all batches are assaying the same PBMC population and should be replicates of each other. 
@@ -137,16 +137,25 @@ sce.mnn.tsne.pbmc <- runTsne.se(sce.mnn.pbmc, reddim.type="MNN")
 plotReducedDim(sce.mnn.tsne.pbmc, "TSNE", colour_by="batch") + ggtitle("After correction")
 ```
 
-Similarly, we use the corrected PCs in clustering to ensure that cells from the same underlying population are assigned to the same cluster.
+Clustering on the corrected PCs ensures that cells from the same underlying population are assigned to the same cluster.
+(We call this a "common clustering" as the definition of each cluster is the same in each batch.)
 This avoids the formation of multiple clusters that represent the same cell type/state but are only separated due to batch effects.
-Such redundant clusters are annoying to interpret as we have to (i) look at more clusters with the same biology and (ii) match them up to each other for further analyses.
-Here, a useful diagnostic measure is the distribution of cells across batches within each cluster.
-If a cluster has contributions from multiple batches, it probably represents a cell type/state that is common to those batches.
-We expect that all of our PBMC clusters are more-or-less evenly distributed across batches as each batch is a replicate of the others.
+Such redundant clusters are annoying to interpret as we have to (i) inspect more clusters to discover the same biology and (ii) match them up to each other for further analyses.
+In addition, the correction increases the number of cells in any subpopulations that are shared across batches.
+This provides some opportunities for improved resolution of rare subpopulations during the clustering step^[
+This benefit is probably not that reliable as it assumes that the correction algorithm manages to preserve the rare subpopulations.
+Indeed, both MNN correction and graph clustering are based on $k$-nearest neighbors with similar choices for $k$,
+so if a cell type is too rare to form a separate cluster within a single batch, it's unlikely to form correct MNN pairs either.].
 
 ```{r}
 sce.mnn.graph.pbmc <- clusterGraph.se(sce.mnn.pbmc, reddim.type="MNN")
+```
 
+Once we obtain a common clustering, a useful diagnostic measure is the distribution of cells across batches within each cluster.
+If a cluster has contributions from multiple batches, it probably represents a cell type/state that is shared across those batches.
+We expect our PBMC clusters to be more-or-less evenly distributed across batches as each batch is a replicate of the others.
+
+```{r}
 # This is a normalized matrix of cell counts for each group (row) and block
 # (column). We divide each column by the number of cells in each batch to
 # account for differences between batches. Then we divide by the row sums to
@@ -186,24 +195,23 @@ However, MNN correction is not without its own assumptions:
 
 - It requires some shared subpopulations between batches to encourage formation of the correct MNN pairs.
   Otherwise, if one batch contains B cells only and another batch contains T cells only, MNN pairs would form between the two cell types and the correction would merge them together.
-- Similar to the previous point, MNN correction becomes more robust with more shared subpopulations between batches.
+  More generally, MNN correction becomes more robust with more shared subpopulations between batches.
   This implicitly reduces the risk of forming incorrect MNN pairs between unique subpopulations in each batch.
   Imagine we have one batch containing B cells and CD4^+^ T cells and another batch containing B cells and CD8^+^ T cells.
   MNN pairs would form correctly across batches for B cells, but they would also form between the CD4^+^ and CD8^+^ T cells as they are the closest available matches to each other.
   If our first batch also contained CD8^+^ T cells, they would match across batches and the CD4^+^ T cells would (correctly) not participate in any MNN pairs. 
-- Each subpopulation needs to have a minimum number of cells in each batch, usually comparable to the choice of $k$ for defining MNN pairs.
-  This ensures that MNN pairs do not form across different subpopulations.
+- Any shared subpopulations should have more than $k$ cells in each batch to ensure that MNN pairs do not incorrectly form across different subpopulations.
   For example, let's say we have one batch that contains only T cells and another batch that contains B cells and fewer than 10 T cells.
-  If we used $k = 10$, some MNN pairs would form between the T cells in the first batch and B cells in the second batch.
-  As an aside, a common argument for batch correction is that it increases the number of cells available for clustering rare cell types.
-  This argument may not be as favorable as one might think given that 
+  If we used $k = 10$, some MNN pairs would form between the T cells in the first batch and B cells in the second batch, which would be wrong.
+  (That said, failure is not guaranteed for small populations - the example above would have worked out fine if B cells also existed in the first batch.
+  It's just that the risk of incorrect MNN pairs is much higher when the subpopulation size drops below $k$.)
 - For more subtle population structure, MNN correction assumes that the batch effect is orthogonal to the axes of biological variation.
   This is generally reasonable for batch effects caused by technical differences that are unrelated to biology - less so for biological differences.
   Say we're studying some kind of continuous biological variation, e.g., differentiation, and we have two batches that are replicates of each other. 
   We introduce a batch effect that is not orthogonal to the biological variation, e.g., because the second batch has higher baseline expression of the differentiation marker.
   MNN correction would be slightly incorrect as it preserves that the non-orthogonal component of the batch effect (Figure \@ref(fig:batch-activity-example)).
 
-```{r batch-activity-example, echo=FALSE, fig.wide=TRUE, fig.asp=0.3, fig.cap="Diagram of MNN correction when the batch effect is confounded with biological variation."} 
+```{r batch-activity-example, echo=FALSE, fig.wide=TRUE, fig.height=6, fig.width=10, fig.cap="Diagram of MNN correction when the batch effect is confounded with biological variation."} 
 set.seed(999)
 N <- 200
 x1 <- runif(N) * 4 * pi
@@ -219,7 +227,7 @@ points(x2 + 2 * pi, y2 + 5, col="red")
 text(4 * pi, 5.6, pos=3, "Batch 2", col="red", font=3)
 
 arrows(0, -2, pi, -2, lwd=2, length=0.1)
-text(pi, -2, "Axis of biological variation (e.g., differentiation status)", pos=4)
+text(pi, -2, "Axis of biological variation\n(e.g., differentiation status)", pos=4)
 slope <- 5 / (2 * pi)
 arrows(1, slope + 1, 4 / slope, 5, lwd=2, length=0.1)
 text(4 / slope, 5, pos=3, "Batch\neffect")
@@ -251,33 +259,32 @@ but then again, maybe we would, if we were really interested in studying differe
 In any case, it is best to treat batch-corrected data - and conclusions derived from it - with a grain of salt.
 The various merging decisions made by the algorithm may or may not be sensible depending on our scientific question.
 
-## What is a batch, anyway?
+## What is a batch effect, anyway?
 
-So far in this chapter, we've been somewhat cavalier with the terminology.
-We've considered each "batch" to be the set of cells that were processed together, e.g., same plate/channel/sequencing run.
-This may or may not coincide with the "sample" of origin of the cells, i.e., whether they were extracted from the same donor/animal/culture.
-In most cases, cells obtained from the same source are also processed together,
-in which case "batch" and "sample" are synonymous and our "batch effect" is simply another description of sample-to-sample variability. 
-Admittedly, this is a bit of a misnomer as, in conventional statistics, batches usually consist of multiple samples^[
-This usage stems from the early days of scRNA-seq when we thought that each cell could be considered an independent sample for statistical purposes.
-We eventually realized that cells from the same source were too correlated and that the real experimental replication occurred at the animal/donor level.].
-But we're past halfway into this book and it's too late to change it, so we'll just have to live with it.
+In this chapter's introduction, we defined batch effects in terms of technical differences that are obviously uninteresting.
+However, certain biological differences are also uninteresting and can be treated as batch effects.
+One example is the biological variability between replicate samples (e.g., donors, animals, cultures) from which the cells are extracted.
+We are generally uninterested in systematic differences between samples, which might cause cells of the same type to form separate clusters based on their sample of origin.
+In these replicated experiments, we might consider removing this sample-to-sample variability by treating each sample as a batch in `correctMnn.se()`.
+Similarly, we could apply batch correction to any uninteresting categorical factor in our dataset, e.g., sex, genotype, cell cycle phase.
+Admittedly, we're misusing the word "batch" here, but we're already halfway into this chapter and we don't want to rewrite the text so just bear with it until the end.
 
-Anyway, what happens if each batch consists of cells from different experimental conditions?
-Say one batch contains control cells and another batch contains drug-treated cells.
-Any systematic difference in expression caused by treatment would be treated as a batch effect and removed by MNN correction.
-This effect is both expected and desirable - by eliminating the differences between conditions, we only need to characterize population heterogeneity once across all cells in all batches. 
-For example, we can define one set of clusters that can be used as common labels across conditions.
-This, in turn, allows us test for differences in expression or abundance of the same cell type/state across conditions (Section \@ref(multi-condition-analysis)).
-The alternative would be to cluster each condition separately and to attempt to identify matching clusters across conditions, which is time-consuming and adds even more subjectivity.
+Now, what happens if different samples contain cells from different experimental conditions?
+Say we have two samples where one contains control cells and the other contains drug-treated cells.
+If we applied MNN correction to the samples, any treatment-induced differential expression would be treated as a batch effect and removed. 
+This behavior is both expected and desirable - by merging cells from both conditions, we only need to characterize population heterogeneity once for all cells. 
+For example, we can use the corrected coordinates to define a common set of clusters across both treated and control samples.
+This, in turn, allows us test for differences in expression or abundance of the same cell type/state between conditions (Section \@ref(multi-condition-analyses)).
 
-It may seem distressing to some that a (potentially very interesting!) biological difference between conditions is lost at this point.
-However, this concern is largely misplaced as the corrected values is only ever used for defining common clusters and annotations.
-Any differences between conditions will still be preserved in the results of Section \@ref(multi-condition-analysis).
+It may seem distressing to some folks that a (very interesting!) biological difference between conditions is deliberately removed by batch correction.
+However, this concern is largely misplaced as the corrected values are only ever used for defining common clusters and annotations.
+Any differences between conditions will still be preserved in the results of Section \@ref(multi-condition-analyses).
+The alternative strategy would be to cluster each condition separately and to attempt to identify matching clusters across conditions,
+which is much less convenient (though not an inherently bad idea, see Section \@ref(regrets)).
 
 ## Using the corrected values
 
-As previously mentioned, the batch-corrected values are typically used to quantify population heterogeneity in a consistent manner across batches.
+As previously mentioned, the batch-corrected values are typically used to quantify population heterogeneity in a common manner across batches.
 Cluster 1 in batch $B_1$ is the same as cluster 1 in batch $B_2$ when clustering is performed on the corrected data.
 We do not have to cluster each batch separately and then identify mappings between separate clusterings, 
 which is time-consuming and might not even be possible when the clusters are not well-separated.
@@ -295,14 +302,14 @@ sce.grun <- GrunPancreasData()
 sce.muraro <- MuraroPancreasData()
 
 # Taking the intersection of features for both endogenous genes...
-common.pancreas <- intersect(rownames(sce.grun), rownames(sce.muraro))
-sce.grun <- sce.grun[common.pancreas,]
-sce.muraro <- sce.muraro[common.pancreas,]
+inter.pancreas <- intersect(rownames(sce.grun), rownames(sce.muraro))
+sce.grun <- sce.grun[inter.pancreas,]
+sce.muraro <- sce.muraro[inter.pancreas,]
 
 # And spike-ins, for completeness...
-common.ercc.pancreas <- intersect(rownames(altExp(sce.grun, "ERCC")), rownames(altExp(sce.muraro, "ERCC")))
-altExp(sce.grun, "ERCC") <- altExp(sce.grun, "ERCC")[common.ercc.pancreas,]
-altExp(sce.muraro, "ERCC") <- altExp(sce.muraro, "ERCC")[common.ercc.pancreas,]
+inter.ercc.pancreas <- intersect(rownames(altExp(sce.grun, "ERCC")), rownames(altExp(sce.muraro, "ERCC")))
+altExp(sce.grun, "ERCC") <- altExp(sce.grun, "ERCC")[inter.ercc.pancreas,]
+altExp(sce.muraro, "ERCC") <- altExp(sce.muraro, "ERCC")[inter.ercc.pancreas,]
 
 # Before combining both datasets into a single SCE object. 
 sce.pancreas <- combineCols(sce.grun, sce.muraro)
@@ -370,7 +377,7 @@ though the opposite outcome is equally possible, i.e., introducing non-zero expr
 From the perspective of the correction algorithm, this effect is intended as these differences between batches are part of the batch effect and must be removed.
 However, if we relied the corrected expression values, we would draw misleading conclusions about the behavior of _INS-IGF2_ across batches.
 For example, if one batch consisted of drug-treated patients and another batch was a control,
-we would not detect differential expression due to treatment from the corrected expression values.
+we would not detect any treatment-induced differential expression from the corrected expression values.
 
 ```{r batch-corrected-insigf2, fig.wide=TRUE, fig.asp=2.5, fig.cap="Expression of _INS-IGF2_ across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom)."}
 current.insigf2 <- "INS-IGF2__chr11"
@@ -397,7 +404,7 @@ Differences between batches should be handled by some other mechanism, e.g., blo
 In the past decade, we have - perhaps once or twice - used the corrected values for visualization,
 specifically to synchronize expression across all batches to the same color gradient in a $t$-SNE plot.
 This was done purely for aesthetics and was probably not worth the extra hassle,
-given that we had to check that the corrected values gave the same conclusions as the original expression values.
+given that we had to check that the plot with the corrected values gave the same conclusions as the original expression values.
 
 ```{r batch-markers-pancreas, fig.wide=TRUE, fig.cap="Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch."}
 markers.pancreas <- scoreMarkers.se(
@@ -418,13 +425,15 @@ plotExpression(
 ) + facet_grid(~batch)
 ```
 
-## Multi-condition analysis
+## Multi-condition analyses
+
+### Differential expression
 
 The most interesting scRNA-seq datasets consist of multiple samples across different conditions, e.g., treated and untreated.
-Once we have a consistent definition of clusters across all our samples, we can test for differences between conditions for each cluster.
+Once we have a common definition of clusters across all our samples, we can test for differences between conditions for each cluster.
 In effect, we treat the scRNA-seq data as a kind of _in silico_ "super-FACS" -
-just like FACS is used to experimentally isolate cell types of interest before bulk RNA-seq or quantifying abundance,
-we do the same with scRNA-seq but our putative cell types are defined by clustering instead.
+FACS^[Fluorescence-activtated cell sorting, duh.] is used to experimentally isolate cell types of interest before bulk RNA-seq or quantifying abundance,
+and now we do the same with scRNA-seq but our putative cell types are defined by clustering instead.
 To illustrate, we'll pull out some pancreas data generated from normal donors and patients with type II diabetes [@segerstolpe2016singlecell]:
 
 ```{r}
@@ -456,6 +465,7 @@ We use the sum of counts for several reasons:
 pseudo.bulk.seger <- aggregateAcrossCells.se(sce.seger, colData(sce.seger)[,c("individual","cell type")])
 pseudo.bulk.seger
 colData(pseudo.bulk.seger)[,c("factor.individual", "factor.cell type", "counts")]
+assay(pseudo.bulk.seger)[1:10,1:10] # sum of counts for each individual/cell-type combination
 ```
 
 Once we have the pseudo-bulk count matrix, we test for differences between conditions (in this case, disease status) within each cell type.
@@ -500,9 +510,11 @@ res.beta.seger <- topTable(fit.beta.seger, sort.by="p", n=Inf, coef=2)
 head(res.beta.seger)
 ```
 
-```{r, eval=FALSE}
+```{r, echo=FALSE}
 stopifnot("INS" %in% head(res.beta.seger)$ID)
 ```
+
+### Differential abundance
 
 Another interesting analysis involves testing for differences in cell type abundance between conditions, i.e., differential abundance (DA).
 We all know how immunologists love to create FACS plots showing some change in the percentages between treatments (e.g., Figure 1A of @richard2018tcell) -
@@ -517,7 +529,7 @@ ab.count.seger <- unclass(ab.count.seger) # get rid of the weird table class.
 ab.count.seger
 ```
 
-We can then apply standard DA pipelines to see which cell types are affected by disease.
+We then apply standard DA pipelines to see which cell types are affected by disease.
 In particular, testing for DA is bread-and-butter stuff in the microbiome field,
 so we'd recommend checking out some of their [best practices](https://microbiome.github.io/OMA/docs/devel/pages/differential_abundance.html).
 Right now, though, this book is hard enough to compile without adding extra dependencies,
@@ -542,7 +554,7 @@ topTags(res.ab.seger)
 ```
 
 It's worth noting that DA and DE are two sides of the same coin as they are both based from the per-cell expression profiles.
-To illustrate, consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
+Consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
 We focus on a cell type $X$ that is present in both conditions but contains some DE genes between conditions.
 This leads to two possible outcomes:
 
@@ -556,45 +568,44 @@ It is difficult to predict whether a difference between conditions will manifest
 For example, we might see DE for coarser clusters but DA for finer clusters.
 We'd recommend performing both DE and DA analyses to ensure that we can catch either possibility.
 
-## Convenience versus rigor
+## Some thoughts about replicates {#regrets}
 
-We have a confession to make.
-Remember how we said that the corrected PCs are useful as we can define a single set of clusters for all batches?
-And that this common clustering could be directly used in DE and DA analyses?
-Well, as convenient as it is, this approach is built on some shaky statistical foundations.
-This is because we are not capturing the variability in the clustering and its biological interpretation.
-We - as humans - introduce our own variability in how we analyze scRNA-seq data,
-e.g., if someone else were to repeat our experiment, their clusters would not be the same as ours.
-This variability should also be modelled given the subjectivity in many of the parameter/algorithm choices (see any chapter in this book).
+Don't put too much faith in the results of DE/DA analyses derived from a common clustering.
+These analyses do not capture the uncertainty in the clustering and its biological interpretation, which reduces confidence in the reproducibility of the results.
+Say we discover significant DE/DA for a cell type in our dataset.
+If an independent party were to repeat our experiment and analysis, would they be able to reach the same conclusion?
+More specifically, would they be able to partition an equivalent cluster and assign the same cell type identity?
+Weakly separated cell subtypes might not manifest as separate clusters in a new dataset,
+or the ranking of markers might change in a manner that causes the analyst to assign a different biological identity.
+We wouldn't know; we can't evaluate the reproducibility of our cell type annotations because we only did the clustering and interpretation once.
 
-So, if we were to be rigorous, we would model the variability introduced by our fickle meat brains. 
-This sounds complicated but can be handled in the same way that statisticians deal with any unknown variability - namely, replication.
-Consider a multi-condition analysis that already requires multiple replicate samples for each condition.
-The idea would be to analyze each replicate independently, from quality control to identification of cell types/states from the clusters.
-We then create a pseudo-bulk or cell abundance count matrix based on the annotated cell types/states from all replicates.
-Any variability in the per-replicate analysis will manifest as greater variance across replicates in these count matrices.
-For example, if a cell subtype is weakly defined, we may not be able to identify it consistently across samples, increasing the variance in the cell type abundances;
-or the corresponding cluster may occasionally include neighboring subtypes, increasing the variance of the pseudo-bulk profiles.
-The increased variance is important as it properly reflects our uncertainty about the existence of the cell subtype itself.
-Indeed, a very careful experimental design would include some blinding and randomize replicates across multiple analysts so that variances in human bias are also modelled^[
-Though this is so tedious, it's probably not worth doing for anything other than a clinical trial.].
+That said, there is a way to model this uncertainty - rarely used and tedious, but it can be done.
+Consider a dataset that has multiple replicate samples for each of multiple conditions.
+The strategy is as follows:
 
-With per-replicate analyses, there is no need for batch correction as we aren't creating a common clustering.
-This avoids all of the headaches involved in interpreting the corrected results as described above.
-Similarly, we can skip batch correction if we use automated cell type annotation, e.g., with `r Biocpkg("SingleR")`.
-This does not involve any clustering and can be applied to each replicate independently, assuming that our cell types of interest exist in the reference annotation.
-Perhaps there is some utility in merging all cells together for visualization, but we probably shouldn't be making conclusions from the $t$-SNE plot anyway.
-And while it is true that increasing the number of cells improves clustering resolution, e.g., of rare cell types,
-this assumes that the batch correction is accurate enough to preserve these rare subpopulations in the merged dataset.
-Both MNN correction and graph clustering are based on $k$ nearest neighbors with similar choices for $k$,
-so if a cell type is too rare for the latter to resolve, it's probably going to struggle with the former.
+1. Analyze each sample independently, from quality control to identification of cell types/states from the clusters.
+   If we were being very careful, we would blind and randomize samples across multiple analysts so that variances in human bias are also modelled during manual annotation of clusters^[
+   Though this is so exceptionally laborious, it's probably not worth doing for anything other than a clinical trial.].
+   Alternatively, we could use automated cell type annotation tools like `r Biocpkg("SingleR")`;
+   these do not require any clustering and can be applied to each sample independently, but assume that our cell types of interest exist in the reference annotation.
+2. Identify matching cell types and states across samples.
+   For manual annotation, one might consider using a controlled vocabulary of cell types/states to simpify this step, especially if multiple analysts are involved.
+   A hierarchical cell type ontology is also useful, e.g., if we can't match two closely related subtypes, we can at least agree that they both match to the parent type.
+   This step yields a common set of cell type/state identities across all samples, replacing the common clustering derived from the corrected PCs.
+   As we are forced to be explicit about how cell types are matched across samples, we don't have to rely on the assumptions (and potential errors) of the correction algorithm.
+3. Create a pseudo-bulk or cell abundance count matrix based on the annotated cell types/states from all samples.
+   Any variability in the per-sample analysis will manifest as greater variance across replicates in these count matrices.
+   For example, if a cell subtype is weakly defined, we may not be able to identify it consistently across replicates, increasing the variance in the cell type abundances.
+   Similarly, if a subtype is poorly separated from its relatives, its cluster may occasionally include cells from neighboring subtypes, increasing the variance of the pseudo-bulk profiles.
+   The increased variance is important as it properly reflects our uncertainty about the existence of the cell subtype itself.
 
-In practice, it seems that very few people analyze each replicate independently prior to DE/DA analyses.
-We recall only a handful of instances over the years^[Good on them.] because it's just too tedious. 
+In practice, this kind of analysis is pretty exhausting, especially for larger studies.
+We recall only a handful of instances over the years because it's just too inconvenient. 
+Besides, the incentives for reproducibility don't exist in the current scientific environment. 
 Why should we do more work to introduce more variance and reduce the number of significant hits^[
 Indeed, this is antithetical to the raison d'être of single-cell genomics, which is to create publishable results.]?
-We typically settle on a compromise between convenience and rigor -
-continue using a common clustering from corrected PCs but invest the extra time and resources into independent validation experiments
+We typically settle on a compromise between convenience and rigor,
+where we still use a common clustering from corrected PCs but invest the extra time and resources into independent validation experiments
 (see also suggestions in Section \@ref(marker-p-value-invalidity)).
 As long as our conclusions can be validated, we can say that our preceding analyses were "exploratory" and give ourselves a pass for any statistical impropriety.
 
