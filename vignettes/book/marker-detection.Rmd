@@ -263,7 +263,12 @@ Back in my day, a "dot plot" referred to a visualization of a pairwise sequence 
 Bet most of you young'uns don't know about that.],
 also known as a bubble plot (Figure \@ref(fig:marker-dot-pbmc)).
 This is more concise than the heatmap as it uses the size of each dot/bubble to represent the proportion of cells with detected expression.
-Personally, we disapprove of using variable areas to represent information as this can generate misleading visualizations, but hey, to each their own.
+Personally, we disapprove of using variable areas to represent data as this can generate misleading visualizations^[
+For starters, an $X$-fold change to the area of the bubble is only a $\sqrt{X}$-change to the radius, which requires more mental arithmetic when comparing adjacent bubbles.
+Also, if a bubble is too small, we can't see its contents clearly, effectively discarding the data encoded by its color.
+It gets even worse for certain configurations of the bubble plot where the color represents the mean of the _non-zero_ expression values;
+here, we need to mentally integrate the color of each bubble by its area to get the mean expression for comparisons between clusters.],
+but hey, to each their own.
 
 ```{r marker-dot-pbmc, fig.wide=TRUE, fig.cap=paste0("Dot plot of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters.")}
 plotDots(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], group="clusters", swap_rownames="Symbol", center=TRUE)
