@@ -108,23 +108,26 @@ If we really must try to guess the "best" number of PCs^[Probably because a revi
 But if we're really concerned about the number of PCs, it's probably just better to repeat the analysis with different number of PCs.
 This allows us explore other perspectives of the data at different trade-offs between biological signal and technical noise.
 
-## Handling multiple batches {#pca-batch}
+## Blocking on uninteresting factors {#pca-block}
 
-Larger datasets typically consist of multiple batches of cells with uninteresting differences between batches, i.e. batch effects.
-We don't want to waste our top PCs on capturing these batch effects - instead, we want our PCA to focus on the biological structure within each batch.
-To demonstrate, let's use a dataset consisting of two plates of wild-type and oncogene-induced 416B cells [@lun2017assessing].
-Differences in expression due to the plate of origin are obviously technical and should be ignored;
-for the sake of this section, we will pretend that oncogene induction is also an uninteresting experimental factor^[
+Larger datasets typically consist of multiple blocks of cells with uninteresting differences between them, e.g.. batch effects, variability between donors.
+We don't want to waste our top PCs on capturing these differences - instead, we want our PCA to focus on the biological structure within each block.
+To demonstrate, let's look at a dataset consisting of two plates of wild-type and oncogene-induced 416B cells [@lun2017assessing].
+Differences in expression due to the plate of origin are obviously technical and should be ignored.
+To make life more exciting, we will also consider the oncogene induction status to be an uninteresting experimental factor^[
 Which is not entirely unreasonable.
 Say that we want to identify matching cell states across the wild-type and induced populations.
-In such cases, we would ignore the induction effect so that the matching states will cluster together.] to be treated as a batch effect.
+In such cases, we would want to ignore the induction effect so that the matching states will cluster together.] that should not be allowed to dominate the PCA.
 
 ```{r}
 library(scRNAseq)
 sce.416b <- LunSpikeInData("416b")
-plate.416b <- sce.416b$block # i.e., the plate of origin.
+
+# Combining the plate of origin and oncogene induction status into a single
+# blocking factor of 'uninteresting' variation.
+plate.416b <- sce.416b$block
 pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
-sce.416b$batch <- factor(paste0(pheno.416b, "-", plate.416b))
+sce.416b$block <- factor(paste0(pheno.416b, "-", plate.416b))
 
 # Computing the QC metrics.
 library(scrapper)
@@ -133,7 +136,7 @@ sce.qc.416b <- quickRnaQc.se(
     sce.416b,
     subsets=list(MT=is.mito.416b),
     altexp.proportions="ERCC",
-    block=sce.416b$batch
+    block=sce.416b$block
 )
 sce.qc.416b <- sce.qc.416b[,sce.qc.416b$keep]
 
@@ -141,19 +144,19 @@ sce.qc.416b <- sce.qc.416b[,sce.qc.416b$keep]
 sce.norm.416b <- normalizeRnaCounts.se(
     sce.qc.416b,
     size.factors=sce.qc.416b$sum,
-    block=sce.qc.416b$batch
+    block=sce.qc.416b$block
 )
 
-# Choosing the topHVGs after blocking on the uninteresting factors.
+# Choosing the top VGs after blocking on the uninteresting factors.
 sce.var.416b <- chooseRnaHvgs.se(
     sce.norm.416b,
     more.choose.args=list(top=1000), # just picking a cool-looking number of top genes here.
-    block=sce.norm.416b$batch
+    block=sce.norm.416b$block
 )
 ```
 
-We set `block=` to instruct `runPca.se()` to focus on the variation within each batch.
-This is equivalent to centering each batch at the origin and then finding the axes of largest variation among the residuals.
+We set `block=` to instruct `runPca.se()` to focus on the variation within each block.
+This is equivalent to centering each block at the origin and then finding the axes of largest variation among the residuals.
 The expression values for each cell are then projected onto these axes to obtain that cell's PC scores.
 Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),
 allowing our subsequent analyses to focus on heterogeneity within each subpopulation.
@@ -165,31 +168,31 @@ sce.block.416b <- runPca.se(
     sce.var.416b,
     features=is.hvg.416b,
     number=20,
-    block=sce.var.416b$batch
+    block=sce.var.416b$block
 )
 
 library(scater)
 gridExtra::grid.arrange(
-    plotReducedDim(sce.pca.416b, dimred="PCA", colour_by="batch") +
+    plotReducedDim(sce.pca.416b, dimred="PCA", colour_by="block") +
         ggtitle("Without blocking"),
-    plotReducedDim(sce.block.416b, dimred="PCA", colour_by="batch") +
+    plotReducedDim(sce.block.416b, dimred="PCA", colour_by="block") +
         ggtitle("Blocked"),
     ncol=1
 )
 ```
 
-If we're lucky, all of the uninteresting batch effects are orthogonal to the major biological variation,
+If we're lucky, all of the uninteresting differences between blocks are orthogonal to the major biological variation,
 such that taking the first few PCs will focus on the latter and remove the former.
-In practice, blocking during PCA is usually not sufficient for batch correction.
-Most batch effects tend to have some biological component that will be retained within the first few PCs.
-This requires some additional effort to remove (see Chapter \@ref(batch-correction)) prior to downstream steps like clustering.
-Nonetheless, blocking is still helpful as it eliminates at least some of the batch effect and preserves more biological signal in the top PCs.
+In practice, blocking during PCA is usually not sufficient to remove differences between blocks,
+as they tend to have some biological component that will be preserved within the first few PCs.
+Removal requires some additional effort (see Chapter \@ref(batch-correction)) prior to downstream steps like clustering.
+Nonetheless, blocking is still helpful as it eliminates at least some of these differences and preserves more biological signal in the top PCs.
 
 To be more precise, the default behavior of `block=` is to use the residuals to compute the rotation matrix but not the PC scores.
-This reduces the influence of the batch effect on the low-dimensional embedding but does not explicitly remove it.
+This reduces the influence of block-to-block differences on the low-dimensional embedding but does not explicitly remove it.
 In contrast, setting `components.from.residuals=TRUE` yields PC scores that are also derived from the residuals.
-This serves as a batch correction step but is only correct in very limiting circumstances,
-e.g., assuming all batches have the same subpopulation composition and the batch effect is consistent for all cell subpopulations.
+This removes the differences between blocks but is only correct in very limiting circumstances,
+e.g., assuming all blocks have the same subpopulation composition and the difference between blocks is consistent for all cell subpopulations.
 Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
 In our 416B example, the two subpopulations are now forced together (Figure \@ref(fig:pca-residuals-416b)) for better or worse.
 
@@ -198,12 +201,12 @@ sce.resid.416b <- runPca.se(
     sce.var.416b,
     features=is.hvg.416b,
     number=20,
-    block=sce.var.416b$batch,
+    block=sce.var.416b$block,
     more.pca.args=list(components.from.residuals=TRUE)
 )
 
 library(scater)
-plotReducedDim(sce.resid.416b, dimred="PCA", colour_by="batch")
+plotReducedDim(sce.resid.416b, dimred="PCA", colour_by="block")
 ```
 
 As with HVGs, we should only use `block=` for experimental factors that are not interesting.
