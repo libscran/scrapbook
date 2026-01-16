@@ -128,16 +128,16 @@ length(hvgs.all.10x)
 sce.all.10x <- runPca.se(sce.var.10x, features=hvgs.all.10x)
 ```
 
-## Handling multiple batches {#variance-batch}
+## Blocking on uninteresting factors {#variance-block}
 
-Larger datasets may contain multiple batches that exhibit uninteresting differences in gene expression, i.e., batch effects.
-We are not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
-We demonstrate using some trophoblast scRNA-seq data generated across two batches [@lun2017assessing]:
+Larger datasets may contain multiple blocks of cells that exhibit uninteresting differences in gene expression, e.g., batch effects, variability between donors.
+We are not interested in HVGs that are driven by these differences; instead, we want to focus on genes that are highly variable within each block.
+We demonstrate using some trophoblast scRNA-seq data generated across two plates [@lun2017assessing]:
 
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
-table(sce.tropho$block) # plate of origin, which is our batch.
+table(sce.tropho$block) # i.e., the plate of origin. 
 
 # Computing the QC metrics.
 library(scrapper)
@@ -158,10 +158,9 @@ sce.norm.tropho <- normalizeRnaCounts.se(
 )
 ```
 
-Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each batch.
-This ensures that any differences between batches will not inflate the variance estimates.
-It will also fit a separate trend for each batch, which accommodates differences in the mean-variance relationships between batches.
-This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.
+Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each plate.
+This ensures that any systematic technical differences between plates (e.g., in sequencing depth) will not inflate the variance estimates.
+It will also fit a separate trend for each plate, which accommodates differences in the mean-variance relationships between plates.
 In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
 
 ```{r trend-plot-tropho, fig.width=10, fig.asp=0.5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
@@ -184,8 +183,8 @@ for (block in colnames(per.block)) {
 }
 ```
 
-When `block=` is set, `chooseRnaHVgs.se()` will report the average statistics across batches for feature selection.
-This ensures that each batch contributes some information about the variability of each gene. 
+When `block=` is set, `chooseRnaHVgs.se()` will report the average statistics across blocks for feature selection.
+This ensures that each blocks contributes some information about the variability of each gene. 
 We then use the average residuals to select our top HVGs as described previously.
 An alternative approach would be to take the intersection or union of the HVGs from each block, but this does not scale well,
 i.e., it becomes too stringent or too relaxed, respectively, as the number of blocks increases.
