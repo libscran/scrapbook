@@ -54,7 +54,14 @@ sce.var.zeisel <- chooseRnaHvgs.se(
 sce.pcs.zeisel <- runPca.se(sce.var.zeisel, features=rowData(sce.var.zeisel)$hvg, number=25)
 ```
 
-We compute the $t$-SNE from the PCs to exploit the data compaction and noise removal of the PCA.
+We compute the $t$-SNE from the PC scores to take advantage of the data compaction and noise removal of the PCA.
+Specifically, we calculate distances in the PC space^[
+For the purposes of this chapter, the PC space is still "high-dimensional". 
+We started with extremely high-dimensional data in our expression matrix (tens of thousands of genes),
+got down to more regular high-dimensional data after PCA (tens of PCs),
+and are now trying to get to a low-dimensional embedding (2, or maybe even 3 dimensions)
+that our feeble human minds can comprehend.] 
+to identify the nearest neighbors for each cell, which are then used for $t$-SNE layout optimization. 
 This yields a 2-dimensional embedding in which neighboring cells have similar expression profiles.
 In Figure \@ref(fig:tsne-brain), we see that cells organize into distinct subpopulations corresponding to their cell types.
 
@@ -102,8 +109,9 @@ This, in turn, helps us sneak into conferences where we can disseminate our _MAL
 
 These days, $t$-SNE has largely been supplanted in the community's consciousness by uniform manifold approximation and projection (UMAP) [@mcInnes2018umap].
 UMAP is roughly similar to $t$-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space.
-However, the two methods are based on different theory that manifests as a different visualization (Figure \@ref(fig:umap-brain)).
+However, the two methods are based on different theoretical principles that manifest as different visualizations.
 Compared to $t$-SNE, UMAP tends to produce more compact visual clusters with more empty space between them.
+We demonstrate on the Zeisel dataset where the UMAP is calculated on nearest neighbors identified from the PCs (Figure \@ref(fig:umap-brain)).
 
 ```{r umap-brain, fig.cap="UMAP plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, coloured according to the published annotation."}
 sce.umap.zeisel <- runUmap.se(sce.pcs.zeisel)
