@@ -43,7 +43,7 @@ url: "`r .gh_url`"
 Single-cell RNA-sequencing (scRNA-seq) - the name says it all, really.
 Long story short, we isolate single cells and we sequence their transcriptomes to quantify the expression of each gene in each cell [@kolodziejczyk2015technology].
 Our aim is to explore heterogeneity in a cell population at the resolution of individual cells,
-typically to identify subpopulations or states that would not be apparent from population-level (bulk) assays.
+typically to identify subpopulations or states that would not be apparent from population-level (i.e., "bulk") assays.
 Since its inception, scRNA-seq has emerged as one of the premier techniques for publishing genomics papers.
 Occasionally, it is even used to do some actual science.
 

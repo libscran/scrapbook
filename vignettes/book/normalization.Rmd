@@ -212,7 +212,7 @@ but it usually needs to be followed by more sophisticated methods (Chapter \@ref
 ## Normalization by spike-ins
 
 Occasionally, we might come across an scRNA-seq dataset with spike-in counts, which gives us the opportunity to perform spike-in normalization [@lun2017assessing]^[
-And to brazenly rack up some gratuitous self-citations to boost our $h$-index.].
+And to rack up some shameless self-citations to boost our $h$-index.].
 This assumes that (i) the same amount of spike-in RNA was added to each cell and (ii) the spike-in transcripts respond to experimental biases in the same relative manner as endogenous genes.
 Thus, any systematic difference in the coverage of the spike-in transcripts can attributed to cell-specific biases, e.g., in capture efficiency or sequencing depth.
 To remove these biases, we equalize spike-in coverage across cells by scaling with "spike-in size factors".
