@@ -309,20 +309,21 @@ Weakly expressed genes will often have low log-fold changes due to the pseudo-co
 and genes that separate closely-related clusters will usually have smaller log-fold changes.
 Prematurely using a large threshold will prevent the detection of these potentially interesting genes.
 
-## Handling multiple batches {#marker-batch}
+## Blocking on uninteresting factors {#marker-block}
 
-Larger datasets may contain multiple batches with uninteresting differences between batches.
-These batch effects can interfere with marker gene detection by 
+Larger datasets may contain multiple blocks of cells where the differences between blocks are uninteresting, e.g., batch effects, variability between donors.
+These differences can interfere with marker gene detection by 
 (i) inflating the variance within each cluster and
-(ii) distorting the log-fold changes if the cluster composition varies between batches.
-To avoid these issues, we block on the batch of origin for each cell when computing the effect sizes.
-Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two batches:
+(ii) distorting the log-fold changes if the cluster composition varies between blocks.
+To avoid these issues, we block on any uninteresting factors when computing the effect sizes.
+Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two plates,
+where any differences between plates are technical and should not be allowed to influence the marker statistics.
 
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
 sce.tropho$block <- factor(sce.tropho$block)
-table(sce.tropho$block) # plate of origin, which is our batch.
+table(sce.tropho$block) # i.e., plate of origin.
 
 # Computing the QC metrics. For brevity, we'll skip the spike-ins. 
 library(scrapper)
@@ -343,26 +344,26 @@ sce.pca.tropho <- runPca.se(sce.var.tropho, features=rowData(sce.var.tropho)$hvg
 sce.nn.tropho <- runAllNeighborSteps.se(sce.pca.tropho)
 ```
 
-We set `block=` to instruct `scoreMarkers.se()` to perform the pairwise comparisons separately in each batch.
-Specifically, for a comparison between two clusters, we compute one effect size per batch where we only use cells in that batch.
-By performing comparisons within each batch, we cancel out any batch effects so that they do not interfere with our effect sizes.
-The per-batch effect sizes are then averaged across batches to obtain a single value per comparison,
-using a weighted mean that accounts for the number of cells involved in the comparison in each batch.
-A similar average across batches is computed for the mean log-expression and proportion of detected cells. 
+We set `block=` to instruct `scoreMarkers.se()` to perform the pairwise comparisons separately in each block, i.e., plate.
+Specifically, for a comparison between two clusters, we compute one effect size per plate where we only use cells in that plate.
+By performing comparisons within each plate, we cancel out any differences between plates so that they do not interfere with our effect sizes.
+The per-plate effect sizes are then averaged across plates to obtain a single value per comparison,
+using a weighted mean that accounts for the number of cells involved in the comparison in each plate.
+A similar average across plates is computed for the mean log-expression and proportion of detected cells. 
 
 ```{r}
 markers.tropho <- scoreMarkers.se(sce.nn.tropho, sce.nn.tropho$clusters, block=sce.nn.tropho$block)
 previewMarkers(markers.tropho[["1"]])
 ```
 
-For simplicity, we do not explicitly penalize genes that behave inconsistently across batches.
-This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all batches.
-That said, it is theoretically possible for a top marker to have highly variable effect sizes across batches, as long as the average is large.
-We can check this by visualizing the expression profile of each gene of interest with respect to the batch (Figure \@ref(fig:markers-violin-batch)).
-Ideally, each gene would behave consistently across batches as this is the easiest to interpret -
-namely, any conclusions about the biological identity of a cluster will be applicable to all batches.
+For simplicity, we do not explicitly penalize genes that behave inconsistently across blocks.
+This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all blocks.
+That said, it is theoretically possible for a top marker to have highly variable effect sizes across plates, as long as the average is large.
+We can check this by visualizing the expression profile of each gene of interest with respect to the plate (Figure \@ref(fig:markers-violin-block)).
+Ideally, each gene would behave consistently across plates as this is the easiest to interpret -
+namely, any conclusions about the biological identity of a cluster will be applicable to all plates.
 
-```{r markers-violin-batch, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each batch (panel).")}
+```{r markers-violin-block, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).")}
 plotExpression(
     sce.nn.tropho,
     features=rownames(markers.tropho[["1"]])[1],
@@ -373,11 +374,11 @@ plotExpression(
     facet_grid(~block)
 ```
 
-Blocking assumes that each pair of clusters is present in at least one batch.
-In scenarios where cells from two clusters never co-occur in the same batch,
+Blocking in `scoreMarkers.se()` assumes that each pair of clusters is present in at least one block in order to perform a comparison within the block.
+In scenarios where cells from two clusters never co-occur in the same block,
 the associated pairwise comparison will be impossible and is ignored during calculation of summary statistics.
-This can be problematic in rare situations where the batches are perfectly confounded with the clusters,
-though marker detection is likely the least of our concerns with this kind of experimental design. 
+This can be problematic in rare situations where the blocks are perfectly confounded with the clusters,
+though marker detection is likely to be the least of our concerns with an experimental design of this calibre. 
 
 ## More uses for the marker scores 
 

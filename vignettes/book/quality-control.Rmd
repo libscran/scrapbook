@@ -347,84 +347,84 @@ sce.relaxed.10x <- quickRnaQc.se(
 summary(sce.relaxed.10x$keep)
 ```
 
-## Handling multiple batches {#qc-batch}
+## Blocking on experimental factors {#qc-block}
 
-More complex studies may involve multiple batches of cells generated with different experimental parameters, e.g., sequencing depth.
-In such cases, it makes little sense to compute medians and MADs from a mixture distribution containing samples from multiple batches.
-For example, if the sequencing coverage is lower in one batch compared to the others, the median will be dragged down and the MAD will be inflated.
-This will reduce the suitability of the adaptive threshold for each batch.
+More complex studies may involve multiple blocks of cells generated with different experimental parameters, e.g., sequencing depth.
+In such cases, it makes little sense to compute medians and MADs from a mixture distribution containing samples from multiple blocks.
+For example, if the sequencing coverage is lower in one block compared to the others, the median will be dragged down and the MAD will be inflated.
+This will reduce the suitability of the adaptive threshold for each block.
 
-A possibly better approach is to compute an adaptive threshold separately for each batch, under the assumption that most cells in each batch are of high quality.
+A possibly better approach is to compute an adaptive threshold separately for each block, under the assumption that most cells in each block are of high quality.
 We illustrate using our 416B dataset again, which actually contains two experimental factors that we previously ignored:
 the microwell plate in which each cell was processed, and whether the expression of a _CBFB-MYH11_ oncogene was induced by doxycycline treatment.
-For the purposes of QC, we will consider each unique combination of these factors to be an experimental batch,
+For the purposes of QC, we will consider each unique combination of these factors to be an experimental block,
 as both have the potential to alter the QC metrics, e.g., different sequencing coverage in each run or different RNA content after treatment.
-Setting `block=` in `quickRnaQc.se()` yields a separate threshold for each batch (Figure \@ref(fig:qc-dist-416b-batch)),
-which may be more appropriate than a common threshold across all batches.
+Setting `block=` in `quickRnaQc.se()` yields a separate threshold for each block (Figure \@ref(fig:qc-dist-416b-block)),
+which may be more appropriate than a common threshold across all blocks.
 
-```{r qc-dist-416b-batch, fig.asp=1, fig.wide=TRUE, fig.fullwidth=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
+```{r qc-dist-416b-block, fig.asp=1, fig.wide=TRUE, fig.fullwidth=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
 # Making a combined factor for easier reading.
 plate.416b <- sce.416b$block # i.e., the plate of origin.
 pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
-batch.416b <- paste0(pheno.416b, "-", plate.416b)
+block.416b <- paste0(pheno.416b, "-", plate.416b)
 
-sce.batch.416b <- quickRnaQc.se(
+sce.block.416b <- quickRnaQc.se(
     sce.416b,
     subsets=list(MT=is.mito.416b),
     altexp.proportions="ERCC",
-    block=batch.416b
+    block=block.416b
 )
-qc.thresh.batch.416b <- metadata(sce.batch.416b)$qc$thresholds
-qc.thresh.batch.416b
-summary(sce.batch.416b$keep)
+qc.thresh.block.416b <- metadata(sce.block.416b)$qc$thresholds
+qc.thresh.block.416b
+summary(sce.block.416b$keep)
 
 library(scater)
-sce.batch.416b$combined.batch <- batch.416b
+sce.block.416b$combined.block <- block.416b
 gridExtra::grid.arrange(
-    plotColData(sce.batch.416b, y="sum", x="combined.batch", colour_by="keep") +
-        categoricalHlinesNamed(qc.thresh.batch.416b$sum, levels=NULL, linetype="dashed", color="red") +
+    plotColData(sce.block.416b, y="sum", x="combined.block", colour_by="keep") +
+        categoricalHlinesNamed(qc.thresh.block.416b$sum, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         scale_y_log10() +
         ggtitle("Total count"),
-    plotColData(sce.batch.416b, y="detected", x="combined.batch", colour_by="keep") +
-        categoricalHlinesNamed(qc.thresh.batch.416b$detected, levels=NULL, linetype="dashed", color="red") +
+    plotColData(sce.block.416b, y="detected", x="combined.block", colour_by="keep") +
+        categoricalHlinesNamed(qc.thresh.block.416b$detected, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         scale_y_log10() +
         ggtitle("Detected features"),
-    plotColData(sce.batch.416b, y="subset.proportion.MT", x="combined.batch", colour_by="keep") + 
-        categoricalHlinesNamed(qc.thresh.batch.416b$subset.proportion$MT, levels=NULL, linetype="dashed", color="red") +
+    plotColData(sce.block.416b, y="subset.proportion.MT", x="combined.block", colour_by="keep") + 
+        categoricalHlinesNamed(qc.thresh.block.416b$subset.proportion$MT, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("Mito proportion"),
-    plotColData(sce.batch.416b, y="subset.proportion.ERCC", x="combined.batch", colour_by="keep") + 
-        categoricalHlinesNamed(qc.thresh.batch.416b$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
+    plotColData(sce.block.416b, y="subset.proportion.ERCC", x="combined.block", colour_by="keep") + 
+        categoricalHlinesNamed(qc.thresh.block.416b$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
         scale_x_discrete(guide = guide_axis(angle = 45)) +
         ggtitle("ERCC proportion"),
     ncol=2
 )
 ```
 
-That said, outlier detection will not be effective if a batch does not contain a majority of high-quality cells.
+That said, outlier detection will not be effective if a block does not contain a majority of high-quality cells.
 For example, some donors in the @grun2016denovo human pancreas dataset have higher ERCC proportions (Figure \@ref(fig:qc-plot-pancreas)), probably corresponding to damaged cells.
-This inflates the median and MAD and reduces the effectiveness of the QC filtering in those batches.
+This inflates the median and MAD and reduces the effectiveness of the QC filtering in those blocks.
 
 ```{r qc-plot-pancreas, fig.wide=TRUE, fig.asp=0.5, fig.cap="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds."}
-sce.batch.grun <- quickRnaQc.se(
+sce.block.grun <- quickRnaQc.se(
     sce.grun,
     subsets=list(),
     altexp.proportions="ERCC",
     block=sce.grun$donor
 )
-qc.thresh.batch.grun <- metadata(sce.batch.grun)$qc$thresholds
-qc.thresh.batch.grun
-summary(sce.batch.grun$keep)
+qc.thresh.block.grun <- metadata(sce.block.grun)$qc$thresholds
+qc.thresh.block.grun
+summary(sce.block.grun$keep)
 
-plotColData(sce.batch.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
-    categoricalHlinesNamed(qc.thresh.batch.grun$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
+plotColData(sce.block.grun, x="donor", y="subset.proportion.ERCC", colour_by="keep") +
+    categoricalHlinesNamed(qc.thresh.block.grun$subset.proportion$ERCC, levels=NULL, linetype="dashed", color="red") +
     ggtitle("ERCC prop")
 ```
 
-For such problematic batches, some manual intervention may be necessary to set an appropriate threshold. 
-A simple solution is to just derive a threshold from the other batches, e.g., by taking the average (Figure \@ref(fig:qc-plot-pancreas-fixed)).
+For such problematic blocks, some manual intervention may be necessary to set an appropriate threshold. 
+A simple solution is to just derive a threshold from the other blocks, e.g., by taking the average (Figure \@ref(fig:qc-plot-pancreas-fixed)).
 This restores some semblance of QC to remove the bulk of damaged cells in the affected donors.
 Hopefully, those cells really are damaged and we aren't accidentally removing a real subpopulation of small cells that are unique to those donors^[But who knows?].
 
@@ -432,10 +432,10 @@ Hopefully, those cells really are damaged and we aren't accidentally removing a 
 okay.donors <- c("D17", "D2", "D7")
 bad.donors <- setdiff(unique(sce.grun$donor), okay.donors)
 
-qc.thresh.fixed.grun <- qc.thresh.batch.grun
-qc.thresh.fixed.grun$sum[bad.donors] <- mean(qc.thresh.batch.grun$sum[okay.donors])
-qc.thresh.fixed.grun$detected[bad.donors] <- mean(qc.thresh.batch.grun$detected[okay.donors])
-qc.thresh.fixed.grun$subset.proportion$ERCC[bad.donors] <- mean(qc.thresh.batch.grun$subset.proportion$ERCC[okay.donors])
+qc.thresh.fixed.grun <- qc.thresh.block.grun
+qc.thresh.fixed.grun$sum[bad.donors] <- mean(qc.thresh.block.grun$sum[okay.donors])
+qc.thresh.fixed.grun$detected[bad.donors] <- mean(qc.thresh.block.grun$detected[okay.donors])
+qc.thresh.fixed.grun$subset.proportion$ERCC[bad.donors] <- mean(qc.thresh.block.grun$subset.proportion$ERCC[okay.donors])
 
 sce.fixed.grun <- quickRnaQc.se(
     sce.grun,

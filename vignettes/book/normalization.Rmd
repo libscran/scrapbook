@@ -146,7 +146,7 @@ We might see a variety of other transformations in the wild:
 
 In practice, the log-transformation is a good default choice due to its simplicity and interpretability, and is what we will be using for all downstream analyses.
 
-## Handling multiple batches
+## Blocking on experimental batches 
 
 Sometimes, our dataset consists of multiple batches of cells that were generated at different sequencing depths.
 Library size normalization is still applicable but some care is required if the coverage differs dramatically between batches.
@@ -177,7 +177,7 @@ plotColData(sce.qc.brain, x='study', y='sum') + scale_y_log10()
 ```
 
 A more conservative approach is to scale down the Tasic counts to match the coverage of the Zeisel data.
-We supply the batch assignments to `block=` in `centerSizeFactors()`, which adjusts the size factors to scale all cells down to the lowest-coverage batch.
+We specify the study of origin for each cell in `block=`, which adjusts the size factors to scale all cells down to the lowest-coverage batch.
 This avoids amplication of sampling noise at the cost of greater shrinkage when counts are scaled down relative to the pseudo-count (Section \@ref(norm-centering)).
 In effect, we are forcibly reducing the contribution of low-abundance genes in the Tasic data to be consistent with their behavior in the Zeisel data.
 Hopefully, there's still enough signal among the higher-abundance genes to find something interesting in later analysis steps.
