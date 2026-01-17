@@ -143,7 +143,7 @@ This avoids the formation of multiple clusters that represent the same cell type
 Such redundant clusters are annoying to interpret as we have to (i) inspect more clusters to discover the same biology and (ii) match them up to each other for further analyses.
 In addition, the correction increases the number of cells in any subpopulations that are shared across batches.
 This provides some opportunities for improved resolution of rare subpopulations during the clustering step^[
-This benefit is probably not that reliable as it assumes that the correction algorithm manages to preserve the rare subpopulations.
+Though this benefit is probably not that reliable as it assumes that the correction algorithm manages to preserve the rare subpopulations.
 Indeed, both MNN correction and graph clustering are based on $k$-nearest neighbors with similar choices for $k$,
 so if a cell type is too rare to form a separate cluster within a single batch, it's unlikely to form correct MNN pairs either.].
 
@@ -267,7 +267,10 @@ One example is the biological variability between replicate samples (e.g., donor
 We are generally uninterested in systematic differences between samples, which might cause cells of the same type to form separate clusters based on their sample of origin.
 In these replicated experiments, we might consider removing this sample-to-sample variability by treating each sample as a batch in `correctMnn.se()`.
 Similarly, we could apply batch correction to any uninteresting categorical factor in our dataset, e.g., sex, genotype, cell cycle phase.
-Admittedly, we're misusing the word "batch" here, but we're already halfway into this chapter and we don't want to rewrite the text so just bear with it until the end.
+Admittedly, we're misusing the word "batch" here^[
+A better name would be "block", which is what we use to describe uninteresting factors in the rest of the book.
+But "block correction" sounds weird and crypto-related so we just decided to stick with "batch" in the chapter name.],
+but we're already halfway into this chapter so let's just bear with it until the end.
 
 Now, what happens if different samples contain cells from different experimental conditions?
 Say we have two samples where one contains control cells and the other contains drug-treated cells.
