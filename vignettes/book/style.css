@@ -12,15 +12,22 @@ p.caption {
   color: #777;
   margin-top: 10px;
 }
+
 p code {
   white-space: inherit;
 }
+
 pre {
   word-break: normal;
   word-wrap: normal;
 }
+
 pre code {
   white-space: inherit;
+}
+
+pre code:not(.sourceCode) {
+  color: dimgrey !important;
 }
 
 .book .book-summary {
@@ -42,4 +49,8 @@ pre code {
 
 .book .book-body .page-wrapper .page-inner section.normal h3 {
   color: #1a81c2;
+}
+
+.book .book-body .page-wrapper .page-inner {
+  max-width: 1200px !important;
 }

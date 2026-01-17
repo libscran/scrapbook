@@ -10,4 +10,16 @@ language:
     tab: "Table "
 cover-image: "images/cover.png"
 output_dir: "docs"
-rmd_files: ["index.Rmd"]
+rmd_files: [
+    "index.Rmd",
+    "quality-control.Rmd",
+    "normalization.Rmd",
+    "feature-selection.Rmd",
+    "principal-components-analysis.Rmd",
+    "visualization.Rmd",
+    "clustering.Rmd",
+    "marker-detection.Rmd",
+    "batch-correction.Rmd",
+    "cite-seq.Rmd",
+    "epilogue.Rmd"
+    ]
