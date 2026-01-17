@@ -13,7 +13,9 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-One of the major aims of scRNA-seq data analysis is to generate a pretty figure that visualizes the distribution of cells.
+One of the major aims of scRNA-seq data analysis is to generate a pretty figure that visualizes the distribution of cells^[
+A cynical person might say that this is the only aim of single-cell technologies, judging by a brief perusal of some recent manuscripts.
+But we would _never_ be so pessimistic.].
 This is not straightforward as our data contains too many dimensions, even after PCA (Chapter \@ref(principal-components-analysis)).
 We can't just create FACS-style biaxial plots of each gene/PC against another as there would be too many plots to examine.
 Instead, we use more aggressive dimensionality reduction methods that can represent our population structure in a two-dimensional embedding.
@@ -52,7 +54,14 @@ sce.var.zeisel <- chooseRnaHvgs.se(
 sce.pcs.zeisel <- runPca.se(sce.var.zeisel, features=rowData(sce.var.zeisel)$hvg, number=25)
 ```
 
-We compute the $t$-SNE from the PCs to exploit the data compaction and noise removal of the PCA.
+We compute the $t$-SNE from the PC scores to take advantage of the data compaction and noise removal of the PCA.
+Specifically, we calculate distances in the PC space^[
+For the purposes of this chapter, the PC space is still "high-dimensional". 
+We started with extremely high-dimensional data in our expression matrix (tens of thousands of genes),
+got down to more regular high-dimensional data after PCA (tens of PCs),
+and are now trying to get to a low-dimensional embedding (2, or maybe even 3 dimensions)
+that our feeble human minds can comprehend.] 
+to identify the nearest neighbors for each cell, which are then used for $t$-SNE layout optimization. 
 This yields a 2-dimensional embedding in which neighboring cells have similar expression profiles.
 In Figure \@ref(fig:tsne-brain), we see that cells organize into distinct subpopulations corresponding to their cell types.
 
@@ -93,14 +102,16 @@ $t$-SNE will inflate dense clusters and compress sparse ones, so we cannot use t
 The algorithm is not obliged to preserve the relative locations of non-neighboring clusters, so we cannot use their positions to determine relationships between distant clusters.
 Many liberties were taken with the data in order to squish it into a two-dimensional representation, so it's worth being skeptical of the fidelity of that representation.
 That said, the $t$-SNE plots are pretty and historically popular so get used to seeing them^[
-Personally, I like $t$-SNE plots because they look a bit like histology slides, which can trick the casual reader into thinking that I'm a real biologist.].
+Personally, we like $t$-SNE plots because they look a bit like histology slides, which can trick those who don't know us into thinking that we're a real biologist.
+This, in turn, helps us sneak into conferences where we can disseminate our _MALAT1_ propaganda on an unsuspecting audience.].
 
 ### Uniform manifold approximation and projection
 
 These days, $t$-SNE has largely been supplanted in the community's consciousness by uniform manifold approximation and projection (UMAP) [@mcInnes2018umap].
 UMAP is roughly similar to $t$-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space.
-However, the two methods are based on different theory that manifests as a different visualization (Figure \@ref(fig:umap-brain)).
+However, the two methods are based on different theoretical principles that manifest as different visualizations.
 Compared to $t$-SNE, UMAP tends to produce more compact visual clusters with more empty space between them.
+We demonstrate on the Zeisel dataset where the UMAP is calculated on nearest neighbors identified from the PCs (Figure \@ref(fig:umap-brain)).
 
 ```{r umap-brain, fig.cap="UMAP plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, coloured according to the published annotation."}
 sce.umap.zeisel <- runUmap.se(sce.pcs.zeisel)
@@ -143,7 +154,7 @@ however, this is not applicable when distant subpopulations are completely disco
 From a practical perspective, UMAP is often faster than $t$-SNE, which is an important consideration for large datasets.
 In any case, much of the same skepticism that we expressed for $t$-SNE is still applicable to UMAP, as a great deal of information is lost when flattening the data into two dimensions.
 
-If we can't decide between a UMAP and a $t$-SNE, we can just compute them both^[Porque no los dos?] via the `runAllNeighborSteps.se()` function.
+If we can't decide between a UMAP and a $t$-SNE, we can just compute them both^[¿Por qué no los dos?] via the `runAllNeighborSteps.se()` function.
 This runs both functions in parallel, along with the graph-based clustering described in Chapter \@ref(clustering).
 It also optimizes the nearest neighbor search by performing it once and re-using the results across multiple graph-related functions.
 
@@ -162,13 +173,13 @@ Thus, if we see multiple cell types or clusters in a single unbroken "island" in
 
 Less can be said about non-neighboring cells/clusters as there is no guarantee that large distances are faithfully recapitulated in the embedding.
 We can conclude that cells in distinct visual clusters are indeed different, but comparing distances between clusters is usually pointless^[
-I've seen people do this with a ruler, to "prove" that one cell type is more closely related to another.].
+We've seen people do this with a ruler, to "prove" that one cell type is more closely related to another.].
 As a thought exercise, imagine a dataset with 4 cell types arranged in three-dimensional space as a regular tetrahedron^[
 A triangular pyramid where all edges are the same length.].
 All cell types are equally distant from each other, but it is impossible to preserve this property in a two-dimensional embedding.
 This can lead to some incorrect conclusions about the relative (dis)similarity of the different cell types if we are not careful with our interpretation of the plot.
 
-Personally, I only use the $t$-SNE/UMAP coordinates for visualization.
+Personally, we only use the $t$-SNE/UMAP coordinates for visualization.
 Other steps like clustering still use the higher-rank representation (i.e., the PCs)
 to leverage all of the information in the data without any of the compromises required to obtain a two-dimensional embedding.
 In theory, we could use the $t$-SNE/UMAP coordinates directly for clustering to ensure that any results are directly consistent with the visualization^[

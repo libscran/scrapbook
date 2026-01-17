@@ -14,7 +14,7 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 ## Motivation
 
 Clustering is an unsupervised learning technique that partitions a dataset into groups (clusters) based on the similarities between observations.
-In the context of scRNA-seq, cells in the same cluster will have similar expression profiles but cells in different clusters will be less similar. 
+In the context of scRNA-seq, cells in the same cluster will have similar expression profiles while cells in different clusters will be less similar. 
 By assigning cells into clusters, we summarize our complex scRNA-seq data into discrete categories for easier human interpretation.
 The idea is to attribute some biological meaning to each cluster, typically based on its upregulated marker genes (Chapter \@ref(marker-detection)).
 We can then treat the clusters as proxies for actual cell types/states in the rest of the analysis,
@@ -26,7 +26,7 @@ Popularized by its use in `r CRANpkg("Seurat")`, graph-based clustering is a fle
 We build a graph where each node is a cell that is connected to its nearest neighbors in the high-dimensional space.
 Edges are weighted based on the similarity between the cells involved, with higher weight given to cells that are more closely related.
 Clusters are then identified as "communities" of nodes that are more strongly interconnected in the graph, i.e., edges are concentrated between cells in the same cluster. 
-To demonstrate, we'll pull out the PBMC dataset from 10X Genomics [@zheng2017massively]:
+To demonstrate, let's use the PBMC dataset from 10X Genomics [@zheng2017massively]:
 
 ```{r}
 # Loading in raw data from the 10X output files.
@@ -59,11 +59,11 @@ sce.tsne.10x <- runTsne.se(sce.pca.10x)
 ```
 
 We build a "shared nearest neighbor" (SNN) graph where the cells are the nodes.
-Each cell's set of nearest neighbors is identified from their PC scores,
+Each cell's set of nearest neighbors is identified based on distances in the low-dimensional PC space,
 taking advantage of the compaction and denoising of the PCA (Chapter \@ref(principal-components-analysis).
 Two cells are connected by an edge if they share any of their nearest neighbors,
 where the weight of the edge is defined from the number/rank of the shared neighbors [@xu2015identification].
-We then apply a community detection algorithm on the SNN graph - in this case the multi-level algorithm, also known as Louvain.
+We then apply a community detection algorithm on the SNN graph - in this case, the "multi-level" algorithm, also known as Louvain clustering.
 Each node in the graph becomes a member of a community, giving us a cluster assignment for each cell (Figure \@ref(fig:tsne-clust-graph)).
 
 ```{r tsne-clust-graph, fig.cap="$t$-SNE plot of the 10X PBMC dataset, where each point represents a cell and is coloured according to the identity of the assigned cluster from graph-based clustering."}
@@ -83,7 +83,7 @@ This includes:
 - The edge weighting scheme used in SNN graph construction.
   For example, we could mimic `r CRANpkg("seurat")`'s behavior by using the Jaccard index to weight the edges.
 - The resolution used by the community detection algorithm.
-  Higher values will favor the detection of smaller, finer clusters.
+  Higher values will favor the creation of smaller, finer clusters.
 - The community detection algorithm itself.
   For example, we could switch to the Leiden algorithm, which typically results in finer clusters.
 
@@ -113,7 +113,7 @@ One drawback of graph-based methods is that, after graph construction, no inform
 Sten Linarrsson talked about this at the SCG2018 conference, but I don't know where that work ended up.
 So this is what passes as a reference for the time being.].
 This has some practical consequences in datasets that exhibit differences in cell density.
-More steps through the graph are required to move the same distance through a region of higher cell density.
+More steps through the graph are required to traverse through a region of higher cell density.
 During community detection, this effect "inflates" the high-density regions such that any internal substructure is more likely to cause formation of subclusters.
 Thus, the resolution of the clustering becomes dependent on the density of cells, which can occasionally be misleading if it overstates the heterogeneity in the data.
 
@@ -132,7 +132,7 @@ table(out, rep(1:2, c(nrow(a), nrow(b))))
 ```
 
 On a practical note, the `runAllNeighborSteps.se()` function performs graph-based clustering alongside the $t$-SNE and UMAP.
-This is more efficient than calling each function separately, though results may be slightly different due to how the neighbor search results are shared. 
+This is more efficient than calling each function separately, though results may be slightly different due to how the neighbor search results are shared across steps. 
 We can sacrifice some speed for exact equality to the `clusterGraph.se()` results by setting `collapse.search=FALSE`.
 
 ```{r}
@@ -156,9 +156,9 @@ plotReducedDim(sce.kmeans.10x, "TSNE", colour_by="clusters")
 ```
 
 If we're not satisfied with the results, we can just tinker with the parameters.
-Obviously, we could just increase $k$ to obtain a greater number of smaller clusters. 
+Most obviously, we could just increase $k$ to obtain a greater number of smaller clusters. 
 We could also alter the initialization and refinement strategies, though the effects of doing so are less clear.
-(By default, our initialization uses the variance partitioning approach [@su2007search], which avoids the randomness of other approaches.)
+(By default, our initialization uses variance partitioning [@su2007search], which avoids the randomness of other approaches.)
 
 ```{r}
 sce.kmeans20.10x <- clusterKmeans.se(sce.tsne.10x, k=20)
@@ -173,8 +173,8 @@ table(sce.lloyd.10x$clusters)
 
 The major drawback of $k$-means clustering is that we need to specify $k$ in advance.
 It is difficult to select a default value that works well for a variety of datasets.
-If it is larger than the number of distinct subpopulations, we will overcluster, i.e., split subpopulations into smaller clusters;
-if it is smaller than the number of subpopulations, we will undercluster, i.e., group multiple subpopulations into a single cluster.
+If $k$ is larger than the number of distinct subpopulations, we will overcluster, i.e., split subpopulations into smaller clusters;
+but if $k$ is smaller than the number of subpopulations, we will undercluster, i.e., group multiple subpopulations into a single cluster.
 We might consider some methods to automatically determine a "suitable" value for $k$, e.g., by maximizing the gap statistic [@tibshirani2001estimating].
 This can be computationally intensive as it involves repeated clusterings at a variety of possible $k$.
 
@@ -200,9 +200,9 @@ gap.10x <- clusGap(
 maxSE(f = gap.10x$Tab[,"gap"], SE.f = gap.10x$Tab[,"SE.sim"])
 ```
 
-In practice, we use $k$-means clustering for vector quantization.
+In practice, we mostly use $k$-means clustering for vector quantization.
 Instead of attempting to interpret the clusters, we treat each centroid as a "pseudo-cell" that represents all of its assigned cells.
-These representatives are used directly in computationally intensive steps, which is more efficient than operating on the per-cell data.
+These representatives are used as the input data of computationally intensive procedures, which is more efficient than operating on the per-cell data.
 We usually set $k$ to a large value such as the square root of the number of cells.
 This yields a set of fine-grained clusters that approximates the underlying distribution of cells in downstream steps, e.g., hierarchical clustering (Figure \@ref(fig:hclust-kmeans-10x)).
 A similar approach is used in `r Biocpkg("SingleR")` to compact large references prior to cell type annotation.
@@ -240,7 +240,7 @@ table(hclust.full.10x)
 What is the "right" number of clusters?
 Which clustering algorithm is "correct"?
 These thoughts have haunted us ever since we did our first scRNA-seq analysis^[
-Indeed, it's a staple question whenever we're reviewing a manuscript and don't have anything better to say.].
+Indeed, it's a staple question for reviewers who don't have anything better to complain about.].
 But with a decade of experience under our belt, our advice is to not worry too much about an "optimal" clustering.
 Just proceed with the rest of the analysis and attempt to assign biological meaning to each cluster (Chapter \@ref(marker-detection)).
 If the clusters represent our cell types/states of interest, great; if not, we can always come back here and fiddle with the parameters.
@@ -256,7 +256,7 @@ This sounds pretty subjective but is pretty much par for the course in data expl
 If you want rigorous statistical analyses with formal hypothesis testing... single-cell genomics might not be the right field for you.].
 
 For what it's worth, there exist many more clustering algorithms that we have not discussed here.
-Some of our favorites include hierarchical clustering, a classic technique that builds a dendrogram to summarize relationships between clusters;
+Off the top of our head, we could suggest hierarchical clustering, a classic technique that builds a dendrogram to summarize relationships between clusters;
 density-based clustering, which adapts to unusual cluster shapes and can ignore outlier points;
 and affinity propagation, which identifies exemplars based on similarities between points.
 All of these methods have been applied successfully to scRNA-seq data and might be worth considering if graph-based clustering isn't satisfactory. 
@@ -265,7 +265,7 @@ For larger datasets, any scalability issues for these methods can be overcome by
 ## Clustering diagnostics
 
 If we really need some "objective" metric of cluster quality^[
-Because the reviewers are on our case.],
+Because of reviewer 2. Yeah, that's right, you know who you are.],
 we can evaluate the stability of each cluster using bootstrap replicates.
 Ideally, the clustering should be stable to perturbations to the input data [@luxburg2010clustering], which increases the likelihood that they can be reproduced in an independent study.
 To quantify stability, we create a "bootstrap replicate" dataset by sampling cells with replacement from the original dataset.
@@ -294,8 +294,13 @@ bootstrap.10x <- bootstrapStability(
 )
 
 library(pheatmap)
-pheatmap(bootstrap.10x, cluster_row=FALSE, cluster_col=FALSE,
-    color=viridis::magma(100), breaks=seq(0, 1, length.out=101))
+pheatmap(
+    bootstrap.10x,
+    cluster_row=FALSE,
+    cluster_col=FALSE,
+    color=viridis::magma(100),
+    breaks=seq(0, 1, length.out=101)
+)
 ```
 
 If even more clustering diagnostics are required, we can choose from a variety of measures of cluster "quality" in the `r Biocpkg("bluster")` package:
@@ -344,7 +349,10 @@ sum(approxSilhouette(as.matrix(iris[,1:4]), iris$Species == "versicolor")$width)
 
 ## Subclustering
 
-Another simple approach to improving resolution is to repeat the feature selection and clustering within a single cluster.
+On occasion, we may want to investigate internal structure within a particular cluster, e.g., to find fine-grained cell subtypes.
+We could just increase the resolution of our clustering algorithm but (i) this is not guaranteed to split our cluster of interest
+and (ii) it could alter the distribution of cells in other clusters that we did not want to change.
+In such cases, a simple alternative is to repeat the feature selection and clustering within the cluster of interest.
 This selects HVGs and PCs that are more relevant to the cluster's internal variation, improving resolution by avoiding noise from unnecessary features.
 The absence of distinct subpopulations also encourages clustering methods to separate cells according to more modest intra-cluster heterogeneity.
 Let's demonstrate on cluster 2 of our PBMC dataset:
@@ -371,9 +379,9 @@ plotReducedDim(sce.subgraph.10x, "TSNE", colour_by="clusters")
 ```
 
 Subclustering can simplify the interpretation of the subclusters, as these only need to be considered in the context of the parent cluster's biological identity.
-For example, if we knew that the parent cluster contained T cells, we could treat the subclusters as T cell subtypes. 
-However, this requires some care due if there is any uncertainty in the identification for the parent cluster.
-If cell types or states span cluster boundaries, conditioning on the putative identity of the parent cluster may be premature,
+For example, if we knew that the parent cluster contained T cells, we could treat all of the subclusters as T cell subtypes.
+However, this requires some care if there is any uncertainty in the identification for the parent cluster.
+If the underlying cell types/states span cluster boundaries, conditioning on the putative identity of the parent cluster may be premature,
 e.g., a subcluster actually represents contamination from a cell type in a neighboring parent cluster.
 
 ## Session information

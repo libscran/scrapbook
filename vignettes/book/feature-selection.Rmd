@@ -15,7 +15,7 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 We often use scRNA-seq data in exploratory analyses to characterize heterogeneity across the cell population.
 Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles,
 which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells.
-The choice of genes to use in this calculation has a major impact on the behavior of the metric and the performance of downstream methods.
+The choice of genes in this calculation has a major impact on the behavior of the metric and the performance of downstream methods.
 We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise.
 In addition to improving signal, this reduces the size of the data to improve computational efficiency of later steps.
 
@@ -26,7 +26,7 @@ In addition to improving signal, this reduces the size of the data to improve co
 Our aim is to select the most highly variable genes (HVGs) based on their expression across the population.
 This assumes that genuine biological differences will manifest as increased variation in the affected genes,
 compared to other genes that are only affected by technical noise or a baseline level of "uninteresting" biological variation (e.g., from transcriptional bursting).
-To demonstrate, we'll pull out the classic PBMC dataset from 10X Genomics [@zheng2017massively]:
+To demonstrate, we'll load the classic PBMC dataset from 10X Genomics [@zheng2017massively]:
 
 ```{r}
 # Loading in raw data from the 10X output files.
@@ -53,7 +53,7 @@ sce.norm.10x
 We compute the variance of the log-normalized expression values for each gene across all cells [@lun2016step].
 We then fit a trend to the variances with respect to the mean (Figure \@ref(fig:trend-plot-pbmc)).
 HVGs are identified as the top $H$ genes with the largest residuals above the trend, where $H$ is typically between 1000 and 5000.
-We use the variances in the log-values to ensure that the feature selection is based on the same expression values that are used for later downstream steps.
+We use the variances of the log-transformed values to ensure that the feature selection is based on the same matrix values that are used in downstream steps.
 Genes with the largest variances will contribute most to the distances between cells during procedures like clustering and dimensionality reduction.
 
 ```{r trend-plot-pbmc, fig.cap="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene, colored according to whether it was chosen as a HVG. The blue line represents the trend fitted to all genes."}
@@ -71,17 +71,21 @@ sum(is.hvg.10x)
 plot(rd.10x$means, rd.10x$variances,
     col=ifelse(is.hvg.10x, "black", "grey"), pch=16, cex=1,
     xlab="Mean of log-expression", ylab="Variance of log-expression")
-legend("topright", col=c("black", "grey"), pch=16, legend=c("non-HVG", "HVG"))
+legend("topright", col=c("black", "grey"), pch=16, legend=c("HVG", "not HVG"))
 
 trend.10x <- approxfun(rd.10x$means, rd.10x$fitted)
 curve(trend.10x, add=TRUE, col="dodgerblue", lwd=2)
 ```
 
-We use residuals to select HVGs as the log-transformation is not a variance stabilizing transformation.
-The assumption is that, at any given abundance, the variation in expression for most genes is driven by uninteresting processes like sampling noise. 
-The fitted value of the trend at any given gene's abundance represents a mean-dependent estimate of its uninteresting variation,
+We use residuals to select HVGs to account for the mean-variance relationship in scRNA-seq data.
+Our assumption is that, at any given mean, the variation in expression for most genes is driven by uninteresting processes like sampling noise. 
+The fitted value of the trend at any given gene's mean represents a mean-dependent estimate of its uninteresting variation,
 while the residuals represent the "interesting" variation for each gene and can be used as the metric for HVG selection.
-If we just used the total variance without any trend, the choice of HVGs would be driven more by the gene's abundance than its biological heterogeneity. 
+By comparison, if we just used the total variance without any trend, the choice of HVGs would be driven more by the gene's abundance than its biological heterogeneity. 
+(In other words, the log-transformation is not a variance-stabilizing transformation^[
+And even VSTs need to deal with a trend at small counts.
+A gene with a mean of zero will also have a variance of zero, and the variance has to become positive with increasing mean, so at some point, a trend will manifest.].)
+This would cause us to neglect lower-abundance genes that exhibit increased variation.
 
 Once we have our top HVGs, we can use them in downstream steps like principal components analysis.
 We'll discuss this more in Chapter \@ref(principal-components-analysis), but it is as simple as using only the subset of HVGs in the analysis:
@@ -96,15 +100,15 @@ How many HVGs should we use in our downstream analyses, i.e., what is the "best"
 A larger set of HVGs will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes,
 at the cost of adding noise from irrelevant genes that might obscure that signal.
 It's difficult to determine the optimal trade-off for any given application as the distinction between noise and signal is context-dependent.
-For example, variation in the activation status of certain immune cells may not be interesting when we are only interested in identifying the cell types;
+For example, variation in the activation status of certain immune cells may not be interesting when we only want to identify the cell types;
 the former can even interfere with the latter by encouraging the formation of clusters based on activation strength instead.
 
-Our recommendation is to simply pick a reasonable $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
+Our recommendation is to simply pick a "reasonable" $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
 If we can answer our scientific question, then our choice is good enough; if not, we can just try another value.
 There's nothing wrong with trying different parameters during data exploration^[
 If would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
 In such cases, it would be improper to shop around for the best parameters that gives us the result that we want.
-Fortunately, single-cell analyses have looser standards as we often don't know what we're looking for.]
+Fortunately, single-cell analyses have looser standards as we often don't know what we're looking for.].
 In fact, different choices of $H$ can provide new perspectives of the same dataset by changing the balance between signal and noise,
 so we might discover new population structure that would not be apparent with other parameters.
 Don't spend too much time worrying about obtaining the "optimal" value.
@@ -124,16 +128,16 @@ length(hvgs.all.10x)
 sce.all.10x <- runPca.se(sce.var.10x, features=hvgs.all.10x)
 ```
 
-## Handling multiple batches {#variance-batch}
+## Blocking on uninteresting factors {#variance-block}
 
-Larger datasets may contain multiple batches that exhibit uninteresting differences in gene expression, i.e., batch effects.
-We are not interested in HVGs that are driven by batch effects; instead, we want to focus on genes that are highly variable within each batch.
-We demonstrate using some trophoblast scRNA-seq data generated across two batches [@lun2017assessing]:
+Larger datasets may contain multiple blocks of cells that exhibit uninteresting differences in gene expression, e.g., batch effects, variability between donors.
+We are not interested in HVGs that are driven by these differences; instead, we want to focus on genes that are highly variable within each block.
+We demonstrate using some trophoblast scRNA-seq data generated across two plates [@lun2017assessing]:
 
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
-table(sce.tropho$block) # plate of origin, which is our batch.
+table(sce.tropho$block) # i.e., the plate of origin. 
 
 # Computing the QC metrics.
 library(scrapper)
@@ -154,10 +158,9 @@ sce.norm.tropho <- normalizeRnaCounts.se(
 )
 ```
 
-Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each batch.
-This ensures that any differences between batches will not inflate the variance estimates.
-It will also fit a separate trend for each batch, which accommodates differences in the mean-variance relationships between batches.
-This is especially important if batches exhibit systematic technical differences, e.g., differences in coverage.
+Setting `block=` instructs `chooseRnaHvgs.se()` to compute the mean and variance for each gene within each plate.
+This ensures that any systematic technical differences between plates (e.g., in sequencing depth) will not inflate the variance estimates.
+It will also fit a separate trend for each plate, which accommodates differences in the mean-variance relationships between plates.
 In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
 
 ```{r trend-plot-tropho, fig.width=10, fig.asp=0.5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
@@ -180,10 +183,10 @@ for (block in colnames(per.block)) {
 }
 ```
 
-`modelGeneVariances()` will report the average statistics across batches for feature selection.
-This ensures that each batch contributes some information about the variability of each gene. 
-We can then use the average residuals to select our top HVGs, as shown below.
-An alternative approach is to take the intersection or union of the HVGs from each block, but this does not scale well,
+When `block=` is set, `chooseRnaHVgs.se()` will report the average statistics across blocks for feature selection.
+This ensures that each blocks contributes some information about the variability of each gene. 
+We then use the average residuals to select our top HVGs as described previously.
+An alternative approach would be to take the intersection or union of the HVGs from each block, but this does not scale well,
 i.e., it becomes too stringent or too relaxed, respectively, as the number of blocks increases.
 
 ```{r}
@@ -197,14 +200,14 @@ However, imagine instead that each plate corresponds to a different treatment co
 In such cases, we might not use `block=` to ensure that our variance estimates can capture the differences between treatments.
 We discuss these considerations in more detail in Chapter \@ref(batch-correction).
 
-As an aside, the wave-like shape observed in Figure \@ref(fig:trend-plot-tropho) is typical of the mean-variance trend for log-expression values.
+As an aside, the wave-like shape observed in Figure \@ref(fig:trend-plot-tropho) is typical of the mean-variance relationship in log-expression values.
 A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero.
 In contrast, the relative contribution of sampling noise decreases at high abundances, resulting in a downward trend.
 The peak represents the point at which these two competing effects cancel each other out.
 
 ## Refining the trend fit
 
-The trend fit in `modelGeneVariances()` uses the LOWESS non-parametric smoother [@cleveland1979robust] by default.
+The trend fit in `chooseRnaHvgs.se()` uses the LOWESS non-parametric smoother [@cleveland1979robust] by default.
 This slides a window across the x-coordinates and performs a linear regression within each window to obtain the fitted value for the point at the window's center.
 The size of the window varies between points, expanding or contracting until it contains some proportion of all points in the dataset (by default, 30%).
 This mostly works well but can be suboptimal in very sparse intervals of the x-axis.
@@ -253,7 +256,7 @@ legend("topright", lwd=2, col=c("dodgerblue", "salmon"), legend=c("default", "mi
 ```
 
 In practice, the parametrization of the trend fitting doesn't matter all that much.
-There are so few genes in these sparse intervals that whether or not they are chosen as HVGs won't have a major effect on downstream analyses.
+There are so few genes in these sparse intervals that their (lack of) selection as HVGs won't have a major effect on downstream analyses.
 But sometimes it's just nice to look at some well-fitted curves.
 
 ## Selecting _a priori_ genes of interest
@@ -333,8 +336,8 @@ until these genes are demonstrably problematic in downstream analyses.
 
 ## Quantifying technical noise
 
-Back in the old days, everyone was all about modelling the gene-wise variability in scRNA-seq data.
-Spike-in transcripts were key to this effort as they allowed us to decompose each gene's variance into technical and biological components. 
+Back in the old days, everyone was obsessed with modelling the gene-wise variability in scRNA-seq data.
+Spike-in transcripts were critical to this effort as they allowed us to decompose each gene's variance into technical and biological components. 
 As spike-ins should not be subject to biological effects, the variance in spike-in expression could be used as an estimate of the technical component. 
 Subtracting this from the variance of an endogenous gene at a similar abundance would then yield an estimate of the biological component.
 Sadly, those days are gone and people don't care about variance decomposition anymore.
@@ -360,9 +363,9 @@ sce.norm.ercc <- normalizeRnaCounts.se(sce.ercc, size.factors=sce.ercc$sum)
 We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
 At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
 This assumes that an endogenous gene is subject to the same technical noise as a spike-in transcript of the same abundance.
-Also note that we use two different sets of size factors - the spike-in factors for the spike-in transcripts and the library size factors for the endogenous genes - 
-as we are not interested in changes in total RNA content.
-We ensure that means are still comparable between genes and spike-ins by centering both sets of size factors to preserve the scale of the original counts. 
+Also note that we only use the spike-in factors for the spike-in transcripts -
+we still use the library size factors for the endogenous genes as we are not interested in changes in total RNA content.
+We ensure that normalized abundances are still comparable between genes and spike-ins by centering both sets of size factors to preserve the scale of the original counts. 
 (This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
 for brevity, we won't show that here.)
 
@@ -388,6 +391,7 @@ To decompose each gene's variance into the technical and biological components,
 we estimate the fitted value of the spike-in trend at that gene's mean and subtract it from the gene's total variance.
 We could then use the biological component to select HVGs via `chooseHighlyVariableGenes()`.
 In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
+Oh well, it is what it is.
 
 ```{r}
 tech.var.zeisel <- trend.spike.zeisel(var.zeisel$means)

@@ -13,21 +13,21 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 
 ## Motivation
 
-Now that we've got our clustering results from Chapter \@ref(clustering), our next step is to identify the genes that drive separation between clusters.
+Now that we've got a clustering from Chapter \@ref(clustering), our next step is to identify the genes that drive separation between clusters.
 Genes that are strongly upregulated in a particular cluster are called "markers" as they define the corresponding cell type/state relative to other cells in the population.
 By examining the annotated functions of the marker genes, we can assign biological meaning to each cluster.
-In the simplest case, if we know that certain genes are upregulated in a particular cell type, clusters with increased expression of the former can be identified as the latter.
-More subtle cell states (e.g., activation status, stress) can also be determined based on the behavior of genes in the affected pathways.
-To detect markers, we simply test for differential expression (DE) between clusters and examine the top DE genes from each comparison.
+In the simplest case, if we know that certain genes are upregulated in a particular cell type, a cluster with increased expression of those genes can be treated as a proxy for that cell type.
+More subtle cell states (e.g., activation status, stress) can also be identified based on the behavior of genes in the affected pathways.
 
 ## Scoring marker genes
 
 ### Comparing pairs of clusters 
 
-We quantify differential expression between each pair of clusters with different effect sizes (Section \@ref(marker-effect-sizes)) 
-and then summarize the effect sizes across comparisons for each cluster (Section \@ref(marker-effect-summaries)).
-These effect size summaries can then be used to obtain a ranking of potential marker genes for each cluster.
-To illustrate, let's pull out our old friend, the PBMC dataset from 10X Genomics [@zheng2017massively].
+Our general strategy is to test for differential expression (DE) between clusters and examine the top DE genes from each comparison.
+Specifically, we quantify the DE between each pair of clusters by computing an effect size for each gene (Section \@ref(marker-effect-sizes)).
+We then summarize the effect sizes across comparisons for each cluster into a single statistic per gene (Section \@ref(marker-effect-summaries)).
+Sorting on one of the effect size summaries yields a ranking of potential marker genes for each cluster.
+To illustrate, let's load our old friend, the PBMC dataset from 10X Genomics [@zheng2017massively].
 
 ```{r}
 # Loading in raw data from the 10X output files.
@@ -64,8 +64,8 @@ Given the clustering and the log-expression values, the `scoreMarkers.se()` func
 Each data frame contains the mean log-expression and the proportion of cells with detected (i.e., non-zero) expression in a particular cluster.
 It also contains multiple columns representing effect size summaries, where each column is named as `<effect size>.<summary type>`,
 e.g., `cohens.d.mean` contains the mean of the Cohen's $d$ across all comparisons involving that cluster.
-Genes with larger `cohens.d.mean` values exhibit stronger upregulation in the current cluster compared to the other clusters.
-By default, `scoreMarkers.se()` orders the rows on `cohens.d.mean` to provide one possible ranking of markers for each cluster.
+Genes with larger `cohens.d.mean` values exhibit stronger upregulation in the current cluster compared to the average of the other clusters.
+By default, `scoreMarkers.se()` orders the rows on `cohens.d.mean`, which represents one possible ranking of markers for each cluster.
 
 ```{r}
 markers.10x <- scoreMarkers.se(sce.nn.10x, sce.nn.10x$clusters, extra.columns="Symbol")
@@ -105,7 +105,7 @@ Different effect sizes or summary statistics can yield alternative rankings that
 
 ### Choice of effect size {#marker-effect-sizes}
 
-For each pairwise comparison, we compute several effect sizes to quantify the magnitude of differential expression.
+For each pairwise comparison, we compute several effect sizes to quantify the magnitude of differential expression between two clusters.
 The choice of effect size influences the types of markers that are prioritized in rankings based on that effect size.
 To demonstrate, we'll look at the different rankings obtained for cluster `r chosen.cluster` with each effect size.
 (For consistency and simplicity, we will use the `.mean` summary in each example.)
@@ -126,8 +126,8 @@ A value of 1 corresponds to upregulation, where all values of our cluster of int
 a value of 0.5 means that there is no difference in the location of the distributions;
 and a value of 0 corresponds to downregulation.
 The AUC is closely related to the $U$ statistic in the Wilcoxon ranked sum test (a.k.a., Mann-Whitney U-test).
-Both the AUC and Cohen's $d$ tend to detect similar markers.
-The AUC is more robust to outliers but less sensitive to the magnitude of the differences between clusters,
+Both the AUC and Cohen's $d$ tend to detect similar markers -
+the former is more robust to outliers but less sensitive to the magnitude of the differences between clusters,
 i.e., a greater difference between clusters will usually result in a larger Cohen's $d$ but may not change the AUC much if it's already close to 0 or 1.
 
 ```{r}
@@ -169,18 +169,18 @@ previewMarkers(chosen.markers.10x, pre.columns='Symbol', order.by="delta.mean.me
 Keep in mind that effect sizes are defined relative to other clusters in the same dataset.
 Biologically meaningful genes will not be detected as markers if they are expressed uniformly throughout the population,
 e.g., T cell markers will not be detected if only T cells are present in the dataset.
-This is usually not a major problem as we should have some prior knowledge about the identity of the general cell population,
-e.g., we know we've isolated T cells^[
+This is usually not a problem as we should have some prior knowledge about the identity of the cell population,
+e.g., we should know we've isolated T cells for our experiment^[
 scRNA-seq experiments aren't exactly cheap, either, so we should have some idea about what we're putting into the sequencer.].
 Nonetheless, if "absolute" identification of cell types is desired, we need to use cell type annotation methods like `r Biocpkg("SingleR")`.
 
 ### Summarizing pairwise effects {#marker-effect-summaries}
 
 As mentioned above, we perform pairwise comparisons between clusters to find differentially expressed genes.
-For each gene, we have one effect size of a given type from each pair of clusters;
+For each gene, we obtain one effect size of a given type from each pair of clusters;
 so in a dataset with $N$ clusters, each cluster will have $N-1$ effect sizes for consideration.
-We summarize these effect sizes for each cluster into key statistics such as the mean and median.
-This allows us to create a ranking based on one of the summary statistics for a given effect size.
+To simplify interpretation, we summarize the effect sizes for each cluster into key statistics such as the mean and median.
+This allows us to create a ranking of potential marker genes based on one of the summary statistics for a given effect size.
 
 The mean and median are the most obvious and general-purpose summary statistics. 
 For cluster $X$, a large mean effect size indicates that the gene is upregulated in $X$ compared to the average of the other groups.
@@ -252,7 +252,7 @@ gridExtra::grid.arrange(
 
 The heatmap is a classic visualization in genomics, and scRNA-seq is no exception (Figure \@ref(fig:marker-heat-pbmc)).
 This provides a compact summary of the relative expression of multiple markers across the cell population.
-Ideally, each marker should be consistently upregulated in our cluster of interest compared to the rest of the cells in the population.
+Ideally, each marker should be consistently upregulated within our cluster of interest compared to the rest of the cells in the population.
 
 ```{r marker-heat-pbmc, fig.wide=TRUE, fig.cap=paste0("Heatmap of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. Each row represents a gene and each column represents a cell. Each entry is colored by the log-fold change for each cell from the mean log-expression for that gene.")}
 plotHeatmap(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], order_columns_by="clusters", swap_rownames="Symbol", center=TRUE)
@@ -262,7 +262,13 @@ Another popular visualization is the `r CRANpkg("seurat")`-style "dot plot"^[
 Back in my day, a "dot plot" referred to a visualization of a pairwise sequence alignment.
 Bet most of you young'uns don't know about that.],
 also known as a bubble plot (Figure \@ref(fig:marker-dot-pbmc)).
-This is more concise than the heatmap as it uses the size of each dot/bubble to represent the proportion of cells with non-detected expression.
+This is more concise than the heatmap as it uses the size of each dot/bubble to represent the proportion of cells with detected expression.
+Personally, we disapprove of using variable areas to represent data as this can generate misleading visualizations^[
+For starters, an $X$-fold change to the area of the bubble is only a $\sqrt{X}$-change to the radius, which requires more mental arithmetic when comparing adjacent bubbles.
+Also, if a bubble is too small, we can't see its contents clearly, effectively discarding the data encoded by its color.
+It gets even worse for certain configurations of the bubble plot where the color represents the mean of the _non-zero_ expression values;
+here, we need to mentally integrate the color of each bubble by its area to get the mean expression for comparisons between clusters.],
+but hey, to each their own.
 
 ```{r marker-dot-pbmc, fig.wide=TRUE, fig.cap=paste0("Dot plot of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters.")}
 plotDots(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], group="clusters", swap_rownames="Symbol", center=TRUE)
@@ -292,7 +298,7 @@ markers.threshold.10x <- scoreMarkers.se(
 chosen.markers.threshold.10x <- markers.threshold.10x[[chosen.cluster]]
 
 # Default ordering by the mean of Cohen's d.
-previewMarkers(chosen.markers.threshold.10x, pre.columns="Symbol") 
+previewMarkers(chosen.markers.threshold.10x, pre.columns="Symbol", post.columns="cohens.d.mean") 
 
 # Also looking at the order by the mean of the AUCs. 
 previewMarkers(chosen.markers.threshold.10x, pre.columns="Symbol", order.by="auc.mean")
@@ -303,20 +309,21 @@ Weakly expressed genes will often have low log-fold changes due to the pseudo-co
 and genes that separate closely-related clusters will usually have smaller log-fold changes.
 Prematurely using a large threshold will prevent the detection of these potentially interesting genes.
 
-## Handling multiple batches {#marker-batch}
+## Blocking on uninteresting factors {#marker-block}
 
-Larger datasets may contain multiple batches with uninteresting differences between batches.
-These batch effects can interfere with marker gene detection by 
+Larger datasets may contain multiple blocks of cells where the differences between blocks are uninteresting, e.g., batch effects, variability between donors.
+These differences can interfere with marker gene detection by 
 (i) inflating the variance within each cluster and
-(ii) distorting the log-fold changes if the cluster composition varies between batches.
-To avoid these issues, we block on the batch of origin for each cell when computing the effect sizes.
-Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two batches:
+(ii) distorting the log-fold changes if the cluster composition varies between blocks.
+To avoid these issues, we block on any uninteresting factors when computing the effect sizes.
+Let's demonstrate on a mouse trophoblast dataset [@lun2017assessing] generated across two plates,
+where any differences between plates are technical and should not be allowed to influence the marker statistics.
 
 ```{r}
 library(scRNAseq)
 sce.tropho <- LunSpikeInData("tropho")
 sce.tropho$block <- factor(sce.tropho$block)
-table(sce.tropho$block) # plate of origin, which is our batch.
+table(sce.tropho$block) # i.e., plate of origin.
 
 # Computing the QC metrics. For brevity, we'll skip the spike-ins. 
 library(scrapper)
@@ -337,26 +344,26 @@ sce.pca.tropho <- runPca.se(sce.var.tropho, features=rowData(sce.var.tropho)$hvg
 sce.nn.tropho <- runAllNeighborSteps.se(sce.pca.tropho)
 ```
 
-We set `block=` to instruct `scoreMarkers.se()` to perform the pairwise comparisons separately in each batch.
-Specifically, for a comparison between two clusters, we compute one effect size per batch where we only use cells in that batch.
-By performing comparisons within each batch, we cancel out any batch effects so that they do not interfere with our effect sizes.
-The per-batch effect sizes are then averaged across batches to obtain a single value per comparison,
-using a weighted mean that accounts for the number of cells involved in the comparison in each batch.
-A similar average across batches is computed for the mean log-expression and proportion of detected cells. 
+We set `block=` to instruct `scoreMarkers.se()` to perform the pairwise comparisons separately in each block, i.e., plate.
+Specifically, for a comparison between two clusters, we compute one effect size per plate where we only use cells in that plate.
+By performing comparisons within each plate, we cancel out any differences between plates so that they do not interfere with our effect sizes.
+The per-plate effect sizes are then averaged across plates to obtain a single value per comparison,
+using a weighted mean that accounts for the number of cells involved in the comparison in each plate.
+A similar average across plates is computed for the mean log-expression and proportion of detected cells. 
 
 ```{r}
 markers.tropho <- scoreMarkers.se(sce.nn.tropho, sce.nn.tropho$clusters, block=sce.nn.tropho$block)
 previewMarkers(markers.tropho[["1"]])
 ```
 
-For simplicity, we do not explicitly penalize genes that behave inconsistently across batches.
-This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all batches.
-That said, it is theoretically possible for a top marker to have highly variable effect sizes across batches, as long as the average is large.
-We can check this by visualizing the expression profile of each gene of interest with respect to the batch (Figure \@ref(fig:markers-violin-batch)).
-Ideally, each gene would behave consistently across batches as this is the easiest to interpret -
-namely, any conclusions about the biological identity of a cluster will be applicable to all batches.
+For simplicity, we do not explicitly penalize genes that behave inconsistently across blocks.
+This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all blocks.
+That said, it is theoretically possible for a top marker to have highly variable effect sizes across plates, as long as the average is large.
+We can check this by visualizing the expression profile of each gene of interest with respect to the plate (Figure \@ref(fig:markers-violin-block)).
+Ideally, each gene would behave consistently across plates as this is the easiest to interpret -
+namely, any conclusions about the biological identity of a cluster will be applicable to all plates.
 
-```{r markers-violin-batch, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each batch (panel).")}
+```{r markers-violin-block, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).")}
 plotExpression(
     sce.nn.tropho,
     features=rownames(markers.tropho[["1"]])[1],
@@ -367,11 +374,11 @@ plotExpression(
     facet_grid(~block)
 ```
 
-Blocking assumes that each pair of clusters is present in at least one batch.
-In scenarios where cells from two clusters never co-occur in the same batch,
+Blocking in `scoreMarkers.se()` assumes that each pair of clusters is present in at least one block in order to perform a comparison within the block.
+In scenarios where cells from two clusters never co-occur in the same block,
 the associated pairwise comparison will be impossible and is ignored during calculation of summary statistics.
-This can be problematic in rare situations where the batches are perfectly confounded with the clusters^[
-For bulk RNA-seq, my nickname for this kind of experimental design was "DOA", a.k.a., dead on arrival.]. 
+This can be problematic in rare situations where the blocks are perfectly confounded with the clusters,
+though marker detection is likely to be the least of our concerns with an experimental design of this calibre. 
 
 ## More uses for the marker scores 
 
@@ -380,7 +387,7 @@ However, a cluster may occasionally be defined by downregulation of some genes r
 In such cases, we can reverse the rankings to see if there is any consistent downregulation compared to other clusters.
 Alternatively, we can recognize that any downregulated genes in cluster $X$ should manifest as upregulated genes in other clusters when compared to $X$.
 By using a summary like the min-rank, we guarantee that these genes will show up somewhere, i.e., as markers of other clusters.
-(Other summaries are less effective as the upregulation only applies to comparisons to $X$ and will not yield a large mean/median effect size.)
+(Other summaries are less effective as the upregulation only applies to comparisons against $X$ and may not cause a noticeable increase in the mean/median summary.)
 
 ```{r}
 # Ordering by increasing Cohen's d.
@@ -429,7 +436,7 @@ previewMarkers(filtered.markers.10x, pre.columns="Symbol", post.columns=c("delta
 
 ## Invalidity of $p$-values {#marker-p-value-invalidity}
 
-In the past, we used to report $p$-values along with the effect sizes for the detected markers.
+In the old days, we used to report $p$-values along with the effect sizes for the detected markers.
 After all, Cohen's $d$ and the AUC are closely related to $t$-tests and the Wilcoxon ranked sum test, respectively.
 Unfortunately, the statistical interpretation of $p$-values is compromised when identifying cluster-specific markers.
 
@@ -437,7 +444,7 @@ The first issue is that of "data dredging" (also known as fishing or data snoopi
 We are more likely to get a positive result when we use a dataset to test a hypothesis generated from that data.
 Or more simply - clustering will separate cells by expression, so of course we will get low $p$-values when we compare between clusters!
 To illustrate, let's simulate i.i.d. normal values, perform $k$-means clustering and test for DE between clusters of cells with Wilcoxon ranked sum tests.
-We'd expect a uniform distribution of $p$-values under the null hypothesis, but instead it is skewed towards low values (Figure \@ref(fig:pval-dist)).
+Our input data is random so we'd expect a uniform distribution of $p$-values under the null hypothesis, but instead it is skewed towards low values (Figure \@ref(fig:pval-dist)).
 This means that we can detect "significant" differences between clusters even in the absence of any real substructure in the data.
 
 ```{r pval-dist, fig.cap="Distribution of $p$-values from a DE analysis between two clusters in a simulation with no true subpopulation structure."}
@@ -450,11 +457,11 @@ out <- apply(y, 1, FUN=function(x) {
 hist(out, col="grey80", xlab="p-value", main="")
 ```
 
-Another problem is that the $p$-value calculation treats counts from the same cluster of cells as replicate observations.
-This is not the most relevant level of replication when cells are derived from the same biological sample (i.e., cell culture, animal or patient).
+Another problem is that many $p$-value calculations treat counts from different cells in the same cluster as replicate observations.
+This is not the most relevant level of replication when cells are derived from the same biological sample, i.e., cell culture, animal or patient.
 DE analyses that treat cells as replicates fail to properly model the sample-to-sample variability [@lun2017overcoming].
-The latter is arguably the more important level of replication as different samples will necessarily be generated if the experiment is to be replicated.
-Indeed, the use of cells as replicates only masks the fact that the sample size is actually one if the experiment involving a single biological sample.
+This is arguably the more important level of replication as different samples will necessarily be generated if the experiment is to be repeated.
+In other words, if the experiment involved a single biological sample, the sample size is actually just 1, regardless of how many individual cells were assayed.
 By treating cells as replicates, we overstate our sample size and obtain much lower $p$-values than would be appropriate.
 
 In short, the $p$-values for marker genes don't make much sense from a statistical perspective.
@@ -470,6 +477,7 @@ Here, we extract predefined sets of genes for specific pathways or processes and
 This reduces some of the hassle of manually examining the annotation for each gene to assign biological meaning to each cluster. 
 To illustrate, we'll use the gene ontology (GO)'s biological process (BP) subcategory,
 which defines gene sets associated with known biological processes [@ashburner2000gene].
+We might also consider other useful gene set collections like KEGG and REACTOME - see the [MSigDB overview](https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp) for details.
 
 ```{r}
 library(msigdbr)
@@ -478,7 +486,7 @@ go.bp.sets <- split(go.bp.df$ensembl_gene, go.bp.df$gs_name)
 ```
 
 We use the hypergeometric test to quantify enrichment of each gene set among the top markers for cluster `r chosen.cluster`.
-The $p$-value of each gene set is determined by the number of shared genes between each GO set and the top markers (relative to the size of the GO set).
+The $p$-value of each gene set is determined by the number of shared genes between each GO set and the top markers, relative to the size of the GO set.
 More strongly enriched sets will have lower $p$-values and should be prioritized for interpretation.
 Here, we have chosen the top 100 markers but different values can be used depending on how many markers are of interest.
 
@@ -492,6 +500,9 @@ enrich.chosen.10x <- testEnrichment(top.chosen.10x, go.bp.sets, universe=rowname
 # Prioritizing the most enriched gene sets for examination.
 enrich.chosen.10x <- enrich.chosen.10x[order(enrich.chosen.10x$p.value),,drop=FALSE]
 head(enrich.chosen.10x)
+
+# Focusing on some of the smaller, more specific gene sets.
+head(enrich.chosen.10x[enrich.chosen.10x$size < 100,,drop=FALSE])
 ```
 
 If we need more detail about a particular set, we can examine the behavior of its constituent genes.
@@ -524,9 +535,9 @@ plotReducedDim(sce.nn.10x, "TSNE", colour_by=data.frame(Score=top.set.score.10x$
 ```
 
 Note that many Bioconductor packages implement methods for quantifying gene set enrichment, e.g., `r Biocpkg("fgsea")`, `r Biocpkg("goseq")`, `r Biocpkg("limma")`, to name a few.
-We like the hypergeometric test as it is simple and focuses on the top markers, but any function can be used if it can accept a ranking of genes.
+We like the hypergeometric test as it is simple and focuses on the top markers, but any function can be used as long as it can accept a ranking of genes.
 In all cases, we would recommend only using the enrichment $p$-values to rank the gene sets, not to make any statements about statistical significance.
-Many of these methods will assume that genes are independent under the null hypothesis to compute a $p$-value.
+Many of these methods compute their $p$-values by assuming that genes are independent under the null hypothesis. 
 In a biological system with highly coordinated pathways and processes, this is unlikely to be true, potentially inflating the type I error beyond the threshold for significance.
 
 <!---
