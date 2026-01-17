@@ -211,7 +211,7 @@ However, MNN correction is not without its own assumptions:
   We introduce a batch effect that is not orthogonal to the biological variation, e.g., because the second batch has higher baseline expression of the differentiation marker.
   MNN correction would be slightly incorrect as it preserves that the non-orthogonal component of the batch effect (Figure \@ref(fig:batch-activity-example)).
 
-```{r batch-activity-example, echo=FALSE, fig.wide=TRUE, fig.height=6, fig.width=10, fig.cap="Diagram of MNN correction when the batch effect is confounded with biological variation."} 
+```{r batch-activity-example, echo=FALSE, fig.height=6, fig.width=10, fig.cap="Diagram of MNN correction when the batch effect is confounded with biological variation."} 
 set.seed(999)
 N <- 200
 x1 <- runif(N) * 4 * pi
@@ -382,20 +382,36 @@ However, if we relied the corrected expression values, we would draw misleading 
 For example, if one batch consisted of drug-treated patients and another batch was a control,
 we would not detect any treatment-induced differential expression from the corrected expression values.
 
-```{r batch-corrected-insigf2, fig.wide=TRUE, fig.asp=2.5, fig.cap="Expression of _INS-IGF2_ across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom)."}
+```{r batch-corrected-insigf2, fig.height=12, fig.width=8, fig.cap="Expression of _INS-IGF2_ across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom)."}
 current.insigf2 <- "INS-IGF2__chr11"
 rotation.insigf2 <- metadata(sce.nn.mnn.pancreas)$PCA$rotation[current.insigf2,]
 lowrank.unc.insigf2 <- reducedDim(sce.nn.mnn.pancreas, "PCA") %*% rotation.insigf2
 lowrank.mnn.insigf2 <- reducedDim(sce.nn.mnn.pancreas, "MNN") %*% rotation.insigf2
 
 gridExtra::grid.arrange(
-    plotExpression(sce.nn.mnn.pancreas, x="clusters", features=current.insigf2, other_fields="batch") + 
+    plotExpression(
+        sce.nn.mnn.pancreas,
+        x="clusters",
+        features=current.insigf2,
+        colour_by="clusters",
+        other_fields="batch"
+    ) + 
         facet_grid(~batch) +
         ggtitle("original expression"),
-    plotXY(sce.nn.mnn.pancreas$clusters, lowrank.unc.insigf2, other_fields=list(batch=sce.nn.mnn.pancreas$batch)) + 
+    plotXY(
+        sce.nn.mnn.pancreas$clusters,
+        lowrank.unc.insigf2,
+        colour_by=sce.nn.mnn.pancreas$clusters,
+        other_fields=list(batch=sce.nn.mnn.pancreas$batch)
+    ) + 
         facet_grid(~batch) +
         ggtitle("reconstruction without correction"),
-    plotXY(sce.nn.mnn.pancreas$clusters, lowrank.mnn.insigf2, other_fields=list(batch=sce.nn.mnn.pancreas$batch)) +
+    plotXY(
+        sce.nn.mnn.pancreas$clusters,
+        lowrank.mnn.insigf2,
+        colour_by=sce.nn.mnn.pancreas$clusters,
+        other_fields=list(batch=sce.nn.mnn.pancreas$batch)
+    ) +
         facet_grid(~batch) +
         ggtitle("reconstruction with correction"),
     ncol=1
@@ -409,7 +425,7 @@ specifically to synchronize expression across all batches to the same color grad
 This was done purely for aesthetics and was probably not worth the extra hassle,
 given that we had to check that the plot with the corrected values gave the same conclusions as the original expression values.
 
-```{r batch-markers-pancreas, fig.wide=TRUE, fig.cap="Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch."}
+```{r batch-markers-pancreas, fig.cap="Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch."}
 markers.pancreas <- scoreMarkers.se(
     sce.nn.mnn.pancreas,
     sce.nn.mnn.pancreas$clusters,
@@ -424,6 +440,7 @@ plotExpression(
     sce.nn.mnn.pancreas,
     x="clusters",
     features=rownames(chosen.markers.pancreas)[1],
+    colour_by="clusters",
     other_fields="batch"
 ) + facet_grid(~batch)
 ```

@@ -180,7 +180,7 @@ In the most ideal case, we would see normal distributions that would justify the
 A large proportion of cells in another mode suggests that the QC metrics might be correlated with some biological state, potentially leading to the loss of distinct cell types during filtering;
 or that there were inconsistencies with library preparation for a subset of cells, which is not uncommon in plate-based protocols.
 
-```{r qc-dist-416b, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric."}
+```{r qc-dist-416b, fig.height=8, fig.width=8, fig.cap="Distribution of QC metrics in the 416B dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric."}
 library(scater)
 gridExtra::grid.arrange(
     plotColData(sce.qc.416b, y="sum", colour_by="keep") +
@@ -206,7 +206,7 @@ This dataset contains a mixture of pancreatic cell types from different donors, 
 We might contemplate whether the clump of discarded cells corresponds to a genuine subpopulation,
 though all things considered, they are probably just damaged cells and removing them is the correct choice. 
 
-```{r qc-dist-grun, fig.asp=0.4, fig.wide=TRUE, fig.cap="Distribution of QC metrics in the Grun dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric."}
+```{r qc-dist-grun, fig.width=10, fig.height=5, fig.cap="Distribution of QC metrics in the Grun dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric."}
 library(scRNAseq)
 sce.grun <- GrunPancreasData()
 
@@ -248,7 +248,7 @@ We demonstrate on data from a larger experiment involving the mouse brain [@zeis
 Figure \@ref(fig:qc-mito-zeisel) shows that the mitochondrial proportion is negatively correlated to the total count and positively correlated with the spike-in proportion.
 This is consistent with a common underlying effect of cell damage and indicates that we are not removing metabolically active, undamaged cells.
 
-```{r qc-mito-zeisel, fig.asp=0.5, fig.wide=TRUE, fig.cap="Percentage of UMIs assigned to mitochondrial transcripts in the Zeisel brain dataset, plotted against the total number of UMIs (left) or the ERCC proportions (right). Each point represents a cell and is colored according to whether it was considered high-quality."}
+```{r qc-mito-zeisel, fig.width=10, fig.height=5, fig.cap="Percentage of UMIs assigned to mitochondrial transcripts in the Zeisel brain dataset, plotted against the total number of UMIs (left) or the ERCC proportions (right). Each point represents a cell and is colored according to whether it was considered high-quality."}
 library(scRNAseq)
 sce.zeisel <- ZeiselBrainData()
 is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
@@ -362,7 +362,7 @@ as both have the potential to alter the QC metrics, e.g., different sequencing c
 Setting `block=` in `quickRnaQc.se()` yields a separate threshold for each block (Figure \@ref(fig:qc-dist-416b-block)),
 which may be more appropriate than a common threshold across all blocks.
 
-```{r qc-dist-416b-block, fig.asp=1, fig.wide=TRUE, fig.fullwidth=TRUE, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
+```{r qc-dist-416b-block, fig.height=8, fig.width=8, fig.cap="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors."}
 # Making a combined factor for easier reading.
 plate.416b <- sce.416b$block # i.e., the plate of origin.
 pheno.416b <- ifelse(sce.416b$phenotype == "wild type phenotype", "WT", "induced")
@@ -407,7 +407,7 @@ That said, outlier detection will not be effective if a block does not contain a
 For example, some donors in the @grun2016denovo human pancreas dataset have higher ERCC proportions (Figure \@ref(fig:qc-plot-pancreas)), probably corresponding to damaged cells.
 This inflates the median and MAD and reduces the effectiveness of the QC filtering in those blocks.
 
-```{r qc-plot-pancreas, fig.wide=TRUE, fig.asp=0.5, fig.cap="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds."}
+```{r qc-plot-pancreas, fig.cap="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds."}
 sce.block.grun <- quickRnaQc.se(
     sce.grun,
     subsets=list(),
@@ -428,7 +428,7 @@ A simple solution is to just derive a threshold from the other blocks, e.g., by 
 This restores some semblance of QC to remove the bulk of damaged cells in the affected donors.
 Hopefully, those cells really are damaged and we aren't accidentally removing a real subpopulation of small cells that are unique to those donors^[But who knows?].
 
-```{r qc-plot-pancreas-fixed, fig.wide=TRUE, fig.asp=0.5, fig.cap="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds, some of which are manually set for donors with a majority of low-quality cells."}
+```{r qc-plot-pancreas-fixed, fig.cap="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds, some of which are manually set for donors with a majority of low-quality cells."}
 okay.donors <- c("D17", "D2", "D7")
 bad.donors <- setdiff(unique(sce.grun$donor), okay.donors)
 

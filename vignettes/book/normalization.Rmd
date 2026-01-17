@@ -111,7 +111,7 @@ For example, Figure \@ref(fig:zeisel-demo-snap25) shows that interneurons have a
 this roughly translates to an original count of 30 - 60 UMIs in each cell, which gives us some confidence that it is actually expressed.
 This relationship to the original data would be less obvious if the centering were not performed.
 
-```{r zeisel-demo-snap25, fig.wide=TRUE, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
+```{r zeisel-demo-snap25, fig.width=8, fig.height=5, fig.cap="Distribution of log-expression values for _Snap25_ in each cell type of the Zeisel brain dataset."}
 library(scater)
 plotExpression(sce.norm.zeisel, x="level1class", features="Snap25", colour="level1class") +
     scale_x_discrete(guide = guide_axis(angle = 45))
@@ -251,7 +251,7 @@ indicating that they are capturing similar technical biases in sequencing depth 
 However, increasing stimulation of the T cell receptor (in terms of increasing affinity or time) results in a decrease in the spike-in factors relative to the library size factors.
 This is consistent with an increase in total RNA content during stimulation, which increases the coverage of endogenous genes at the expense of the spike-in transcripts.
 
-```{r norm-spike-t, fig.wide=TRUE, fig.asp=0.5, fig.width=8, fig.cap="Size factors from spike-in normalization, plotted against the library size factors for all cells in the T cell dataset. Each plot represents a different ligand treatment and each point is a cell coloured according by time from stimulation."}
+```{r norm-spike-t, fig.height=8, fig.width=10, fig.cap="Size factors from spike-in normalization, plotted against the library size factors for all cells in the T cell dataset. Each plot represents a different ligand treatment and each point is a cell coloured according by time from stimulation."}
 rna.sums.richard <- colSums(counts(sce.qc.richard))
 lib.factor.richard <- centerSizeFactors(rna.sums.richard)
 to.plot <- data.frame(
@@ -276,7 +276,7 @@ However, the opposite would occur if the deconvolution size factors were used.
 This can manifest as shifts in the magnitude and direction of DE between conditions when we switch between normalization strategies,
 as shown below for our most beloved gene _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
 
-```{r norm-effect-malat, fig.asp=1, fig.wide=TRUE, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
+```{r norm-effect-malat, fig.height=8, fig.width=10, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
 # Setting center=FALSE because we already centered the size factors. 
 sce.lib.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=lib.factor.richard, center=FALSE)
 sce.spike.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=spike.factor.richard, center=FALSE)
@@ -284,10 +284,10 @@ sce.spike.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=spike.fa
 library(scater)
 gridExtra::grid.arrange(
     plotExpression(sce.lib.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
-        theme(axis.text.x = element_text(angle = 40)) + 
+        scale_x_discrete(guide = guide_axis(angle = 70)) +
         ggtitle("After library size normalization"),
     plotExpression(sce.spike.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
-        theme(axis.text.x = element_text(angle = 40)) +
+        scale_x_discrete(guide = guide_axis(angle = 70)) +
         ggtitle("After spike-in normalization"),
     ncol=2
 )

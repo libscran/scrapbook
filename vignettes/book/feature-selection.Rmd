@@ -163,7 +163,7 @@ This ensures that any systematic technical differences between plates (e.g., in 
 It will also fit a separate trend for each plate, which accommodates differences in the mean-variance relationships between plates.
 In this case, there are only minor differences between the trends in Figure \@ref(fig:trend-plot-tropho), which indicates that the experiment was tightly replicated across plates.
 
-```{r trend-plot-tropho, fig.width=10, fig.asp=0.5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
+```{r trend-plot-tropho, fig.width=10, fig.height=5, fig.cap="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue."}
 sce.var.tropho <- chooseRnaHvgs.se(
     sce.norm.tropho,
     block=sce.qc.tropho$block,

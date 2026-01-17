@@ -86,7 +86,7 @@ Low perplexities will favor resolution of finer structure while higher values fo
 We can test different perplexity values to obtain different perspectives of the data (Figure \@ref(fig:tsne-perplexity)),
 depending on whether we are interested in local or global structure.
 
-```{r tsne-perplexity, fig.cap="$t$-SNE plots constructed from the top PCs in the Zeisel brain dataset, using a range of perplexity values. Each point represents a cell, coloured according to its annotation.", fig.width=15, fig.height=6}
+```{r tsne-perplexity, fig.cap="$t$-SNE plots constructed from the top PCs in the Zeisel brain dataset, using a range of perplexity values. Each point represents a cell, coloured according to its annotation.", fig.width=12, fig.height=5}
 sce.tsne.p5.zeisel <- runTsne.se(sce.pcs.zeisel, perplexity=5)
 sce.tsne.p50.zeisel <- runTsne.se(sce.pcs.zeisel, perplexity=50)
 
@@ -121,7 +121,7 @@ plotReducedDim(sce.umap.zeisel, dimred="UMAP", colour_by="level1class")
 Like $t$-SNE, UMAP has its own suite of parameters that affect the visualization (see the documentation [here](https://umap-learn.readthedocs.io/en/latest/parameters.html)).
 The number of neighbors is most analogous to $t$-SNE's perplexity, where lower values focus on the local structure around each cell (Figure \@ref(fig:umap-neighbors)).
 
-```{r umap-neighbors, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of neighbors. Each point represents a cell, coloured according to its annotation.", fig.width=15, fig.height=6}
+```{r umap-neighbors, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of neighbors. Each point represents a cell, coloured according to its annotation.", fig.width=12, fig.height=5}
 sce.umap.n3.zeisel <- runUmap.se(sce.pcs.zeisel, num.neighbors=3)
 sce.umap.n30.zeisel <- runUmap.se(sce.pcs.zeisel, num.neighbors=30)
 
@@ -136,7 +136,7 @@ Another influential parameter is the minimum distance between points in the embe
 Larger values will generally inflate the visual clusters and reduce the amount of whitespace in the plot (Figure \@ref(fig:umap-mindist)).
 Sometimes it's worth fiddling around with some of these parameters to get a prettier plot.
 
-```{r umap-mindist, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of minimum distances. Each point represents a cell, coloured according to its annotation.", fig.width=15, fig.height=6}
+```{r umap-mindist, fig.cap="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of minimum distances. Each point represents a cell, coloured according to its annotation.", fig.width=12, fig.height=5}
 sce.umap.d01.zeisel <- runUmap.se(sce.pcs.zeisel, min.dist=0.01)
 sce.umap.d5.zeisel <- runUmap.se(sce.pcs.zeisel, min.dist=0.5)
 

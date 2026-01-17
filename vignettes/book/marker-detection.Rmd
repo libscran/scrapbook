@@ -88,7 +88,7 @@ though we can always perform a more detailed characterization by considering add
 We can also visualize the distribution of their expression values in each cluster (Figure \@ref(fig:marker-violins-pbmc)),
 where the top markers should be upregulated in cluster `r chosen.cluster` compared to most of the other clusters.
 
-```{r marker-violins-pbmc, fig.wide=TRUE, fig.asp=2, fig.cap=paste0("Distribution of log-expression values for the top marker genes of cluster ", chosen.cluster, " in the PBMC dataset.")}
+```{r marker-violins-pbmc, fig.width=8, fig.height=12, fig.cap=paste0("Distribution of log-expression values for the top marker genes of cluster ", chosen.cluster, " in the PBMC dataset.")}
 library(scater)
 # Displaying symbols instead of Ensembl IDs for easier interpretation. 
 plotExpression(
@@ -142,7 +142,7 @@ Rankings based on the delta-detected value will prioritize genes that are near-s
 When available, these genes are often very effective markers as they are only expressed in our cluster of interest.
 However, it is also possible that strong markers will not have a large delta-detected value, e.g., because they are expressed at a low constitutive level in the other cluster.
 
-```{r marker-detected-pbmc, fig.asp=2, fig.wide=TRUE, fig.cap=paste0("Distribution of log-expression values for the top marker genes of cluster ", chosen.cluster, " in the PBMC dataset, ranked by the mean delta-detected.")}
+```{r marker-detected-pbmc, fig.width=8, fig.height=12, fig.cap=paste0("Distribution of log-expression values for the top marker genes of cluster ", chosen.cluster, " in the PBMC dataset, ranked by the mean delta-detected.")}
 top.detected.10x <- previewMarkers(chosen.markers.10x, pre.columns='Symbol', order.by="delta.detected.mean")
 top.detected.10x
 
@@ -242,7 +242,7 @@ We have already demonstrated how we can examine the distribution of expression v
 Another option is to color our $t$-SNE plot according to the log-expression values of a specific marker in each cell (Figure \@ref(fig:marker-tsne-pbmc)).
 Any heterogeneity in expression within our cluster might be indicative of internal structure.
 
-```{r marker-tsne-pbmc, fig.wide=TRUE, fig.asp=0.5, fig.cap=paste0("$t$-SNE plot of the cells in the PBMC dataset, colored by the assigned cluster (top) or the log-expression of the top marker gene in cluster ", chosen.cluster, " (bottom).")}
+```{r marker-tsne-pbmc, fig.width=12, fig.height=5, fig.cap=paste0("$t$-SNE plot of the cells in the PBMC dataset, colored by the assigned cluster (top) or the log-expression of the top marker gene in cluster ", chosen.cluster, " (bottom).")}
 gridExtra::grid.arrange(
     plotReducedDim(sce.nn.10x, "TSNE", colour_by="clusters"),
     plotReducedDim(sce.nn.10x, "TSNE", colour_by=chosen.markers.10x$Symbol[1], swap_rownames="Symbol"),
@@ -254,7 +254,7 @@ The heatmap is a classic visualization in genomics, and scRNA-seq is no exceptio
 This provides a compact summary of the relative expression of multiple markers across the cell population.
 Ideally, each marker should be consistently upregulated within our cluster of interest compared to the rest of the cells in the population.
 
-```{r marker-heat-pbmc, fig.wide=TRUE, fig.cap=paste0("Heatmap of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. Each row represents a gene and each column represents a cell. Each entry is colored by the log-fold change for each cell from the mean log-expression for that gene.")}
+```{r marker-heat-pbmc, fig.height=8, fig.width=8, fig.cap=paste0("Heatmap of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. Each row represents a gene and each column represents a cell. Each entry is colored by the log-fold change for each cell from the mean log-expression for that gene.")}
 plotHeatmap(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], order_columns_by="clusters", swap_rownames="Symbol", center=TRUE)
 ```
 
@@ -270,7 +270,7 @@ It gets even worse for certain configurations of the bubble plot where the color
 here, we need to mentally integrate the color of each bubble by its area to get the mean expression for comparisons between clusters.],
 but hey, to each their own.
 
-```{r marker-dot-pbmc, fig.wide=TRUE, fig.cap=paste0("Dot plot of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters.")}
+```{r marker-dot-pbmc, fig.height=8, fig.width=8, fig.cap=paste0("Dot plot of the top markers for cluster ", chosen.cluster, " in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters.")}
 plotDots(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], group="clusters", swap_rownames="Symbol", center=TRUE)
 ```
 
@@ -362,7 +362,7 @@ That said, it is theoretically possible for a top marker to have highly variable
 We can check this by visualizing the expression profile of a gene of interest with respect to the plate (Figure \@ref(fig:markers-violin-block)).
 Ideally, our gene would behave consistently across plates. 
 
-```{r markers-violin-block, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).")}
+```{r markers-violin-block, fig.width=8, fig.height=5, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).")}
 plotExpression(
     sce.nn.tropho,
     features=rownames(markers.tropho[["1"]])[1],

@@ -161,7 +161,7 @@ The expression values for each cell are then projected onto these axes to obtain
 Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure \@ref(fig:pca-416b)),
 allowing our subsequent analyses to focus on heterogeneity within each subpopulation.
 
-```{r pca-416b, fig.asp=1.5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
+```{r pca-416b, fig.width=10, fig.height=5, fig.cap="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors."}
 is.hvg.416b <- rowData(sce.var.416b)$hvg
 sce.pca.416b <- runPca.se(sce.var.416b, features=is.hvg.416b, number=20)
 sce.block.416b <- runPca.se(
@@ -177,7 +177,7 @@ gridExtra::grid.arrange(
         ggtitle("Without blocking"),
     plotReducedDim(sce.block.416b, dimred="PCA", colour_by="block") +
         ggtitle("Blocked"),
-    ncol=1
+    ncol=2
 )
 ```
 
@@ -223,7 +223,7 @@ If we're lucky, our population structure is simple enough that the first two PCs
 However, in most cases, relevant biological heterogeneity is spread throughout 10-50 PCs that are much harder to visualize.
 For example, examination of the top 4 PCs is still insufficient to resolve all subpopulations identified by @zeisel2015brain (Figure \@ref(fig:zeisel-pca-multi)).
 
-```{r zeisel-pca-multi, fig.wide=TRUE, fig.asp=1, fig.cap="PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors."}
+```{r zeisel-pca-multi, fig.height=10, fig.width=10, fig.cap="PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors."}
 library(scater)
 plotReducedDim(
     sce.pca.zeisel,

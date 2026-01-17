@@ -91,7 +91,7 @@ The `quickAdtQc.se()` function computes thresholds using the outlier-based strat
 We use a log-transformation for the number of detected features and the IgG sum to avoid negative thresholds and improve normality.
 We also perform a minor adjustment to relax the threshold for the number of detected ADTs if the MAD is zero.
 
-```{r qc-dist-adt-pbmc, fig.wide=TRUE, fig.cap="Distribution of ADT-based QC metrics in the PBMC dataset. Each point represents a cell, while dashed lines represent thresholds for each metric."}
+```{r qc-dist-adt-pbmc, fig.width=10, fig.height=5, fig.cap="Distribution of ADT-based QC metrics in the PBMC dataset. Each point represents a cell, while dashed lines represent thresholds for each metric."}
 qc.thresh.adt.pbmc <- metadata(sce.qc.adt.pbmc)$qc$thresholds
 qc.thresh.adt.pbmc
 
