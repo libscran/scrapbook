@@ -2,7 +2,7 @@ Package: scrapbook
 Title: Single-cell RNA-seq analyses with scrapper
 Version: 0.99.0
 Date: 2021-05-16
-Authors@R: person('Aaron', 'Lun', role = c('aut', 'cre'), email="infinite.monkeys.with.keyboards@gmail.com")
+Authors@R: person('Aaron', 'Lun', role = c('aut', 'cre'), email="infinite.monkeys.with.keyboards@gmail.com", comment=c(ORCID="0000-0002-3564-4813"))
 Description: 
     Demonstrates some basic analysis of single-cell RNA-seq data with scrapper. 
     This includes quality control, normalization, feature selection, various forms of dimensionality reduction, clustering into subpopulations, and detection of marker genes.
@@ -31,6 +31,7 @@ Suggests:
 VignetteBuilder: knitr
 License: MIT + file LICENSE
 URL: https://github.com/libscran/scrapbook
+BugReports: https://github.com/libscran/scrapbook/issues
 biocViews: 
     Workflow, 
     SingleCellWorkflow

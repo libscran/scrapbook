@@ -1,1 +1,3 @@
-vignettes/book/docs
+^vignettes/book/docs$
+^vignettes/book/.*_files$
+^vignettes/book/.*\.rds$
