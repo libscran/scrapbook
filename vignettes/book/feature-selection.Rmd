@@ -73,6 +73,7 @@ plot(rd.10x$means, rd.10x$variances,
     xlab="Mean of log-expression", ylab="Variance of log-expression")
 legend("topright", col=c("black", "grey"), pch=16, legend=c("HVG", "not HVG"))
 
+# Just using approxfun() to make a nice-looking curve for us.
 trend.10x <- approxfun(rd.10x$means, rd.10x$fitted)
 curve(trend.10x, add=TRUE, col="dodgerblue", lwd=2)
 ```
@@ -369,9 +370,15 @@ is.mito.zeisel <- rowData(sce.zeisel)$featureType=="mito"
 library(scrapper)
 sce.qc.zeisel <- quickRnaQc.se(sce.zeisel, subsets=list(MT=is.mito.zeisel), altexp.proportions="ERCC")
 sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
+```
 
-# Computing log-normalized expression values. This time, we do it for both the
-# endogenous genes and the spike-ins with their respective size factors.
+We compute log-normalized expression values for endogenous genes and spike-in transcripts with their respective size factors.
+We still use the library size factors for the endogenous genes as we are not interested in changes in total RNA content.
+Both sets of size factors are centered to preserve the scale of the original counts, ensuring that normalized abundances are comparable between genes and spike-ins.
+(This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
+for brevity, we won't show that here.)
+
+```{r}
 sce.norm.zeisel <- normalizeRnaCounts.se(sce.qc.zeisel, size.factors=sce.qc.zeisel$sum)
 sce.ercc <- altExp(sce.norm.zeisel, "ERCC")
 sce.norm.ercc <- normalizeRnaCounts.se(sce.ercc, size.factors=sce.ercc$sum)
@@ -380,11 +387,6 @@ sce.norm.ercc <- normalizeRnaCounts.se(sce.ercc, size.factors=sce.ercc$sum)
 We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
 At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
 This assumes that an endogenous gene is subject to the same technical noise as a spike-in transcript of the same abundance.
-Also note that we only use the spike-in factors for the spike-in transcripts -
-we still use the library size factors for the endogenous genes as we are not interested in changes in total RNA content.
-We ensure that normalized abundances are still comparable between genes and spike-ins by centering both sets of size factors to preserve the scale of the original counts. 
-(This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
-for brevity, we won't show that here.)
 
 ```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)."}
 sce.var.zeisel <- chooseRnaHvgs.se(sce.norm.zeisel, more.var.args=list(use.min.width=TRUE))
@@ -407,8 +409,6 @@ legend("topright", c("gene", "spike-in"), pch=c(16, 4))
 To decompose each gene's variance into the technical and biological components,
 we estimate the fitted value of the spike-in trend at that gene's mean and subtract it from the gene's total variance.
 We could then use the biological component to select HVGs via `chooseHighlyVariableGenes()`.
-In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
-Oh well, it is what it is.
 
 ```{r}
 tech.var.zeisel <- trend.spike.zeisel(var.zeisel$means)
@@ -417,6 +417,9 @@ summary(tech.var.zeisel)
 bio.var.zeisel <- var.zeisel$variances - tech.var.zeisel
 summary(bio.var.zeisel)
 ```
+
+In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
+Oh well.
 
 ## Session information {-}
 
