@@ -100,10 +100,10 @@ How many HVGs should we use in our downstream analyses, i.e., what is the "best"
 A larger set of HVGs will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes,
 at the cost of adding noise from irrelevant genes that might obscure that signal.
 It's difficult to determine the optimal trade-off for any given application as the distinction between noise and signal is context-dependent.
-For example, variation in the activation status of certain immune cells may not be interesting when we are only interested in identifying the cell types;
+For example, variation in the activation status of certain immune cells may not be interesting when we only want to identify the cell types;
 the former can even interfere with the latter by encouraging the formation of clusters based on activation strength instead.
 
-Our recommendation is to simply pick a reasonable $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
+Our recommendation is to simply pick a "reasonable" $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
 If we can answer our scientific question, then our choice is good enough; if not, we can just try another value.
 There's nothing wrong with trying different parameters during data exploration^[
 If would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
