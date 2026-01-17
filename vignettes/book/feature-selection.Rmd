@@ -183,15 +183,32 @@ for (block in colnames(per.block)) {
 }
 ```
 
-When `block=` is set, `chooseRnaHVgs.se()` will report the average statistics across blocks for feature selection.
-This ensures that each blocks contributes some information about the variability of each gene. 
-We then use the average residuals to select our top HVGs as described previously.
-An alternative approach would be to take the intersection or union of the HVGs from each block, but this does not scale well,
-i.e., it becomes too stringent or too relaxed, respectively, as the number of blocks increases.
+`chooseRnaHVgs.se()` also combines information across blocks by reporting the weighted mean of each statistic,
+where the weight is determined by the size of number of cells in each plate.
+We use the mean residuals to select our top HVGs as described previously.
+This ensures that each block contributes some information about the variability of each gene.
+High variability in any block can increase the residual for a gene, giving it an opportunity to be selected as a HVG.
 
 ```{r}
+rowData(sce.var.tropho)[,c("means", "variances", "fitted", "residuals")] # mean across blocks.
 hvgs.tropho <- rowData(sce.var.tropho)$hvg
 sum(hvgs.tropho)
+```
+
+Alternatively, we could focus on genes are consistently variable within each block by asking `chooseRnaHvgs.se()` to compute a quantile instead of a weighted mean.
+For example, we could report the minimum residual across blocks, which means that genes will only be considered as HVGs if they have large positive residuals in each block.
+This tends to scale poorly as it becomes too stringent with a large number of blocks.
+
+```{r}
+sce.var.min.tropho <- chooseRnaHvgs.se(
+    sce.norm.tropho,
+    block=sce.qc.tropho$block,
+    more.var.args=list(
+        block.average.policy="quantile",
+        block.quantile=0 # i.e., minimum.
+    )
+)
+rowData(sce.var.min.tropho)[,c("means", "variances", "fitted", "residuals")] # minimum across blocks.
 ```
 
 It is generally expected that `block=` will be used for uninteresting factors of variation.

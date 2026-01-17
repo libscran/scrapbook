@@ -356,12 +356,11 @@ markers.tropho <- scoreMarkers.se(sce.nn.tropho, sce.nn.tropho$clusters, block=s
 previewMarkers(markers.tropho[["1"]])
 ```
 
-For simplicity, we do not explicitly penalize genes that behave inconsistently across blocks.
+By default, we do not explicitly penalize genes that behave inconsistently across blocks.
 This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all blocks.
 That said, it is theoretically possible for a top marker to have highly variable effect sizes across plates, as long as the average is large.
-We can check this by visualizing the expression profile of each gene of interest with respect to the plate (Figure \@ref(fig:markers-violin-block)).
-Ideally, each gene would behave consistently across plates as this is the easiest to interpret -
-namely, any conclusions about the biological identity of a cluster will be applicable to all plates.
+We can check this by visualizing the expression profile of a gene of interest with respect to the plate (Figure \@ref(fig:markers-violin-block)).
+Ideally, our gene would behave consistently across plates. 
 
 ```{r markers-violin-block, fig.wide=TRUE, fig.cap=paste0("Distribution of expression values for the top-ranked marker gene (", rownames(markers.tropho[["1"]])[1], ") of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).")}
 plotExpression(
@@ -372,6 +371,22 @@ plotExpression(
     other_fields="block"
 ) +
     facet_grid(~block)
+```
+
+If we really want to enforce consistent DE across blocks, we can ask `scoreMarkers.se()` to instead compute a quantile instead of a weighted mean.
+For example, rankings derived from the minimum effect size across blocks will focus on genes that exhibit large changes in the same direction within each block.
+
+```{r}
+markers.min.tropho <- scoreMarkers.se(
+    sce.nn.tropho,
+    sce.nn.tropho$clusters,
+    block=sce.nn.tropho$block,
+    more.marker.args=list(
+        block.average.policy="quantile",
+        block.quantile=0 # i.e., minimum.
+    )
+)
+previewMarkers(markers.min.tropho[["1"]])
 ```
 
 Blocking in `scoreMarkers.se()` assumes that each pair of clusters is present in at least one block in order to perform a comparison within the block.
