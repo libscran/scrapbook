@@ -110,7 +110,7 @@ gridExtra::grid.arrange(
 
 We then apply these thresholds to our metrics to identify high-quality cells.
 If we wanted to use custom thresholds, we could modify our thresholds in the same manner as described in Section \@ref(qc-fixed).
-Similarly, if our dataset contained multiple experimental batches, we could use the same blocking approach as described in Section \@ref(qc-batch).
+Similarly, if our dataset contained multiple experimental batches, we could use the same blocking approach as described in Section \@ref(qc-block).
 
 ```{r}
 summary(sce.qc.adt.pbmc$keep)

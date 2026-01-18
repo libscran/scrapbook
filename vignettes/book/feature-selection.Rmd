@@ -285,7 +285,7 @@ For example, to study transcriptional changes during the earliest stages of cell
 we might focus only on lineage markers to avoid interference from variability in other pathways (e.g., cell cycle, metabolism).
 Using scRNA-seq data in this manner is conceptually equivalent to a fluorescence activated cell sorting (FACS) experiment,
 with the convenience of being able to (re)define the features of interest at any time.
-We provide some examples of _a priori_ selection based on MSigDB gene sets [@godec2016compendium] below:
+We provide some examples of _a priori_ selection based on MSigDB gene sets [@liberzon2015msigdb] below:
 
 ```{r}
 library(msigdbr)
@@ -354,7 +354,7 @@ until these genes are demonstrably problematic in downstream analyses.
 
 ## Quantifying technical noise
 
-Back in the old days, everyone was obsessed with modelling the gene-wise variability in scRNA-seq data.
+Back in the old days, everyone was obsessed with modelling the gene-wise variability in scRNA-seq data [@brennecke2013accounting;@vallejos2015basics;@kim2015characterizing].
 Spike-in transcripts were critical to this effort as they allowed us to decompose each gene's variance into technical and biological components. 
 As spike-ins should not be subject to biological effects, the variance in spike-in expression could be used as an estimate of the technical component. 
 Subtracting this from the variance of an endogenous gene at a similar abundance would then yield an estimate of the biological component.

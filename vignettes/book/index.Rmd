@@ -47,8 +47,9 @@ typically to identify subpopulations or states that would not be apparent from p
 Since its inception, scRNA-seq has emerged as one of the premier techniques for publishing genomics papers.
 Occasionally, it is even used to do some actual science.
 
-This book describes a computational workflow for analyzing scRNA-seq data using the [R/Bioconductor](https://bioconductor.org) ecosystem.
-Most of the heavy lifting is performed using the `r Biocpkg("scrapper")` package, while `r Biocpkg("scater")` handles the plotting.
+This book describes a computational workflow for analyzing scRNA-seq data using the [R/Bioconductor](https://bioconductor.org) ecosystem
+[@huber2015orchestrating;@amezquita2020orchestrating].
+Most of the heavy lifting is performed using the `r Biocpkg("scrapper")` package, while `r Biocpkg("scater")` handles the plotting [@mccarthy2017scater].
 We rely heavily on Bioconductor data structures like the `SingleCellExperiment` class,
 so readers should check out the `r Biocpkg("SingleCellExperiment", "intro.html", label="associated documentation")` if they haven't already.
 Each chapter is devoted to a particular step in the analysis where we provide its theoretical rationale, the associated code, and some typical results from real public datasets.
@@ -86,6 +87,5 @@ previewMarkers(res.zeisel$markers$rna[["1"]])
 And that's it.
 Sometimes, ignorance is bliss, and it's better to not know how the sausage is made.
 But hey - you're already here, so why not keep reading?
-Anecdotal studies indicate that exposure to the inner workings of scRNA-seq data analysis leads to only minor deteriorations in mental health.
 
 Any questions can be posted at [Bioconductor support site](https://support.bioconductor.org) or the [GitHub page for this book](https://github.com/libscran/scrapbook).

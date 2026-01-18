@@ -28,7 +28,7 @@ Note that this step is quite different from the blocking discussed in most of th
 as setting `block=` just instructs those functions to ignore the batch effect instead of actively removing it.
 
 Historically, we used linear regression for batch correction of RNA-seq data [@ritchie2015limma;@leek2012sva].
-(We can achieve the same effect with our PCA if we compute the components from the residuals, see Section \@ref(pca-batch).)
+(We can achieve the same effect with our PCA if we compute the components from the residuals, see Section \@ref(pca-block).)
 However, this assumes that the composition of cell subpopulations is either known, and can be used as a covariate in the model;
 or the composition is the same across batches, with a consistent batch effect in each subpopulation.
 Such assumptions are usually inappropriate for single-cell studies.
@@ -419,7 +419,7 @@ gridExtra::grid.arrange(
 ```
 
 For gene-based analyses, we recommend using the original log-expression values as these are easier to interpret.
-Differences between batches should be handled by some other mechanism, e.g., blocking during marker detection (Figure \@ref(fig:batch-markers-pancreas), Section \@ref(marker-batch)).
+Differences between batches should be handled by some other mechanism, e.g., blocking during marker detection (Figure \@ref(fig:batch-markers-pancreas), Section \@ref(marker-block)).
 In the past decade, we have - perhaps once or twice - used the corrected values for visualization,
 specifically to synchronize expression across all batches to the same color gradient in a $t$-SNE plot.
 This was done purely for aesthetics and was probably not worth the extra hassle,
@@ -489,7 +489,7 @@ assay(pseudo.bulk.seger)[1:10,1:10] # sum of counts for each individual/cell-typ
 ```
 
 Once we have the pseudo-bulk count matrix, we test for differences between conditions (in this case, disease status) within each cell type.
-Any DE analysis method that works with bulk RNA-seq data can be used - here, we'll be using `voom()` from the `r Biocpkg("limma")` package.
+Any DE analysis method that works with bulk RNA-seq data can be used - here, we'll be using `voom()` from the `r Biocpkg("limma")` package [@law2014voom].
 We won't go into too much detail here as there is plentiful documentation elsewhere, e.g., see `limma::limmaUsersGuide()`.
 Our only extra advice is to:
 
@@ -553,7 +553,7 @@ We then apply standard DA pipelines to see which cell types are affected by dise
 In particular, testing for DA is bread-and-butter stuff in the microbiome field,
 so we'd recommend checking out some of their [best practices](https://microbiome.github.io/OMA/docs/devel/pages/differential_abundance.html).
 Right now, though, this book is hard enough to compile without adding extra dependencies,
-so we'll just re-use `r Biocpkg("edgeR")`'s statistical machinery to test for differences in the cell abundance matrix^[
+so we'll just re-use `r Biocpkg("edgeR")`'s statistical machinery to test for differences in the cell abundance matrix [@robinson2010edgeR]^[
 With a hammer like `r Biocpkg("edgeR")`, everything kind of looks like a nail.].
 
 ```{r}

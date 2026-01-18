@@ -279,7 +279,7 @@ plotDots(sce.nn.10x, features=chosen.markers.10x$Symbol[1:10], group="clusters",
 The Cohen's $d$ and AUC consider both the magnitude of the difference between clusters as well as the variability within each cluster.
 If the variability is low, it is possible for a gene to have a large effect size even if the magnitude of the difference is small.
 These genes tend to be uninformative for cell type identification, e.g., ribosomal protein genes.
-We would prefer genes with larger log-fold changes between clusters, even if they have higher variability.
+We would prefer genes with larger log-fold changes between clusters, even if they have higher variability [@mccarthy2009treat].
 
 To favor the detection of such genes, we can compute the effect sizes relative to a log-fold change threshold.
 The definition of Cohen's $d$ is generalized to the standardized difference between the observed log-fold change and the specified threshold.

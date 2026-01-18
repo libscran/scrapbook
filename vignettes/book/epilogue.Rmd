@@ -30,3 +30,5 @@ In a scientific context, the infamous adage "all science is either physics or st
 dismissing the importance of other research fields to their inability to generate testable hypotheses.
 We feel that this comparison is disrespectful to the fun and noble hobby of stamp collecting.].
 You've already been paid to generate and analyze the data, so you might as well get it published; perhaps it might help someone else down the line.
+
+# References {-}
