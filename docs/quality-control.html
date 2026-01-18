@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 1 Quality Control | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 1 Quality Control | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 1 Quality Control | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="index.html"/>
+<link rel="next" href="normalization.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="quality-control" class="section level1 hasAnchor" number="1">
+<h1><span class="header-section-number">Chapter 1</span> Quality Control<a href="quality-control.html#quality-control" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="qc-motivation" class="section level2 hasAnchor" number="1.1">
+<h2><span class="header-section-number">1.1</span> Motivation<a href="quality-control.html#qc-motivation" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In a typical scRNA-seq dataset, some of the cells will be of “low quality” for one reason or another.
+Perhaps the cells were damaged during dissociation, or maybe library preparation was not performed efficiently.
+Such low-quality libraries are problematic as they can contribute to misleading results in downstream analyses:</p>
+<ul>
+<li>They form their own distinct cluster(s), complicating interpretation of the results.
+Low-quality libraries generated from different cell types can cluster together based on similarities in the damage-induced expression profiles,
+creating artificial intermediate states or trajectories between otherwise distinct subpopulations.</li>
+<li>They interfere with quantification of population heterogeneity during variance estimation or principal components analysis.
+The first few principal components will capture differences in quality rather than biology, reducing the effectiveness of dimensionality reduction.
+Similarly, genes with the largest variances will be driven by differences between low- and high-quality cells.</li>
+<li>Many low-quality libraries have small total counts and are scaled up aggressively during normalization.
+This inflates the apparent expression of genes with non-zero counts in such libraries,
+which further contributes to inflated variances and formation of artificial clusters.</li>
+</ul>
+<p>To mitigate these problems, we remove the problematic cells before proceeding with the rest of our analysis.
+This step is commonly referred to as quality control (QC) on the cells.
+(We will use “library” and “cell” interchangeably in this chapter;
+the distinction is more important for droplet-based data, where some libraries may not contain cells.)</p>
+</div>
+<div id="common-choices-of-qc-metrics" class="section level2 hasAnchor" number="1.2">
+<h2><span class="header-section-number">1.2</span> Common choices of QC metrics<a href="quality-control.html#common-choices-of-qc-metrics" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We use several common QC metrics to identify low-quality cells based on their expression profiles.
+These metrics are described below in terms of reads for Smart-seq2 data <span class="citation">(Picelli et al. <a href="#ref-picelli2014fulllength" role="doc-biblioref">2014</a>)</span>,
+but the same definitions apply to UMI data generated by other technologies like MARS-seq and droplet-based protocols
+<span class="citation">(Islam et al. <a href="#ref-islam2014quantitative" role="doc-biblioref">2014</a>; Jaitin et al. <a href="#ref-jaitin2014massively" role="doc-biblioref">2014</a>; Macosko et al. <a href="#ref-macosko2015highly" role="doc-biblioref">2015</a>; Klein et al. <a href="#ref-klein2015droplet" role="doc-biblioref">2015</a>)</span>.</p>
+<ul>
+<li>The library size is defined as the total sum of counts across all relevant features for each cell.
+Typically, the relevant features are the endogenous genes, excluding other feature types (e.g., spike-ins) or modalities (e.g., antibody-derived tags).
+Cells with small library sizes are likely to be of low quality as the RNA has been lost at some point during library preparation,
+either due to cell lysis or inefficient cDNA capture and amplification.</li>
+<li>The number of expressed features in each cell is defined as the number of endogenous genes with non-zero counts for that cell.
+Any cell with very few expressed genes is likely to be of poor quality as the diverse transcript population has not been successfully captured.</li>
+<li>The proportion of reads mapped to genes in the mitochondrial genome is defined relative to the library size in each cell <span class="citation">(Islam et al. <a href="#ref-islam2014quantitative" role="doc-biblioref">2014</a>; Ilicic et al. <a href="#ref-ilicic2016classification" role="doc-biblioref">2016</a>)</span>.
+The reasoning is that, in the presence of modest damage, perforations in the cell membrane permit efflux of cytoplasmic transcript molecules but are too small to allow mitochondria to escape.
+This leads to a relative enrichment of mitochondrial transcripts in libraries corresponding to damaged cells.
+(For single-nuclei RNA-seq experiments, high proportions are also useful as they represent cells where the cytoplasm has not been successfully stripped.)</li>
+<li>If spike-in transcripts were used in the experiment, the proportion of reads mapped to spike-ins is defined relative to the library size plus the total spike-in count in each cell.
+As the same amount of spike-in RNA should have been added to each cell, any enrichment in spike-in counts indicates that endogenous RNA was lost.
+Thus, high spike-in proportions are indicative of poor-quality cells where endogenous RNA has been lost due to, e.g., partial cell lysis or RNA degradation during dissociation.</li>
+</ul>
+<p>To demonstrate, we’ll use a small scRNA-seq dataset from <span class="citation">A. T. L. Lun et al. (<a href="#ref-lun2017assessing" role="doc-biblioref">2017</a>)</span>, which is provided with no prior QC steps.
+Happily enough, this dataset also contains spike-in transcripts so we can compute the spike-in proportions for each cell.
+These days, spike-ins are rare as they don’t work well in high-throughput scRNA-seq protocols;
+but this 416B dataset was generated from a good old-fashioned plate-based protocol, so if we’ve got spike-in data, we might as well use it.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="quality-control.html#cb4-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb4-2"><a href="quality-control.html#cb4-2" aria-hidden="true"></a>sce<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">LunSpikeInData</span>(<span class="st">&quot;416b&quot;</span>)</span>
+<span id="cb4-3"><a href="quality-control.html#cb4-3" aria-hidden="true"></a>sce<span class="fl">.416</span>b</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 46604 192 
+## metadata(0):
+## assays(1): counts
+## rownames(46604): ENSMUSG00000102693 ENSMUSG00000064842 ...
+##   ENSMUSG00000095742 CBFB-MYH11-mcherry
+## rowData names(1): Length
+## colnames(192): SLX-9555.N701_S502.C89V9ANXX.s_1.r_1
+##   SLX-9555.N701_S503.C89V9ANXX.s_1.r_1 ...
+##   SLX-11312.N712_S508.H5H5YBBXX.s_8.r_1
+##   SLX-11312.N712_S517.H5H5YBBXX.s_8.r_1
+## colData names(8): cell line cell type ... spike-in addition block
+## reducedDimNames(0):
+## mainExpName: endogenous
+## altExpNames(2): ERCC SIRV</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="quality-control.html#cb6-1" aria-hidden="true"></a><span class="co"># Finding all the mitochondrial transcripts first.</span></span>
+<span id="cb6-2"><a href="quality-control.html#cb6-2" aria-hidden="true"></a>location<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">rowRanges</span>(sce<span class="fl">.416</span>b)</span>
+<span id="cb6-3"><a href="quality-control.html#cb6-3" aria-hidden="true"></a>is.mito<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">any</span>(<span class="kw">seqnames</span>(location<span class="fl">.416</span>b)<span class="op">==</span><span class="st">&quot;MT&quot;</span>))</span>
+<span id="cb6-4"><a href="quality-control.html#cb6-4" aria-hidden="true"></a><span class="kw">length</span>(is.mito<span class="fl">.416</span>b)</span></code></pre></div>
+<pre><code>## [1] 37</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="quality-control.html#cb8-1" aria-hidden="true"></a><span class="co"># And then computing the QC metrics from our count matrix.</span></span>
+<span id="cb8-2"><a href="quality-control.html#cb8-2" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb8-3"><a href="quality-control.html#cb8-3" aria-hidden="true"></a>sce.qc<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb8-4"><a href="quality-control.html#cb8-4" aria-hidden="true"></a>    sce<span class="fl">.416</span>b, </span>
+<span id="cb8-5"><a href="quality-control.html#cb8-5" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.416</span>b),</span>
+<span id="cb8-6"><a href="quality-control.html#cb8-6" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span> <span class="co"># omit this if no spike-ins are present.</span></span>
+<span id="cb8-7"><a href="quality-control.html#cb8-7" aria-hidden="true"></a>)</span>
+<span id="cb8-8"><a href="quality-control.html#cb8-8" aria-hidden="true"></a></span>
+<span id="cb8-9"><a href="quality-control.html#cb8-9" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc<span class="fl">.416</span>b<span class="op">$</span>sum)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   27084  856350 1111252 1165865 1328301 4398883</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="quality-control.html#cb10-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc<span class="fl">.416</span>b<span class="op">$</span>detected)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    5609    7502    8341    8397    9208   11380</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="quality-control.html#cb12-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc<span class="fl">.416</span>b<span class="op">$</span>subset.proportion.MT)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## 0.04593 0.07294 0.08139 0.08146 0.09035 0.15617</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="quality-control.html#cb14-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc<span class="fl">.416</span>b<span class="op">$</span>subset.proportion.ERCC)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## 0.02263 0.04389 0.06161 0.06622 0.08451 0.20765</code></pre>
+<p>A key assumption here is that these QC metrics are independent of the biological state of each cell.
+Poor values (e.g., low library sizes, high mitochondrial proportions) are presumed to be driven by technical factors rather than biological processes,
+such that the removal of the corresponding cells will not misrepresent the biology in downstream analyses.
+In heterogeneous datasets, this assumption is unlikely to be true:</p>
+<ul>
+<li>Some cell types have systematically less RNA content or more mitochondria (see Figure 3A of <span class="citation">Germain, Sonrel, and Robinson (<a href="#ref-germain2020pipecomp" role="doc-biblioref">2020</a>)</span>).
+For example, CD8+ T cells increase RNA synthesis upon stimulation while hepatocyptes contain more mitochondria to power their metabolic activities.</li>
+<li>Even if all cell types have the same total RNA content and mitochondria counts, certain cell types may be less amenable to the scRNA-seq protocol.
+The obvious example is that of neurons, which are easily damaged during dissociation and often have poorer values for the QC metrics.</li>
+</ul>
+<p>Major violations of this assumption could result in the loss of entire cell types prior to downstream analysis.
+We can check for such violations using diagnostic plots described in Section <a href="quality-control.html#qc-plots">1.4</a>,
+but for now, let’s just hope for the best and proceed through this chapter.</p>
+</div>
+<div id="identifying-low-quality-cells" class="section level2 hasAnchor" number="1.3">
+<h2><span class="header-section-number">1.3</span> Identifying low-quality cells<a href="quality-control.html#identifying-low-quality-cells" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="qc-outlier" class="section level3 hasAnchor" number="1.3.1">
+<h3><span class="header-section-number">1.3.1</span> With adaptive thresholds<a href="quality-control.html#qc-outlier" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Once we have some QC metrics, we need to define thresholds with which we can separate low- and high-quality cells.
+With the adaptive threshold strategy, we assume that most of our dataset consists of high-quality cells.
+This is usually reasonable and can be experimentally verified in some situations, e.g., by visually checking that each cell is intact on a microwell plate.
+We then identify cells that are outliers for any of the QC metrics, based on the median absolute deviation (MAD) from the median value of each metric across all cells.
+By default, we consider a value to be an outlier if it is more than 3 MADs from the median in the “problematic” direction.
+This is loosely motivated by the fact that such a filter will retain 99% of non-outlier values that follow a normal distribution.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="quality-control.html#cb16-1" aria-hidden="true"></a>qc.thresh<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.qc<span class="fl">.416</span>b)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb16-2"><a href="quality-control.html#cb16-2" aria-hidden="true"></a>qc.thresh<span class="fl">.416</span>b</span></code></pre></div>
+<pre><code>## $sum
+## [1] 434082.9
+## 
+## $detected
+## [1] 5231.468
+## 
+## $subset.proportion
+##        MT      ERCC 
+## 0.1191734 0.1454460</code></pre>
+<p>This function computes a MAD-based outlier threshold for each metric.</p>
+<ul>
+<li>For the library sizes and number of expressed genes, a lower threshold is defined after log-transforming the metrics.
+This improves the normality of right-skewed distributions to justify the 99% rationale mentioned above.
+It also avoids defining a negative threshold that would be meaningless for a non-negative metric.
+Note that only the MAD calculations are on the log-scale - the thresholds reported in <code>qc.thresh.416b</code> are always on the original scale.</li>
+<li>For the mitochondrial/spike-in proportions, an upper threshold is defined without any transformation of the metrics.
+In particular, we do not log-transform as this would inflate the MAD by converting near-zero proportions to large negative log-values.</li>
+</ul>
+<p>We apply these thresholds to filter for high-quality cells where the relevant metrics are above/below their respective lower/upper thresholds:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="quality-control.html#cb18-1" aria-hidden="true"></a><span class="co"># The &#39;keep&#39; column in the colData is added by quickRnaQc.se() and indicates</span></span>
+<span id="cb18-2"><a href="quality-control.html#cb18-2" aria-hidden="true"></a><span class="co"># whether a cell should be kept after QC filtering.</span></span>
+<span id="cb18-3"><a href="quality-control.html#cb18-3" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc<span class="fl">.416</span>b<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical       6     186</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="quality-control.html#cb20-1" aria-hidden="true"></a><span class="co"># Subsetting our SingleCellExperiment to only retain high-quality</span></span>
+<span id="cb20-2"><a href="quality-control.html#cb20-2" aria-hidden="true"></a><span class="co"># cells in the downstream analysis steps.</span></span>
+<span id="cb20-3"><a href="quality-control.html#cb20-3" aria-hidden="true"></a>sce.filt<span class="fl">.416</span>b &lt;-<span class="st"> </span>sce.qc<span class="fl">.416</span>b[,sce.qc<span class="fl">.416</span>b<span class="op">$</span>keep]</span>
+<span id="cb20-4"><a href="quality-control.html#cb20-4" aria-hidden="true"></a><span class="kw">ncol</span>(sce.filt<span class="fl">.416</span>b)</span></code></pre></div>
+<pre><code>## [1] 186</code></pre>
+<p>These outlier-based thresholds adapt to both the location and spread of the distribution of values for a given metric.
+This enables the QC procedure to adjust to changes in sequencing depth, cDNA capture efficiency, mitochondrial content, etc. without any user intervention or prior experience.
+The use of the MAD also improves robustness to dependencies between the QC metrics and the underlying biology, where some cell types have extreme QC metrics due to their biology.
+A heterogeneous population should have higher variability in the metrics among high-quality cells, increasing the MAD and reducing the risk of inadvertently removing those cell types
+(at the cost of reducing power to remove actual low-quality cells).</p>
+<p>Keep in mind that the underlying assumption of a high-quality majority may not always be appropriate.
+If most cells are of (unacceptably) low quality, the adaptive thresholds will fail as - by definition - they cannot remove the majority of cells.
+Of course, what is “acceptable” or not is rather context-dependent,
+e.g., small library sizes for embryonic stem cells might be problematic but the same distribution would be perfectly satisfactory for a dataset of naive T cells.
+In practice, this assumption is convenient as it ensures that we always retain most cells for our downstream analyses.</p>
+</div>
+<div id="qc-fixed" class="section level3 hasAnchor" number="1.3.2">
+<h3><span class="header-section-number">1.3.2</span> With fixed thresholds<a href="quality-control.html#qc-fixed" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>A simpler approach to identify low-quality cells involves applying fixed thresholds to the QC metrics.
+For example, we might consider cells to be low quality if they have library sizes below 100000 reads;
+express fewer than 5000 genes;
+have spike-in proportions above 10%;
+or have mitochondrial proportions above 10%.
+We can supply these numbers directly to <code>quickRnaQc.se()</code> to force the function to use our thresholds:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="quality-control.html#cb22-1" aria-hidden="true"></a>sce.fixed<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb22-2"><a href="quality-control.html#cb22-2" aria-hidden="true"></a>    sce<span class="fl">.416</span>b,</span>
+<span id="cb22-3"><a href="quality-control.html#cb22-3" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.416</span>b),</span>
+<span id="cb22-4"><a href="quality-control.html#cb22-4" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>, </span>
+<span id="cb22-5"><a href="quality-control.html#cb22-5" aria-hidden="true"></a>    <span class="dt">thresholds=</span><span class="kw">list</span>(</span>
+<span id="cb22-6"><a href="quality-control.html#cb22-6" aria-hidden="true"></a>        <span class="dt">sum =</span> <span class="fl">1e5</span>,</span>
+<span id="cb22-7"><a href="quality-control.html#cb22-7" aria-hidden="true"></a>        <span class="dt">detected =</span> <span class="fl">5e3</span>,</span>
+<span id="cb22-8"><a href="quality-control.html#cb22-8" aria-hidden="true"></a>        <span class="dt">subsets =</span> <span class="kw">c</span>(<span class="dt">MT =</span> <span class="fl">0.1</span>, <span class="dt">ERCC =</span> <span class="fl">0.1</span>)</span>
+<span id="cb22-9"><a href="quality-control.html#cb22-9" aria-hidden="true"></a>    )</span>
+<span id="cb22-10"><a href="quality-control.html#cb22-10" aria-hidden="true"></a>)</span>
+<span id="cb22-11"><a href="quality-control.html#cb22-11" aria-hidden="true"></a></span>
+<span id="cb22-12"><a href="quality-control.html#cb22-12" aria-hidden="true"></a><span class="kw">summary</span>(sce.fixed<span class="fl">.416</span>b<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical      39     153</code></pre>
+<p>This strategy is intuitive but requires some experience to determine appropriate thresholds for each experimental protocol and biological system.
+Thresholds for read count-based data are not applicable for UMI-based data, and vice versa.
+Differences in mitochondrial activity or total RNA content require constant adjustment of the mitochondrial and spike-in thresholds, respectively, for different biological systems.
+Even with the same protocol and system, the appropriate threshold can vary between runs due to fluctuations in cDNA capture efficiency and sequencing depth per cell.</p>
+</div>
+</div>
+<div id="qc-plots" class="section level2 hasAnchor" number="1.4">
+<h2><span class="header-section-number">1.4</span> Creating diagnostic plots<a href="quality-control.html#qc-plots" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>It’s prudent to inspect the distributions of QC metrics (Figure <a href="quality-control.html#fig:qc-dist-416b">1.1</a>) to identify possible problems.
+In the most ideal case, we would see normal distributions that would justify the 3 MAD threshold used in outlier detection.
+A large proportion of cells in another mode suggests that the QC metrics might be correlated with some biological state, potentially leading to the loss of distinct cell types during filtering;
+or that there were inconsistencies with library preparation for a subset of cells, which is not uncommon in plate-based protocols.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="quality-control.html#cb24-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb24-2"><a href="quality-control.html#cb24-2" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb24-3"><a href="quality-control.html#cb24-3" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;sum&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-4"><a href="quality-control.html#cb24-4" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh<span class="fl">.416</span>b<span class="op">$</span>sum, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-5"><a href="quality-control.html#cb24-5" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb24-6"><a href="quality-control.html#cb24-6" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Total count&quot;</span>),</span>
+<span id="cb24-7"><a href="quality-control.html#cb24-7" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;detected&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-8"><a href="quality-control.html#cb24-8" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh<span class="fl">.416</span>b<span class="op">$</span>detected, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-9"><a href="quality-control.html#cb24-9" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb24-10"><a href="quality-control.html#cb24-10" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Detected features&quot;</span>),</span>
+<span id="cb24-11"><a href="quality-control.html#cb24-11" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;subset.proportion.MT&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb24-12"><a href="quality-control.html#cb24-12" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh<span class="fl">.416</span>b<span class="op">$</span>subset.proportion[<span class="st">&quot;MT&quot;</span>], <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-13"><a href="quality-control.html#cb24-13" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mito prop&quot;</span>),</span>
+<span id="cb24-14"><a href="quality-control.html#cb24-14" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb24-15"><a href="quality-control.html#cb24-15" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh<span class="fl">.416</span>b<span class="op">$</span>subset.proportion[<span class="st">&quot;ERCC&quot;</span>], <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb24-16"><a href="quality-control.html#cb24-16" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;ERCC prop&quot;</span>),</span>
+<span id="cb24-17"><a href="quality-control.html#cb24-17" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb24-18"><a href="quality-control.html#cb24-18" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-dist-416b"></span>
+<img src="quality-control_files/figure-html/qc-dist-416b-1.png" alt="Distribution of QC metrics in the 416B dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric." width="768" />
+<p class="caption">
+Figure 1.1: Distribution of QC metrics in the 416B dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric.
+</p>
+</div>
+<p>For comparison, let’s look at a different dataset with stronger biological heterogeneity <span class="citation">(Grun et al. <a href="#ref-grun2016denovo" role="doc-biblioref">2016</a>)</span>.
+This dataset contains a mixture of pancreatic cell types from different donors, resulting in a more complex distribution for the metrics in Figure <a href="quality-control.html#fig:qc-dist-grun">1.2</a>.
+We might contemplate whether the clump of discarded cells corresponds to a genuine subpopulation,
+though all things considered, they are probably just damaged cells and removing them is the correct choice.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="quality-control.html#cb25-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb25-2"><a href="quality-control.html#cb25-2" aria-hidden="true"></a>sce.grun &lt;-<span class="st"> </span><span class="kw">GrunPancreasData</span>()</span>
+<span id="cb25-3"><a href="quality-control.html#cb25-3" aria-hidden="true"></a></span>
+<span id="cb25-4"><a href="quality-control.html#cb25-4" aria-hidden="true"></a><span class="co"># This dataset doesn&#39;t include any of the mitochondrial genes, unfortunately.</span></span>
+<span id="cb25-5"><a href="quality-control.html#cb25-5" aria-hidden="true"></a><span class="co"># But it does contain some nice ERCC spike-ins, so let&#39;s compute those proportions.</span></span>
+<span id="cb25-6"><a href="quality-control.html#cb25-6" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb25-7"><a href="quality-control.html#cb25-7" aria-hidden="true"></a>sce.qc.grun &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.grun, <span class="dt">subsets=</span><span class="kw">list</span>(), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb25-8"><a href="quality-control.html#cb25-8" aria-hidden="true"></a>qc.thresh.grun &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.qc.grun)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb25-9"><a href="quality-control.html#cb25-9" aria-hidden="true"></a>qc.thresh.grun</span></code></pre></div>
+<pre><code>## $sum
+## [1] 99.01313
+## 
+## $detected
+## [1] 133.9956
+## 
+## $subset.proportion
+##      ERCC 
+## 0.2666693</code></pre>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="quality-control.html#cb27-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.grun<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical     437    1291</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="quality-control.html#cb29-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb29-2"><a href="quality-control.html#cb29-2" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb29-3"><a href="quality-control.html#cb29-3" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.grun, <span class="dt">y=</span><span class="st">&quot;sum&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-4"><a href="quality-control.html#cb29-4" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh.grun<span class="op">$</span>sum, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-5"><a href="quality-control.html#cb29-5" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb29-6"><a href="quality-control.html#cb29-6" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Total count&quot;</span>),</span>
+<span id="cb29-7"><a href="quality-control.html#cb29-7" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.grun, <span class="dt">y=</span><span class="st">&quot;detected&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-8"><a href="quality-control.html#cb29-8" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh.grun<span class="op">$</span>detected, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-9"><a href="quality-control.html#cb29-9" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb29-10"><a href="quality-control.html#cb29-10" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Detected features&quot;</span>),</span>
+<span id="cb29-11"><a href="quality-control.html#cb29-11" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.grun, <span class="dt">y=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-12"><a href="quality-control.html#cb29-12" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh.grun<span class="op">$</span>subset.proportion[<span class="st">&quot;ERCC&quot;</span>], <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb29-13"><a href="quality-control.html#cb29-13" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb29-14"><a href="quality-control.html#cb29-14" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;ERCC proportion&quot;</span>),</span>
+<span id="cb29-15"><a href="quality-control.html#cb29-15" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">3</span></span>
+<span id="cb29-16"><a href="quality-control.html#cb29-16" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-dist-grun"></span>
+<img src="quality-control_files/figure-html/qc-dist-grun-1.png" alt="Distribution of QC metrics in the Grun dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric." width="960" />
+<p class="caption">
+Figure 1.2: Distribution of QC metrics in the Grun dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric.
+</p>
+</div>
+<p>Another useful diagnostic involves comparing the proportion of mitochondrial counts against some of the other QC metrics.</p>
+<ul>
+<li>Libraries with both large total counts and large mitochondrial counts may represent high-quality cells that happen to be highly metabolically active (e.g., hepatocytes, muscle cells).
+A similar interpretation can be applied to libraries with high mitochondrial percentages and low spike-in percentages, if these are available.</li>
+<li>Low-quality cells with small mitochondrial percentages, large spike-in percentages and small library sizes are likely to be stripped nuclei,
+i.e., they have been so extensively damaged that they have lost all cytoplasmic content.
+For single-nuclei studies, the stripped nuclei become the libraries of interest while the undamaged cells are of low quality.</li>
+</ul>
+<p>We demonstrate on data from a larger experiment involving the mouse brain <span class="citation">(Zeisel et al. <a href="#ref-zeisel2015brain" role="doc-biblioref">2015</a>)</span>.
+Figure <a href="quality-control.html#fig:qc-mito-zeisel">1.3</a> shows that the mitochondrial proportion is negatively correlated to the total count and positively correlated with the spike-in proportion.
+This is consistent with a common underlying effect of cell damage and indicates that we are not removing metabolically active, undamaged cells.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="quality-control.html#cb30-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb30-2"><a href="quality-control.html#cb30-2" aria-hidden="true"></a>sce.zeisel &lt;-<span class="st"> </span><span class="kw">ZeiselBrainData</span>()</span>
+<span id="cb30-3"><a href="quality-control.html#cb30-3" aria-hidden="true"></a>is.mito.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.zeisel)<span class="op">$</span>featureType<span class="op">==</span><span class="st">&quot;mito&quot;</span></span>
+<span id="cb30-4"><a href="quality-control.html#cb30-4" aria-hidden="true"></a><span class="kw">summary</span>(is.mito.zeisel)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical   19972      34</code></pre>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="quality-control.html#cb32-1" aria-hidden="true"></a><span class="co"># This dataset also contains spike-ins, so we might as well use them.</span></span>
+<span id="cb32-2"><a href="quality-control.html#cb32-2" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb32-3"><a href="quality-control.html#cb32-3" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.zeisel, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.zeisel), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb32-4"><a href="quality-control.html#cb32-4" aria-hidden="true"></a>qc.thresh.zeisel &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.qc.zeisel)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb32-5"><a href="quality-control.html#cb32-5" aria-hidden="true"></a>qc.thresh.zeisel</span></code></pre></div>
+<pre><code>## $sum
+## [1] 1928.56
+## 
+## $detected
+## [1] 845.7155
+## 
+## $subset.proportion
+##        MT      ERCC 
+## 0.2022321 0.7627049</code></pre>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="quality-control.html#cb34-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.zeisel<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical     139    2866</code></pre>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="quality-control.html#cb36-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb36-2"><a href="quality-control.html#cb36-2" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb36-3"><a href="quality-control.html#cb36-3" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.zeisel, <span class="dt">x=</span><span class="st">&quot;sum&quot;</span>, <span class="dt">y=</span><span class="st">&quot;subset.proportion.MT&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>),</span>
+<span id="cb36-4"><a href="quality-control.html#cb36-4" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.zeisel, <span class="dt">x=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">y=</span><span class="st">&quot;subset.proportion.MT&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>),</span>
+<span id="cb36-5"><a href="quality-control.html#cb36-5" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb36-6"><a href="quality-control.html#cb36-6" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-mito-zeisel"></span>
+<img src="quality-control_files/figure-html/qc-mito-zeisel-1.png" alt="Percentage of UMIs assigned to mitochondrial transcripts in the Zeisel brain dataset, plotted against the total number of UMIs (left) or the ERCC proportions (right). Each point represents a cell and is colored according to whether it was considered high-quality." width="960" />
+<p class="caption">
+Figure 1.3: Percentage of UMIs assigned to mitochondrial transcripts in the Zeisel brain dataset, plotted against the total number of UMIs (left) or the ERCC proportions (right). Each point represents a cell and is colored according to whether it was considered high-quality.
+</p>
+</div>
+<p>We can also check for inappropriate removal of cell types by comparing the expression profiles of the discarded and retained cells.
+If the discarded pool is enriched for a certain cell type, we should observe increased expression of the corresponding marker genes.
+To illustrate, we’ll use the classic PBMC dataset from 10X Genomics <span class="citation">(Zheng et al. <a href="#ref-zheng2017massively" role="doc-biblioref">2017</a>)</span> where we perform some additional QC after cell calling.
+Examination of the upregulated genes in Figure <a href="quality-control.html#fig:discardplotpbmc">1.4</a> reveals <em>PF4</em>, <em>PPBP</em> and <em>SDPR</em>,
+which (spoiler alert!) indicates that there is a platelet subpopulation that was removed by our QC filter.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="quality-control.html#cb37-1" aria-hidden="true"></a><span class="co"># Loading in raw data from the 10X output files.</span></span>
+<span id="cb37-2"><a href="quality-control.html#cb37-2" aria-hidden="true"></a><span class="kw">library</span>(DropletTestFiles)</span>
+<span id="cb37-3"><a href="quality-control.html#cb37-3" aria-hidden="true"></a>raw.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">getTestFile</span>(<span class="st">&quot;tenx-2.1.0-pbmc4k/1.0.0/raw.tar.gz&quot;</span>)</span>
+<span id="cb37-4"><a href="quality-control.html#cb37-4" aria-hidden="true"></a>dir.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;pbmc4k&quot;</span>)</span>
+<span id="cb37-5"><a href="quality-control.html#cb37-5" aria-hidden="true"></a><span class="kw">untar</span>(raw.path<span class="fl">.10</span>x, <span class="dt">exdir=</span>dir.path<span class="fl">.10</span>x)</span>
+<span id="cb37-6"><a href="quality-control.html#cb37-6" aria-hidden="true"></a></span>
+<span id="cb37-7"><a href="quality-control.html#cb37-7" aria-hidden="true"></a><span class="kw">library</span>(DropletUtils)</span>
+<span id="cb37-8"><a href="quality-control.html#cb37-8" aria-hidden="true"></a>fname<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir.path<span class="fl">.10</span>x, <span class="st">&quot;raw_gene_bc_matrices/GRCh38&quot;</span>)</span>
+<span id="cb37-9"><a href="quality-control.html#cb37-9" aria-hidden="true"></a>sce<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">read10xCounts</span>(fname<span class="fl">.10</span>x, <span class="dt">col.names=</span><span class="ot">TRUE</span>)</span>
+<span id="cb37-10"><a href="quality-control.html#cb37-10" aria-hidden="true"></a></span>
+<span id="cb37-11"><a href="quality-control.html#cb37-11" aria-hidden="true"></a><span class="co"># Cell calling to distinguish real cells from empty droplets. Normally this</span></span>
+<span id="cb37-12"><a href="quality-control.html#cb37-12" aria-hidden="true"></a><span class="co"># would be handled by the CellRanger pipeline, but older versions of CellRanger</span></span>
+<span id="cb37-13"><a href="quality-control.html#cb37-13" aria-hidden="true"></a><span class="co"># would already remove interesting cells with low total counts before we could</span></span>
+<span id="cb37-14"><a href="quality-control.html#cb37-14" aria-hidden="true"></a><span class="co"># even make any QC decisions. So for the purposes of this example, we&#39;ll handle</span></span>
+<span id="cb37-15"><a href="quality-control.html#cb37-15" aria-hidden="true"></a><span class="co"># cell calling ourselves using the unfiltered count data. </span></span>
+<span id="cb37-16"><a href="quality-control.html#cb37-16" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb37-17"><a href="quality-control.html#cb37-17" aria-hidden="true"></a>ed<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">emptyDrops</span>(<span class="kw">counts</span>(sce<span class="fl">.10</span>x))</span>
+<span id="cb37-18"><a href="quality-control.html#cb37-18" aria-hidden="true"></a>sce<span class="fl">.10</span>x &lt;-<span class="st"> </span>sce<span class="fl">.10</span>x[,<span class="kw">which</span>(ed<span class="fl">.10</span>x<span class="op">$</span>FDR <span class="op">&lt;=</span><span class="st"> </span><span class="fl">0.001</span>)]</span>
+<span id="cb37-19"><a href="quality-control.html#cb37-19" aria-hidden="true"></a>sce<span class="fl">.10</span>x</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 33694 4402 
+## metadata(1): Samples
+## assays(1): counts
+## rownames(33694): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+##   ENSG00000268674
+## rowData names(2): ID Symbol
+## colnames(4402): AAACCTGAGAAGGCCT-1 AAACCTGAGACAGACC-1 ...
+##   TTTGTCAGTTAAGACA-1 TTTGTCATCCCAAGAT-1
+## colData names(2): Sample Barcode
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="quality-control.html#cb39-1" aria-hidden="true"></a><span class="co"># Applying our default QC with outlier-based thresholds.</span></span>
+<span id="cb39-2"><a href="quality-control.html#cb39-2" aria-hidden="true"></a>is.mito<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">grepl</span>(<span class="st">&quot;^MT-&quot;</span>, <span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>Symbol)</span>
+<span id="cb39-3"><a href="quality-control.html#cb39-3" aria-hidden="true"></a>sce.qc<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce<span class="fl">.10</span>x, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.10</span>x))</span>
+<span id="cb39-4"><a href="quality-control.html#cb39-4" aria-hidden="true"></a></span>
+<span id="cb39-5"><a href="quality-control.html#cb39-5" aria-hidden="true"></a><span class="co"># Summing counts for the pools of retained or discarded cells.</span></span>
+<span id="cb39-6"><a href="quality-control.html#cb39-6" aria-hidden="true"></a>aggregate<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">aggregateAcrossCells.se</span>(</span>
+<span id="cb39-7"><a href="quality-control.html#cb39-7" aria-hidden="true"></a>    sce<span class="fl">.10</span>x,</span>
+<span id="cb39-8"><a href="quality-control.html#cb39-8" aria-hidden="true"></a>    <span class="kw">list</span>(<span class="dt">status=</span><span class="kw">ifelse</span>(sce.qc<span class="fl">.10</span>x<span class="op">$</span>keep, <span class="st">&quot;retain&quot;</span>, <span class="st">&quot;discard&quot;</span>))</span>
+<span id="cb39-9"><a href="quality-control.html#cb39-9" aria-hidden="true"></a>)</span>
+<span id="cb39-10"><a href="quality-control.html#cb39-10" aria-hidden="true"></a>sums<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">assay</span>(aggregate<span class="fl">.10</span>x, <span class="st">&quot;sums&quot;</span>)</span>
+<span id="cb39-11"><a href="quality-control.html#cb39-11" aria-hidden="true"></a><span class="kw">colnames</span>(sums<span class="fl">.10</span>x) &lt;-<span class="st"> </span>aggregate<span class="fl">.10</span>x<span class="op">$</span>factor.status</span>
+<span id="cb39-12"><a href="quality-control.html#cb39-12" aria-hidden="true"></a><span class="kw">head</span>(sums<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>##                 discard retain
+## ENSG00000243485       0      0
+## ENSG00000237613       0      0
+## ENSG00000186092       0      0
+## ENSG00000238009       0      9
+## ENSG00000239945       0      2
+## ENSG00000239906       0      0</code></pre>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="quality-control.html#cb41-1" aria-hidden="true"></a><span class="co"># Computing log-fold changes between retained and discarded pools.</span></span>
+<span id="cb41-2"><a href="quality-control.html#cb41-2" aria-hidden="true"></a><span class="kw">library</span>(edgeR)</span>
+<span id="cb41-3"><a href="quality-control.html#cb41-3" aria-hidden="true"></a>logged<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">cpm</span>(sums<span class="fl">.10</span>x, <span class="dt">log=</span><span class="ot">TRUE</span>, <span class="dt">prior.count=</span><span class="dv">2</span>)</span>
+<span id="cb41-4"><a href="quality-control.html#cb41-4" aria-hidden="true"></a>logFC<span class="fl">.10</span>x &lt;-<span class="st"> </span>logged<span class="fl">.10</span>x[,<span class="st">&quot;discard&quot;</span>] <span class="op">-</span><span class="st"> </span>logged<span class="fl">.10</span>x[,<span class="st">&quot;retain&quot;</span>]</span>
+<span id="cb41-5"><a href="quality-control.html#cb41-5" aria-hidden="true"></a>abundance<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">rowMeans</span>(logged<span class="fl">.10</span>x)</span>
+<span id="cb41-6"><a href="quality-control.html#cb41-6" aria-hidden="true"></a></span>
+<span id="cb41-7"><a href="quality-control.html#cb41-7" aria-hidden="true"></a><span class="kw">plot</span>(abundance<span class="fl">.10</span>x, logFC<span class="fl">.10</span>x, <span class="dt">xlab=</span><span class="st">&quot;Average abundance&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Log-FC (discarded/retained)&quot;</span>, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="fl">0.5</span>)</span>
+<span id="cb41-8"><a href="quality-control.html#cb41-8" aria-hidden="true"></a>platelet &lt;-<span class="st"> </span><span class="kw">match</span>(<span class="kw">c</span>(<span class="st">&quot;PF4&quot;</span>, <span class="st">&quot;PPBP&quot;</span>, <span class="st">&quot;SDPR&quot;</span>), <span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>Symbol)</span>
+<span id="cb41-9"><a href="quality-control.html#cb41-9" aria-hidden="true"></a><span class="kw">points</span>(abundance<span class="fl">.10</span>x[platelet], logFC<span class="fl">.10</span>x[platelet], <span class="dt">col=</span><span class="st">&quot;red&quot;</span>, <span class="dt">pch=</span><span class="dv">16</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:discardplotpbmc"></span>
+<img src="quality-control_files/figure-html/discardplotpbmc-1.png" alt="Log-fold changes between discarded and retained cells in the PBMC dataset against the average abundance. Each point represents a gene, with platelet-related genes highlighted in red." width="672" />
+<p class="caption">
+Figure 1.4: Log-fold changes between discarded and retained cells in the PBMC dataset against the average abundance. Each point represents a gene, with platelet-related genes highlighted in red.
+</p>
+</div>
+<p>If we suspect that cell types have been incorrectly discarded by our QC procedure, the most direct solution is to relax the QC filters.
+This is easily achieved for the outlier-based thresholds by increasing <code>num.mads=</code> in the <code>quickRnaQc.se()</code> call.
+Alternatively, we can disable filtering for particular metrics by setting the threshold to <code>Inf</code> or <code>-Inf</code> for upper and lower thresholds, respectively.
+We might even think about skipping the filtering altogether<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>,
+as discussed in Section <a href="quality-control.html#qc-skip">1.6</a>.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="quality-control.html#cb42-1" aria-hidden="true"></a><span class="co"># Effectively just filtering on the mitochondrial proportions.</span></span>
+<span id="cb42-2"><a href="quality-control.html#cb42-2" aria-hidden="true"></a>relaxed.thresh<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.qc<span class="fl">.10</span>x)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb42-3"><a href="quality-control.html#cb42-3" aria-hidden="true"></a>relaxed.thresh<span class="fl">.10</span>x<span class="op">$</span>sum &lt;-<span class="st"> </span><span class="op">-</span><span class="ot">Inf</span></span>
+<span id="cb42-4"><a href="quality-control.html#cb42-4" aria-hidden="true"></a>relaxed.thresh<span class="fl">.10</span>x<span class="op">$</span>detected &lt;-<span class="st"> </span><span class="op">-</span><span class="ot">Inf</span></span>
+<span id="cb42-5"><a href="quality-control.html#cb42-5" aria-hidden="true"></a>sce.relaxed<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb42-6"><a href="quality-control.html#cb42-6" aria-hidden="true"></a>    sce<span class="fl">.10</span>x,</span>
+<span id="cb42-7"><a href="quality-control.html#cb42-7" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.10</span>x),</span>
+<span id="cb42-8"><a href="quality-control.html#cb42-8" aria-hidden="true"></a>    <span class="dt">thresholds=</span>relaxed.thresh<span class="fl">.10</span>x</span>
+<span id="cb42-9"><a href="quality-control.html#cb42-9" aria-hidden="true"></a>)</span>
+<span id="cb42-10"><a href="quality-control.html#cb42-10" aria-hidden="true"></a><span class="kw">summary</span>(sce.relaxed<span class="fl">.10</span>x<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical     322    4080</code></pre>
+</div>
+<div id="qc-block" class="section level2 hasAnchor" number="1.5">
+<h2><span class="header-section-number">1.5</span> Blocking on experimental factors<a href="quality-control.html#qc-block" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>More complex studies may involve multiple blocks of cells generated with different experimental parameters, e.g., sequencing depth.
+In such cases, it makes little sense to compute medians and MADs from a mixture distribution containing samples from multiple blocks.
+For example, if the sequencing coverage is lower in one block compared to the others, the median will be dragged down and the MAD will be inflated.
+This will reduce the suitability of the adaptive threshold for each block.</p>
+<p>A possibly better approach is to compute an adaptive threshold separately for each block, under the assumption that most cells in each block are of high quality.
+We illustrate using our 416B dataset again, which actually contains two experimental factors that we previously ignored:
+the microwell plate in which each cell was processed, and whether the expression of a <em>CBFB-MYH11</em> oncogene was induced by doxycycline treatment.
+For the purposes of QC, we will consider each unique combination of these factors to be an experimental block,
+as both have the potential to alter the QC metrics, e.g., different sequencing coverage in each run or different RNA content after treatment.
+Setting <code>block=</code> in <code>quickRnaQc.se()</code> yields a separate threshold for each block (Figure <a href="quality-control.html#fig:qc-dist-416b-block">1.5</a>),
+which may be more appropriate than a common threshold across all blocks.</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="quality-control.html#cb44-1" aria-hidden="true"></a><span class="co"># Making a combined factor for easier reading.</span></span>
+<span id="cb44-2"><a href="quality-control.html#cb44-2" aria-hidden="true"></a>plate<span class="fl">.416</span>b &lt;-<span class="st"> </span>sce<span class="fl">.416</span>b<span class="op">$</span>block <span class="co"># i.e., the plate of origin.</span></span>
+<span id="cb44-3"><a href="quality-control.html#cb44-3" aria-hidden="true"></a>pheno<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">ifelse</span>(sce<span class="fl">.416</span>b<span class="op">$</span>phenotype <span class="op">==</span><span class="st"> &quot;wild type phenotype&quot;</span>, <span class="st">&quot;WT&quot;</span>, <span class="st">&quot;induced&quot;</span>)</span>
+<span id="cb44-4"><a href="quality-control.html#cb44-4" aria-hidden="true"></a>block<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">paste0</span>(pheno<span class="fl">.416</span>b, <span class="st">&quot;-&quot;</span>, plate<span class="fl">.416</span>b)</span>
+<span id="cb44-5"><a href="quality-control.html#cb44-5" aria-hidden="true"></a></span>
+<span id="cb44-6"><a href="quality-control.html#cb44-6" aria-hidden="true"></a>sce.block<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb44-7"><a href="quality-control.html#cb44-7" aria-hidden="true"></a>    sce<span class="fl">.416</span>b,</span>
+<span id="cb44-8"><a href="quality-control.html#cb44-8" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.416</span>b),</span>
+<span id="cb44-9"><a href="quality-control.html#cb44-9" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb44-10"><a href="quality-control.html#cb44-10" aria-hidden="true"></a>    <span class="dt">block=</span>block<span class="fl">.416</span>b</span>
+<span id="cb44-11"><a href="quality-control.html#cb44-11" aria-hidden="true"></a>)</span>
+<span id="cb44-12"><a href="quality-control.html#cb44-12" aria-hidden="true"></a>qc.thresh.block<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.block<span class="fl">.416</span>b)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb44-13"><a href="quality-control.html#cb44-13" aria-hidden="true"></a>qc.thresh.block<span class="fl">.416</span>b</span></code></pre></div>
+<pre><code>## $sum
+## induced-20160113 induced-20160325      WT-20160113      WT-20160325 
+##         461073.1         399133.7         599794.9         370316.5 
+## 
+## $detected
+## induced-20160113 induced-20160325      WT-20160113      WT-20160325 
+##         5399.240         6519.740         7215.887         7586.402 
+## 
+## $subset.proportion
+## $subset.proportion$MT
+## induced-20160113 induced-20160325      WT-20160113      WT-20160325 
+##        0.1175679        0.1289473        0.1175331        0.1169890 
+## 
+## $subset.proportion$ERCC
+## induced-20160113 induced-20160325      WT-20160113      WT-20160325 
+##       0.15504768       0.12718583       0.08995810       0.08105749 
+## 
+## 
+## $block.ids
+## [1] &quot;induced-20160113&quot; &quot;induced-20160325&quot; &quot;WT-20160113&quot;      &quot;WT-20160325&quot;</code></pre>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="quality-control.html#cb46-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.block<span class="fl">.416</span>b<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical       9     183</code></pre>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="quality-control.html#cb48-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb48-2"><a href="quality-control.html#cb48-2" aria-hidden="true"></a>sce.block<span class="fl">.416</span>b<span class="op">$</span>combined.block &lt;-<span class="st"> </span>block<span class="fl">.416</span>b</span>
+<span id="cb48-3"><a href="quality-control.html#cb48-3" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb48-4"><a href="quality-control.html#cb48-4" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.block<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;sum&quot;</span>, <span class="dt">x=</span><span class="st">&quot;combined.block&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-5"><a href="quality-control.html#cb48-5" aria-hidden="true"></a><span class="st">        </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.block<span class="fl">.416</span>b<span class="op">$</span>sum, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-6"><a href="quality-control.html#cb48-6" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_x_discrete</span>(<span class="dt">guide =</span> <span class="kw">guide_axis</span>(<span class="dt">angle =</span> <span class="dv">45</span>)) <span class="op">+</span></span>
+<span id="cb48-7"><a href="quality-control.html#cb48-7" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb48-8"><a href="quality-control.html#cb48-8" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Total count&quot;</span>),</span>
+<span id="cb48-9"><a href="quality-control.html#cb48-9" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.block<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;detected&quot;</span>, <span class="dt">x=</span><span class="st">&quot;combined.block&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-10"><a href="quality-control.html#cb48-10" aria-hidden="true"></a><span class="st">        </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.block<span class="fl">.416</span>b<span class="op">$</span>detected, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-11"><a href="quality-control.html#cb48-11" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_x_discrete</span>(<span class="dt">guide =</span> <span class="kw">guide_axis</span>(<span class="dt">angle =</span> <span class="dv">45</span>)) <span class="op">+</span></span>
+<span id="cb48-12"><a href="quality-control.html#cb48-12" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb48-13"><a href="quality-control.html#cb48-13" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Detected features&quot;</span>),</span>
+<span id="cb48-14"><a href="quality-control.html#cb48-14" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.block<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;subset.proportion.MT&quot;</span>, <span class="dt">x=</span><span class="st">&quot;combined.block&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb48-15"><a href="quality-control.html#cb48-15" aria-hidden="true"></a><span class="st">        </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.block<span class="fl">.416</span>b<span class="op">$</span>subset.proportion<span class="op">$</span>MT, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-16"><a href="quality-control.html#cb48-16" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_x_discrete</span>(<span class="dt">guide =</span> <span class="kw">guide_axis</span>(<span class="dt">angle =</span> <span class="dv">45</span>)) <span class="op">+</span></span>
+<span id="cb48-17"><a href="quality-control.html#cb48-17" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mito proportion&quot;</span>),</span>
+<span id="cb48-18"><a href="quality-control.html#cb48-18" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.block<span class="fl">.416</span>b, <span class="dt">y=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">x=</span><span class="st">&quot;combined.block&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb48-19"><a href="quality-control.html#cb48-19" aria-hidden="true"></a><span class="st">        </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.block<span class="fl">.416</span>b<span class="op">$</span>subset.proportion<span class="op">$</span>ERCC, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb48-20"><a href="quality-control.html#cb48-20" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_x_discrete</span>(<span class="dt">guide =</span> <span class="kw">guide_axis</span>(<span class="dt">angle =</span> <span class="dv">45</span>)) <span class="op">+</span></span>
+<span id="cb48-21"><a href="quality-control.html#cb48-21" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;ERCC proportion&quot;</span>),</span>
+<span id="cb48-22"><a href="quality-control.html#cb48-22" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb48-23"><a href="quality-control.html#cb48-23" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-dist-416b-block"></span>
+<img src="quality-control_files/figure-html/qc-dist-416b-block-1.png" alt="Distribution of QC metrics in the 416B dataset, separated according to each cell's combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors." width="768" />
+<p class="caption">
+Figure 1.5: Distribution of QC metrics in the 416B dataset, separated according to each cell’s combination of experimental factors. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric in each combination of factors.
+</p>
+</div>
+<p>That said, outlier detection will not be effective if a block does not contain a majority of high-quality cells.
+For example, some donors in the <span class="citation">Grun et al. (<a href="#ref-grun2016denovo" role="doc-biblioref">2016</a>)</span> human pancreas dataset have higher ERCC proportions (Figure <a href="quality-control.html#fig:qc-plot-pancreas">1.6</a>), probably corresponding to damaged cells.
+This inflates the median and MAD and reduces the effectiveness of the QC filtering in those blocks.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="quality-control.html#cb49-1" aria-hidden="true"></a>sce.block.grun &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb49-2"><a href="quality-control.html#cb49-2" aria-hidden="true"></a>    sce.grun,</span>
+<span id="cb49-3"><a href="quality-control.html#cb49-3" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(),</span>
+<span id="cb49-4"><a href="quality-control.html#cb49-4" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb49-5"><a href="quality-control.html#cb49-5" aria-hidden="true"></a>    <span class="dt">block=</span>sce.grun<span class="op">$</span>donor</span>
+<span id="cb49-6"><a href="quality-control.html#cb49-6" aria-hidden="true"></a>)</span>
+<span id="cb49-7"><a href="quality-control.html#cb49-7" aria-hidden="true"></a>qc.thresh.block.grun &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.block.grun)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb49-8"><a href="quality-control.html#cb49-8" aria-hidden="true"></a>qc.thresh.block.grun</span></code></pre></div>
+<pre><code>## $sum
+##         D10         D17          D2          D3          D7 
+##    1.222967 1002.354420  943.017540    3.977602  883.043512 
+## 
+## $detected
+##        D10        D17         D2         D3         D7 
+##   2.002534 815.811991 866.701785   5.936999 656.102224 
+## 
+## $subset.proportion
+## $subset.proportion$ERCC
+##        D10        D17         D2         D3         D7 
+## 0.73610696 0.07599947 0.06010975 1.13105828 0.15216956 
+## 
+## 
+## $block.ids
+## [1] &quot;D10&quot; &quot;D17&quot; &quot;D2&quot;  &quot;D3&quot;  &quot;D7&quot;</code></pre>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="quality-control.html#cb51-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.block.grun<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical     132    1596</code></pre>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="quality-control.html#cb53-1" aria-hidden="true"></a><span class="kw">plotColData</span>(sce.block.grun, <span class="dt">x=</span><span class="st">&quot;donor&quot;</span>, <span class="dt">y=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb53-2"><a href="quality-control.html#cb53-2" aria-hidden="true"></a><span class="st">    </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.block.grun<span class="op">$</span>subset.proportion<span class="op">$</span>ERCC, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb53-3"><a href="quality-control.html#cb53-3" aria-hidden="true"></a><span class="st">    </span><span class="kw">ggtitle</span>(<span class="st">&quot;ERCC prop&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-plot-pancreas"></span>
+<img src="quality-control_files/figure-html/qc-plot-pancreas-1.png" alt="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds." width="672" />
+<p class="caption">
+Figure 1.6: Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds.
+</p>
+</div>
+<p>For such problematic blocks, some manual intervention may be necessary to set an appropriate threshold.
+A simple solution is to just derive a threshold from the other blocks, e.g., by taking the average (Figure <a href="quality-control.html#fig:qc-plot-pancreas-fixed">1.7</a>).
+This restores some semblance of QC to remove the bulk of damaged cells in the affected donors.
+Hopefully, those cells really are damaged and we aren’t accidentally removing a real subpopulation of small cells that are unique to those donors<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>.</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="quality-control.html#cb54-1" aria-hidden="true"></a>okay.donors &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;D17&quot;</span>, <span class="st">&quot;D2&quot;</span>, <span class="st">&quot;D7&quot;</span>)</span>
+<span id="cb54-2"><a href="quality-control.html#cb54-2" aria-hidden="true"></a>bad.donors &lt;-<span class="st"> </span><span class="kw">setdiff</span>(<span class="kw">unique</span>(sce.grun<span class="op">$</span>donor), okay.donors)</span>
+<span id="cb54-3"><a href="quality-control.html#cb54-3" aria-hidden="true"></a></span>
+<span id="cb54-4"><a href="quality-control.html#cb54-4" aria-hidden="true"></a>qc.thresh.fixed.grun &lt;-<span class="st"> </span>qc.thresh.block.grun</span>
+<span id="cb54-5"><a href="quality-control.html#cb54-5" aria-hidden="true"></a>qc.thresh.fixed.grun<span class="op">$</span>sum[bad.donors] &lt;-<span class="st"> </span><span class="kw">mean</span>(qc.thresh.block.grun<span class="op">$</span>sum[okay.donors])</span>
+<span id="cb54-6"><a href="quality-control.html#cb54-6" aria-hidden="true"></a>qc.thresh.fixed.grun<span class="op">$</span>detected[bad.donors] &lt;-<span class="st"> </span><span class="kw">mean</span>(qc.thresh.block.grun<span class="op">$</span>detected[okay.donors])</span>
+<span id="cb54-7"><a href="quality-control.html#cb54-7" aria-hidden="true"></a>qc.thresh.fixed.grun<span class="op">$</span>subset.proportion<span class="op">$</span>ERCC[bad.donors] &lt;-<span class="st"> </span><span class="kw">mean</span>(qc.thresh.block.grun<span class="op">$</span>subset.proportion<span class="op">$</span>ERCC[okay.donors])</span>
+<span id="cb54-8"><a href="quality-control.html#cb54-8" aria-hidden="true"></a></span>
+<span id="cb54-9"><a href="quality-control.html#cb54-9" aria-hidden="true"></a>sce.fixed.grun &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb54-10"><a href="quality-control.html#cb54-10" aria-hidden="true"></a>    sce.grun,</span>
+<span id="cb54-11"><a href="quality-control.html#cb54-11" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(),</span>
+<span id="cb54-12"><a href="quality-control.html#cb54-12" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb54-13"><a href="quality-control.html#cb54-13" aria-hidden="true"></a>    <span class="dt">block=</span>sce.grun<span class="op">$</span>donor,</span>
+<span id="cb54-14"><a href="quality-control.html#cb54-14" aria-hidden="true"></a>    <span class="dt">thresholds=</span>qc.thresh.fixed.grun</span>
+<span id="cb54-15"><a href="quality-control.html#cb54-15" aria-hidden="true"></a>)</span>
+<span id="cb54-16"><a href="quality-control.html#cb54-16" aria-hidden="true"></a></span>
+<span id="cb54-17"><a href="quality-control.html#cb54-17" aria-hidden="true"></a><span class="kw">plotColData</span>(sce.fixed.grun, <span class="dt">x=</span><span class="st">&quot;donor&quot;</span>, <span class="dt">y=</span><span class="st">&quot;subset.proportion.ERCC&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;keep&quot;</span>) <span class="op">+</span></span>
+<span id="cb54-18"><a href="quality-control.html#cb54-18" aria-hidden="true"></a><span class="st">    </span><span class="kw">categoricalHlinesNamed</span>(qc.thresh.fixed.grun<span class="op">$</span>subset.proportion<span class="op">$</span>ERCC, <span class="dt">levels=</span><span class="ot">NULL</span>, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb54-19"><a href="quality-control.html#cb54-19" aria-hidden="true"></a><span class="st">    </span><span class="kw">ggtitle</span>(<span class="st">&quot;ERCC prop&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-plot-pancreas-fixed"></span>
+<img src="quality-control_files/figure-html/qc-plot-pancreas-fixed-1.png" alt="Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds, some of which are manually set for donors with a majority of low-quality cells." width="672" />
+<p class="caption">
+Figure 1.7: Distribution of the proportion of ERCC transcripts in each donor of the Grun pancreas dataset. Each point represents a cell and is coloured according to whether it was considered high-quality across all metrics. Dashed lines represent donor-specific thresholds, some of which are manually set for donors with a majority of low-quality cells.
+</p>
+</div>
+</div>
+<div id="qc-skip" class="section level2 hasAnchor" number="1.6">
+<h2><span class="header-section-number">1.6</span> Skipping quality control<a href="quality-control.html#qc-skip" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>If we don’t want to risk discarding real cell types, we could simply mark the low-quality cells as such and retain them in the downstream analysis.
+The aim here is to allow clusters of low-quality cells to form, and then to identify and ignore such clusters during interpretation of the results.
+This approach avoids discarding cell types that have poor values for the QC metrics, deferring the decision on whether a cluster of such cells represents a genuine biological state.
+So, in our 416B example, we would just continue with the unfiltered <code>sce.416b</code> for downstream analysis instead of using <code>sce.qc.416b</code>.</p>
+<p>The downside is that it shifts the burden of QC to the manual interpretation of the clusters,
+which is already a major bottleneck in scRNA-seq data analysis (Chapters <a href="clustering.html#clustering">6</a> and <a href="marker-detection.html#marker-detection">7</a>).
+If we don’t trust the QC metrics, we would have to distinguish between genuine cell types and low-quality cells based only on the cluster-specific marker genes…
+but if we had good markers for low-quality cells, we would have already used them as QC metrics!
+In practice, this usually becomes a time-consuming process of elimination whereby the clusters of low-quality cells are identified because they don’t fit any other characterization.
+Additionally, retention of low-quality cells may compromise the accuracy of other steps in the analysis, as discussed in Section <a href="quality-control.html#qc-motivation">1.1</a>.</p>
+<p>Personally, I’d suggest removing low-quality cells by default to avoid complications.
+This allows most of the population structure to be characterized with fewer concerns about its validity.
+Once the initial analysis is done, and if there are any concerns about discarded cell types, a more thorough re-analysis can be performed where the low-quality cells are only marked.
+This recovers cell types with low RNA content, high mitochondrial proportions, etc. that only need to be interpreted insofar as they “fill the gaps” in the initial analysis.</p>
+</div>
+<div id="session-info" class="section level2 unnumbered hasAnchor">
+<h2>Session Info<a href="quality-control.html#session-info" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="quality-control.html#cb55-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] edgeR_4.9.2                 limma_3.67.0               
+##  [3] DropletUtils_1.31.0         DropletTestFiles_1.21.0    
+##  [5] scater_1.39.1               ggplot2_4.0.1              
+##  [7] scuttle_1.21.0              scrapper_1.5.10            
+##  [9] ensembldb_2.35.0            AnnotationFilter_1.35.0    
+## [11] GenomicFeatures_1.63.1      AnnotationDbi_1.73.0       
+## [13] scRNAseq_2.25.0             SingleCellExperiment_1.33.0
+## [15] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+## [17] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [19] IRanges_2.45.0              S4Vectors_0.49.0           
+## [21] BiocGenerics_0.57.0         generics_0.1.4             
+## [23] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3        jsonlite_2.0.0           
+##   [3] magrittr_2.0.4            ggbeeswarm_0.7.3         
+##   [5] gypsum_1.7.0              farver_2.1.2             
+##   [7] rmarkdown_2.30            BiocIO_1.21.0            
+##   [9] vctrs_0.6.5               DelayedMatrixStats_1.33.0
+##  [11] memoise_2.0.1             Rsamtools_2.27.0         
+##  [13] RCurl_1.98-1.17           htmltools_0.5.9          
+##  [15] S4Arrays_1.11.1           AnnotationHub_4.1.0      
+##  [17] curl_7.0.0                BiocNeighbors_2.5.0      
+##  [19] Rhdf5lib_1.33.0           SparseArray_1.11.10      
+##  [21] rhdf5_2.55.12             sass_0.4.10              
+##  [23] alabaster.base_1.11.1     bslib_0.9.0              
+##  [25] alabaster.sce_1.11.0      httr2_1.2.2              
+##  [27] cachem_1.1.0              GenomicAlignments_1.47.0 
+##  [29] lifecycle_1.0.5           pkgconfig_2.0.3          
+##  [31] rsvd_1.0.5                Matrix_1.7-4             
+##  [33] R6_2.6.1                  fastmap_1.2.0            
+##  [35] digest_0.6.39             dqrng_0.4.1              
+##  [37] irlba_2.3.5.1             ExperimentHub_3.1.0      
+##  [39] RSQLite_2.4.5             beachmat_2.27.1          
+##  [41] labeling_0.4.3            filelock_1.0.3           
+##  [43] httr_1.4.7                abind_1.4-8              
+##  [45] compiler_4.6.0            bit64_4.6.0-1            
+##  [47] withr_3.0.2               S7_0.2.1                 
+##  [49] BiocParallel_1.45.0       viridis_0.6.5            
+##  [51] DBI_1.2.3                 R.utils_2.13.0           
+##  [53] HDF5Array_1.39.0          alabaster.ranges_1.11.0  
+##  [55] alabaster.schemas_1.11.0  rappdirs_0.3.3           
+##  [57] DelayedArray_0.37.0       rjson_0.2.23             
+##  [59] tools_4.6.0               vipor_0.4.7              
+##  [61] otel_0.2.0                beeswarm_0.4.0           
+##  [63] R.oo_1.27.1               glue_1.8.0               
+##  [65] h5mread_1.3.1             restfulr_0.0.16          
+##  [67] rhdf5filters_1.23.3       grid_4.6.0               
+##  [69] gtable_0.3.6              R.methodsS3_1.8.2        
+##  [71] BiocSingular_1.27.1       ScaledMatrix_1.19.0      
+##  [73] XVector_0.51.0            ggrepel_0.9.6            
+##  [75] BiocVersion_3.23.1        pillar_1.11.1            
+##  [77] dplyr_1.1.4               BiocFileCache_3.1.0      
+##  [79] lattice_0.22-7            rtracklayer_1.71.3       
+##  [81] bit_4.6.0                 tidyselect_1.2.1         
+##  [83] locfit_1.5-9.12           Biostrings_2.79.4        
+##  [85] knitr_1.51                gridExtra_2.3            
+##  [87] bookdown_0.46             ProtGenerics_1.43.0      
+##  [89] xfun_0.55                 statmod_1.5.1            
+##  [91] UCSC.utils_1.7.1          lazyeval_0.2.2           
+##  [93] yaml_2.3.12               evaluate_1.0.5           
+##  [95] codetools_0.2-20          cigarillo_1.1.0          
+##  [97] tibble_3.3.0              alabaster.matrix_1.11.0  
+##  [99] BiocManager_1.30.27       cli_3.6.5                
+## [101] jquerylib_0.1.4           dichromat_2.0-0.1        
+## [103] Rcpp_1.1.1                GenomeInfoDb_1.47.2      
+## [105] dbplyr_2.5.1              png_0.1-8                
+## [107] XML_3.99-0.20             parallel_4.6.0           
+## [109] blob_1.2.4                sparseMatrixStats_1.23.0 
+## [111] bitops_1.0-9              viridisLite_0.4.2        
+## [113] alabaster.se_1.11.0       scales_1.4.0             
+## [115] purrr_1.2.1               crayon_1.5.3             
+## [117] rlang_1.1.7               cowplot_1.2.0            
+## [119] KEGGREST_1.51.1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-germain2020pipecomp">
+<p>Germain, P.-L., A. Sonrel, and M. D. Robinson. 2020. “pipeComp, a general framework for the evaluation of computational pipelines, reveals performant single cell RNA-seq preprocessing tools.” <em>Genome Biol.</em> 21 (1): 227.</p>
+</div>
+<div id="ref-grun2016denovo">
+<p>Grun, D., M. J. Muraro, J. C. Boisset, K. Wiebrands, A. Lyubimova, G. Dharmadhikari, M. van den Born, et al. 2016. “De novo prediction of stem cell identity using single-cell transcriptome data.” <em>Cell Stem Cell</em> 19 (2): 266–77.</p>
+</div>
+<div id="ref-ilicic2016classification">
+<p>Ilicic, T., J. K. Kim, A. A. Kołodziejczyk, F. O. Bagger, D. J. McCarthy, J. C. Marioni, and S. A. Teichmann. 2016. “Classification of low quality cells from single-cell RNA-seq data.” <em>Genome Biol.</em> 17 (1): 29.</p>
+</div>
+<div id="ref-islam2014quantitative">
+<p>Islam, S., A. Zeisel, S. Joost, G. La Manno, P. Zajac, M. Kasper, P. Lonnerberg, and S. Linnarsson. 2014. “Quantitative single-cell RNA-seq with unique molecular identifiers.” <em>Nat. Methods</em> 11 (2): 163–66.</p>
+</div>
+<div id="ref-jaitin2014massively">
+<p>Jaitin, D. A., E. Kenigsberg, H. Keren-Shaul, N. Elefant, F. Paul, I. Zaretsky, A. Mildner, et al. 2014. “Massively parallel single-cell RNA-seq for marker-free decomposition of tissues into cell types.” <em>Science</em> 343 (6172): 776–79.</p>
+</div>
+<div id="ref-klein2015droplet">
+<p>Klein, A. M., L. Mazutis, I. Akartuna, N. Tallapragada, A. Veres, V. Li, L. Peshkin, D. A. Weitz, and M. W. Kirschner. 2015. “Droplet barcoding for single-cell transcriptomics applied to embryonic stem cells.” <em>Cell</em> 161 (5): 1187–1201.</p>
+</div>
+<div id="ref-lun2017assessing">
+<p>Lun, A. T. L., F. J. Calero-Nieto, L. Haim-Vilmovsky, B. Gottgens, and J. C. Marioni. 2017. “Assessing the reliability of spike-in normalization for analyses of single-cell RNA sequencing data.” <em>Genome Res.</em> 27 (11): 1795–1806.</p>
+</div>
+<div id="ref-macosko2015highly">
+<p>Macosko, E. Z., A. Basu, R. Satija, J. Nemesh, K. Shekhar, M. Goldman, I. Tirosh, et al. 2015. “Highly parallel genome-wide expression profiling of individual cells using nanoliter droplets.” <em>Cell</em> 161 (5): 1202–14.</p>
+</div>
+<div id="ref-picelli2014fulllength">
+<p>Picelli, S., O. R. Faridani, A. K. Bjorklund, G. Winberg, S. Sagasser, and R. Sandberg. 2014. “Full-length RNA-seq from single cells using Smart-seq2.” <em>Nat. Protoc.</em> 9 (1): 171–81.</p>
+</div>
+<div id="ref-zeisel2015brain">
+<p>Zeisel, A., A. B. Munoz-Manchado, S. Codeluppi, P. Lonnerberg, G. La Manno, A. Jureus, S. Marques, et al. 2015. “Brain structure. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq.” <em>Science</em> 347 (6226): 1138–42.</p>
+</div>
+<div id="ref-zheng2017massively">
+<p>Zheng, G. X., J. M. Terry, P. Belgrader, P. Ryvkin, Z. W. Bent, R. Wilson, S. B. Ziraldo, et al. 2017. “Massively parallel digital transcriptional profiling of single cells.” <em>Nat. Commun.</em> 8 (January): 14049.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="1">
+<li id="fn1"><p>
+At this point, you might get the impression that the QC step involves many arbitrary and <em>ad hoc</em> decisions.
+That impression would mostly be correct.
+Better get used to it, there’s going to be a lot more of that in the rest of this book.<a href="quality-control.html#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>But who knows?<a href="quality-control.html#fnref2" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="normalization.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/quality-control.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/quality-control.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/quality-control.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

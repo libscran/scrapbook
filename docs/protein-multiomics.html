@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 9 Protein multiomics | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 9 Protein multiomics | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 9 Protein multiomics | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="batch-correction.html"/>
+<link rel="next" href="closing-remarks.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="protein-multiomics" class="section level1 hasAnchor" number="9">
+<h1><span class="header-section-number">Chapter 9</span> Protein multiomics<a href="protein-multiomics.html#protein-multiomics" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-7" class="section level2 hasAnchor" number="9.1">
+<h2><span class="header-section-number">9.1</span> Motivation<a href="protein-multiomics.html#motivation-7" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Cellular indexing of transcriptomes and epitopes by sequencing (CITE-seq) simultaneously quantifies gene expression and surface protein abundance in each cell <span class="citation">(Stoeckius et al. <a href="#ref-stoeckius2017simultaneous" role="doc-biblioref">2017</a>)</span>.
+First, we create antibodies against the proteins of interest and conjugate them to synthetic RNA tags, i.e., antibody-derived tags (ADTs)<a href="#fn35" class="footnote-ref" id="fnref35"><sup>35</sup></a>.
+Cells are labelled with these antibodies and processed with single-cell technologies like 10X Genomics.
+For each cell, both ADTs and endogenous transcripts are reverse-transcribed into cDNA and sequenced.
+This yields a set of counts for the ADTs, to quantify the abundance of each selected protein; and another set of counts for the genes, as in scRNA-seq.
+We can then examine aspects of the proteome (e.g., post-translational modifications) and other cellular features that would normally be overlooked in transcriptomic studies.</p>
+<p>To analyze CITE-seq data, we split the dataset into the RNA and ADT counts and apply usual steps (quality control, normalization, etc.) to each modality.
+For the RNA modality, we can re-use the same functions from the previous chapters as if the data were generated from an scRNA-seq experiment.
+For ADTs, some tweaks are necessary to account for unique aspects of the ADT counts -
+specifically, fewer features are available as the proteins of interest were chosen by the reseacher,
+and the coverage of each ADT is much deeper as the sequencing resources are concentrated into a smaller number of features.
+Once modality-specific processing is complete, we combine the ADT and RNA data so that information in both modalities are used in downstream steps like clustering.</p>
+</div>
+<div id="quality-control-1" class="section level2 hasAnchor" number="9.2">
+<h2><span class="header-section-number">9.2</span> Quality control<a href="protein-multiomics.html#quality-control-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>As in the RNA-based analysis, we want to remove cells in which ADTs were not efficiently captured or sequenced.
+This involves similar QC metrics to those described in Chapter <a href="quality-control.html#quality-control">1</a>, specifically:</p>
+<ul>
+<li>The number of ADTs detected (i.e., with non-zero counts) in each cell.
+We expect non-zero counts for most ADTs in each cell, even if the corresponding protein target is not present on the cell surface.
+This is due to deeper sequencing coverage that detects up free-floating antibodies in the ambient solution or antibodies that are non-specifically bound to the cell membrance.
+An unusually low number of detected features is indicative of a failure in library preparation or sequencing.</li>
+<li>The sum of counts for isotype control (IgG) antibodies.
+IgG controls lack a specific target in the cell but otherwise have similar properties to the primary antibodies against the proteins of interest.
+The coverage of these control ADTs serves as a measure of non-specific binding in each cell.
+A large sum for the controls is indicative of a problem with specificity, possibly even the formation of undesirable protein aggregates.</li>
+</ul>
+<p>We demonstrate using a PBMC dataset from 10X Genomics <span class="citation">(Zheng et al. <a href="#ref-zheng2017massively" role="doc-biblioref">2017</a>)</span> that contains quantified abundances for a number of interesting surface proteins.</p>
+<div class="sourceCode" id="cb286"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb286-1"><a href="protein-multiomics.html#cb286-1" aria-hidden="true"></a><span class="kw">library</span>(DropletTestFiles)</span>
+<span id="cb286-2"><a href="protein-multiomics.html#cb286-2" aria-hidden="true"></a>path.pbmc &lt;-<span class="st"> </span><span class="kw">getTestFile</span>(<span class="st">&quot;tenx-3.0.0-pbmc_10k_protein_v3/1.0.0/filtered.tar.gz&quot;</span>)</span>
+<span id="cb286-3"><a href="protein-multiomics.html#cb286-3" aria-hidden="true"></a>dir.pbmc &lt;-<span class="st"> </span><span class="kw">tempfile</span>()</span>
+<span id="cb286-4"><a href="protein-multiomics.html#cb286-4" aria-hidden="true"></a><span class="kw">untar</span>(path.pbmc, <span class="dt">exdir=</span>dir.pbmc)</span>
+<span id="cb286-5"><a href="protein-multiomics.html#cb286-5" aria-hidden="true"></a></span>
+<span id="cb286-6"><a href="protein-multiomics.html#cb286-6" aria-hidden="true"></a><span class="co"># Loading it in as a SingleCellExperiment object.</span></span>
+<span id="cb286-7"><a href="protein-multiomics.html#cb286-7" aria-hidden="true"></a><span class="kw">library</span>(DropletUtils)</span>
+<span id="cb286-8"><a href="protein-multiomics.html#cb286-8" aria-hidden="true"></a>sce.pbmc &lt;-<span class="st"> </span><span class="kw">read10xCounts</span>(<span class="kw">file.path</span>(dir.pbmc, <span class="st">&quot;filtered_feature_bc_matrix&quot;</span>))</span>
+<span id="cb286-9"><a href="protein-multiomics.html#cb286-9" aria-hidden="true"></a></span>
+<span id="cb286-10"><a href="protein-multiomics.html#cb286-10" aria-hidden="true"></a><span class="co"># Splitting off the ADTs into an alternative experiment for separate</span></span>
+<span id="cb286-11"><a href="protein-multiomics.html#cb286-11" aria-hidden="true"></a><span class="co"># processing, otherwise they&#39;d be treated as genes.</span></span>
+<span id="cb286-12"><a href="protein-multiomics.html#cb286-12" aria-hidden="true"></a>sce.pbmc &lt;-<span class="st"> </span><span class="kw">splitAltExps</span>(sce.pbmc, <span class="kw">rowData</span>(sce.pbmc)<span class="op">$</span>Type)</span>
+<span id="cb286-13"><a href="protein-multiomics.html#cb286-13" aria-hidden="true"></a>sce.pbmc</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 33538 7865 
+## metadata(1): Samples
+## assays(1): counts
+## rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+##   ENSG00000268674
+## rowData names(3): ID Symbol Type
+## colnames: NULL
+## colData names(2): Sample Barcode
+## reducedDimNames(0):
+## mainExpName: Gene Expression
+## altExpNames(1): Antibody Capture</code></pre>
+<div class="sourceCode" id="cb288"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb288-1"><a href="protein-multiomics.html#cb288-1" aria-hidden="true"></a><span class="co"># Here, the &quot;main&quot; experiment contains the RNA data, while the alternative</span></span>
+<span id="cb288-2"><a href="protein-multiomics.html#cb288-2" aria-hidden="true"></a><span class="co"># experiment contains the antibody data.</span></span>
+<span id="cb288-3"><a href="protein-multiomics.html#cb288-3" aria-hidden="true"></a><span class="kw">mainExpName</span>(sce.pbmc)</span></code></pre></div>
+<pre><code>## [1] &quot;Gene Expression&quot;</code></pre>
+<div class="sourceCode" id="cb290"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb290-1"><a href="protein-multiomics.html#cb290-1" aria-hidden="true"></a>sce.adt.pbmc &lt;-<span class="st"> </span><span class="kw">altExp</span>(sce.pbmc, <span class="st">&quot;Antibody Capture&quot;</span>)</span>
+<span id="cb290-2"><a href="protein-multiomics.html#cb290-2" aria-hidden="true"></a>sce.adt.pbmc</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 17 7865 
+## metadata(1): Samples
+## assays(1): counts
+## rownames(17): CD3 CD4 ... IgG1 IgG2b
+## rowData names(3): ID Symbol Type
+## colnames: NULL
+## colData names(0):
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
+<div class="sourceCode" id="cb292"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb292-1"><a href="protein-multiomics.html#cb292-1" aria-hidden="true"></a><span class="co"># Taking a sneak peak at the ADT counts.</span></span>
+<span id="cb292-2"><a href="protein-multiomics.html#cb292-2" aria-hidden="true"></a><span class="kw">counts</span>(sce.adt.pbmc)[,<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>]</span></code></pre></div>
+<pre><code>## 17 x 10 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                                       
+## CD3     18  30   18   18    5   21   34   48 4522 2910
+## CD4    138 119  207   11   14 1014  324 1127 3479 2900
+## CD8a    13  19   10   17   14   29   27   43   38   28
+## CD14   491 472 1289   20   19 2428 1958 2189   55   41
+## CD15    61 102  128  124  156  204  607  128  111  130
+## CD16    17 155   72 1227 1873  148  676   75   44   37
+## CD56    17 248   26  491  458   29   29   29   30   15
+## CD19     3   3    8    5    4    7   15    4    6    6
+## CD25     9   5   15   15   16   52   85   17   13   18
+## CD45RA 110 125 5268 4743 4108  227  175  523 4044 1081
+## CD45RO  74 156   28   28   21  492  517  316   26   43
+## PD-1     9   9   20   25   28   16   26   16   28   16
+## TIGIT    4   9   11   59   76   11   12   12    9    8
+## CD127    7   8   12   16   17   15   11   10  231  179
+## IgG2a    5   4   12   12    7    9    6    3   19   14
+## IgG1     2   8   19   16   14   10   12    7   16   10
+## IgG2b    3   3    6    4    9    8   50    2    8    2</code></pre>
+<p>We compute each of the QC metrics described above from the ADT count matrix.
+We also compute the sum of counts across all ADTs for each cell, but this is strictly for informational purposes only as it is not an effective QC metric.
+Specifically, the presence of a targeted protein can lead to a several-fold increase in the total ADT count, given the binary nature of most surface markers.
+Removing cells with low total ADT counts could inadvertently eliminate cell types that do not express many - or indeed, any - of the selected protein targets.
+Similarly, we prefer to use the sum of IgG counts instead of the proportion as the latter relies on the total count and is more affected by the biology.
+For example, a cell that does not express any of the targets would have a lower total and thus a higher IgG proportion, making it unfairly susceptible to removal.</p>
+<div class="sourceCode" id="cb294"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb294-1"><a href="protein-multiomics.html#cb294-1" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb294-2"><a href="protein-multiomics.html#cb294-2" aria-hidden="true"></a>is.igg.pbmc &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;^IgG&quot;</span>, <span class="kw">rownames</span>(sce.adt.pbmc))</span>
+<span id="cb294-3"><a href="protein-multiomics.html#cb294-3" aria-hidden="true"></a>sce.qc.adt.pbmc &lt;-<span class="st"> </span><span class="kw">quickAdtQc.se</span>(sce.adt.pbmc, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">IgG=</span>is.igg.pbmc))</span>
+<span id="cb294-4"><a href="protein-multiomics.html#cb294-4" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.adt.pbmc<span class="op">$</span>sum)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##       0    3332    5816    6509    8166  147076</code></pre>
+<div class="sourceCode" id="cb296"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb296-1"><a href="protein-multiomics.html#cb296-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.adt.pbmc<span class="op">$</span>detected)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00   17.00   17.00   16.94   17.00   17.00</code></pre>
+<div class="sourceCode" id="cb298"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb298-1"><a href="protein-multiomics.html#cb298-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.adt.pbmc<span class="op">$</span>subset.sum.IgG)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00   18.00   23.00   27.41   30.00 2113.00</code></pre>
+<p>The <code>quickAdtQc.se()</code> function computes thresholds using the outlier-based strategy described in Section <a href="quality-control.html#qc-outlier">1.3.1</a> (Figure <a href="protein-multiomics.html#fig:qc-dist-adt-pbmc">9.1</a>).
+We use a log-transformation for the number of detected features and the IgG sum to avoid negative thresholds and improve normality.
+We also perform a minor adjustment to relax the threshold for the number of detected ADTs if the MAD is zero.</p>
+<div class="sourceCode" id="cb300"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb300-1"><a href="protein-multiomics.html#cb300-1" aria-hidden="true"></a>qc.thresh.adt.pbmc &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.qc.adt.pbmc)<span class="op">$</span>qc<span class="op">$</span>thresholds</span>
+<span id="cb300-2"><a href="protein-multiomics.html#cb300-2" aria-hidden="true"></a>qc.thresh.adt.pbmc</span></code></pre></div>
+<pre><code>## $detected
+## [1] 15.3
+## 
+## $subset.sum
+##      IgG 
+## 74.98505</code></pre>
+<div class="sourceCode" id="cb302"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb302-1"><a href="protein-multiomics.html#cb302-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb302-2"><a href="protein-multiomics.html#cb302-2" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb302-3"><a href="protein-multiomics.html#cb302-3" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.adt.pbmc, <span class="dt">y=</span><span class="st">&quot;detected&quot;</span>) <span class="op">+</span></span>
+<span id="cb302-4"><a href="protein-multiomics.html#cb302-4" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh.adt.pbmc<span class="op">$</span>detected, <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb302-5"><a href="protein-multiomics.html#cb302-5" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Detected features&quot;</span>),</span>
+<span id="cb302-6"><a href="protein-multiomics.html#cb302-6" aria-hidden="true"></a>    <span class="kw">plotColData</span>(sce.qc.adt.pbmc, <span class="dt">y=</span><span class="st">&quot;subset.sum.IgG&quot;</span>) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb302-7"><a href="protein-multiomics.html#cb302-7" aria-hidden="true"></a><span class="st">        </span><span class="kw">geom_hline</span>(<span class="dt">yintercept=</span>qc.thresh.adt.pbmc<span class="op">$</span>subset.sum[<span class="st">&quot;IgG&quot;</span>], <span class="dt">linetype=</span><span class="st">&quot;dashed&quot;</span>, <span class="dt">color=</span><span class="st">&quot;red&quot;</span>) <span class="op">+</span></span>
+<span id="cb302-8"><a href="protein-multiomics.html#cb302-8" aria-hidden="true"></a><span class="st">        </span><span class="kw">scale_y_log10</span>() <span class="op">+</span></span>
+<span id="cb302-9"><a href="protein-multiomics.html#cb302-9" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;IgG sum&quot;</span>),</span>
+<span id="cb302-10"><a href="protein-multiomics.html#cb302-10" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb302-11"><a href="protein-multiomics.html#cb302-11" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:qc-dist-adt-pbmc"></span>
+<img src="cite-seq_files/figure-html/qc-dist-adt-pbmc-1.png" alt="Distribution of ADT-based QC metrics in the PBMC dataset. Each point represents a cell, while dashed lines represent thresholds for each metric." width="960" />
+<p class="caption">
+Figure 9.1: Distribution of ADT-based QC metrics in the PBMC dataset. Each point represents a cell, while dashed lines represent thresholds for each metric.
+</p>
+</div>
+<p>We then apply these thresholds to our metrics to identify high-quality cells.
+If we wanted to use custom thresholds, we could modify our thresholds in the same manner as described in Section <a href="quality-control.html#qc-fixed">1.3.2</a>.
+Similarly, if our dataset contained multiple experimental batches, we could use the same blocking approach as described in Section <a href="quality-control.html#qc-block">1.5</a>.</p>
+<div class="sourceCode" id="cb303"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb303-1"><a href="protein-multiomics.html#cb303-1" aria-hidden="true"></a><span class="kw">summary</span>(sce.qc.adt.pbmc<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical     158    7707</code></pre>
+<p>If we were only interested in the ADT data, we could subset our <code>SingleCellExperiment</code> with <code>qc.keep.adt.pbmc</code> and proceed to the next step.
+However, the entire purpose of CITE-seq is to examine both protein abundance and gene expression for the same cell.
+Thus, we need to apply quality control to the RNA counts as described in Chapter <a href="quality-control.html#quality-control">1</a>.
+We only keep cells that are considered to be of high quality in both of the ADT and RNA modalities.</p>
+<div class="sourceCode" id="cb305"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb305-1"><a href="protein-multiomics.html#cb305-1" aria-hidden="true"></a>is.mito.pbmc &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;^MT-&quot;</span>, <span class="kw">rowData</span>(sce.pbmc)<span class="op">$</span>Symbol)</span>
+<span id="cb305-2"><a href="protein-multiomics.html#cb305-2" aria-hidden="true"></a>sce.qc.pbmc &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.pbmc, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.pbmc))</span>
+<span id="cb305-3"><a href="protein-multiomics.html#cb305-3" aria-hidden="true"></a></span>
+<span id="cb305-4"><a href="protein-multiomics.html#cb305-4" aria-hidden="true"></a><span class="co"># Seeing how many cells pass both, one or neither QC filters. </span></span>
+<span id="cb305-5"><a href="protein-multiomics.html#cb305-5" aria-hidden="true"></a><span class="kw">table</span>(<span class="dt">RNA=</span>sce.qc.pbmc<span class="op">$</span>keep, <span class="dt">ADT=</span>sce.qc.adt.pbmc<span class="op">$</span>keep)</span></code></pre></div>
+<pre><code>##        ADT
+## RNA     FALSE TRUE
+##   FALSE    41  296
+##   TRUE    117 7411</code></pre>
+<div class="sourceCode" id="cb307"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb307-1"><a href="protein-multiomics.html#cb307-1" aria-hidden="true"></a><span class="co"># Only keeping cells that pass both filters.</span></span>
+<span id="cb307-2"><a href="protein-multiomics.html#cb307-2" aria-hidden="true"></a>qc.keep.combined.pbmc &lt;-<span class="st"> </span>sce.qc.pbmc<span class="op">$</span>keep <span class="op">&amp;</span><span class="st"> </span>sce.qc.adt.pbmc<span class="op">$</span>keep</span>
+<span id="cb307-3"><a href="protein-multiomics.html#cb307-3" aria-hidden="true"></a>sce.qc.pbmc &lt;-<span class="st"> </span>sce.qc.pbmc[,qc.keep.combined.pbmc]</span>
+<span id="cb307-4"><a href="protein-multiomics.html#cb307-4" aria-hidden="true"></a>sce.qc.adt.pbmc &lt;-<span class="st"> </span>sce.qc.adt.pbmc[,qc.keep.combined.pbmc]</span>
+<span id="cb307-5"><a href="protein-multiomics.html#cb307-5" aria-hidden="true"></a><span class="kw">ncol</span>(sce.qc.pbmc)</span></code></pre></div>
+<pre><code>## [1] 7411</code></pre>
+</div>
+<div id="normalization-1" class="section level2 hasAnchor" number="9.3">
+<h2><span class="header-section-number">9.3</span> Normalization<a href="protein-multiomics.html#normalization-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>As with RNA, we performing scaling normalization to remove cell-specific biases due to differences in library preparation and sequencing efficiency (Chapter <a href="normalization.html#normalization">2</a>).
+Unfortunately, we can’t just take the size factors for the RNA counts and re-use them for the ADTs.
+The two modalities will be subject to different biases due to differences in biophysical properties between endogenous transcripts and ADTs, e.g., length, sequence composition.
+Some aspects of the library preparation and sequencing are also unique to each modality, providing more opportunities for differences in the biases.
+So, instead, we need to compute ADT-specific size factors to normalize the ADT counts.</p>
+<p>The simplest choice of size factor is to use the total sum of ADT counts, i.e., the library size for the ADTs.
+Unfortunately, this is highly susceptible to composition biases caused by differences in protein abundance between cells.
+Composition biases are much more pronounced in ADT data compared to RNA due to (i) the binary nature of target protein abundances,
+where any increase in protein abundance manifests as a large increase to the total ADT count;
+and (ii) the <em>a priori</em> selection of interesting protein targets, which enriches for features that are more likely to be differentially abundant across the population.
+These composition biases are strong enough to interfere with interpretation of fold-changes in protein abundance between clusters.</p>
+<p>Instead, we use the geometric mean of all counts as the size factor for each cell <span class="citation">(Stoeckius et al. <a href="#ref-stoeckius2017simultaneous" role="doc-biblioref">2017</a>)</span>,
+which is based on the centered log-ratio (CLR) transformation for handling compositional data.
+The geometric mean is a reasonable estimator of the scaling biases for large counts,
+with the added benefit that it mitigates the effects of composition biases by dampening the impact of one or two highly abundant ADTs.
+<em><a href="https://bioconductor.org/packages/3.23/scrapper">scrapper</a></em> implements a slightly more accurate variant of this approach named <a href="https://github.com/libscran/clrm1/">“CLRm1”</a>,
+which accounts for the bias introduced by adding a pseudo-count during the calculation of the geometric mean.
+We center the size factors to ensure that the scaling normalization preserves the magnitude of the original counts,
+and we compute log-normalized abundance values for ADTs as described in Section <a href="normalization.html#norm-transformation">2.3.1</a>.</p>
+<div class="sourceCode" id="cb309"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb309-1"><a href="protein-multiomics.html#cb309-1" aria-hidden="true"></a>sce.norm.adt.pbmc &lt;-<span class="st"> </span><span class="kw">normalizeAdtCounts.se</span>(sce.qc.adt.pbmc)</span>
+<span id="cb309-2"><a href="protein-multiomics.html#cb309-2" aria-hidden="true"></a><span class="kw">summary</span>(sce.norm.adt.pbmc<span class="op">$</span>sizeFactor)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.2041  0.7042  0.9094  1.0000  1.1486  6.7457</code></pre>
+<p>We observe some deviation between the CLRm1 size factors and their library size-derived counterparts (Figure <a href="protein-multiomics.html#fig:cite-sf">9.2</a>).
+This is consistent with the presence of strong composition biases in the latter that are dampened in the former.
+Of course, the geometric mean is not foolproof and will progressively become less accurate with more upregulated ADTs in each cell.
+It is also more sensitive to noise at low counts, though this should be less problematic for ADT data due to its deeper sequencing coverage compared to RNA.</p>
+<div class="sourceCode" id="cb311"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb311-1"><a href="protein-multiomics.html#cb311-1" aria-hidden="true"></a>lib.sf.adt.pbmc &lt;-<span class="st"> </span><span class="kw">centerSizeFactors</span>(sce.norm.adt.pbmc<span class="op">$</span>sum)</span>
+<span id="cb311-2"><a href="protein-multiomics.html#cb311-2" aria-hidden="true"></a><span class="kw">plot</span>(sce.norm.adt.pbmc<span class="op">$</span>sizeFactor, lib.sf.adt.pbmc, <span class="dt">log=</span><span class="st">&quot;xy&quot;</span>, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="fl">0.5</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:cite-sf"></span>
+<img src="cite-seq_files/figure-html/cite-sf-1.png" alt="Comparison between the CLRm1 size factors and the library size-derived factors for the ADT modality of the PBMC dataset." width="672" />
+<p class="caption">
+Figure 9.2: Comparison between the CLRm1 size factors and the library size-derived factors for the ADT modality of the PBMC dataset.
+</p>
+</div>
+</div>
+<div id="feature-selection-and-pca" class="section level2 hasAnchor" number="9.4">
+<h2><span class="header-section-number">9.4</span> Feature selection and PCA<a href="protein-multiomics.html#feature-selection-and-pca" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Feature selection for ADTs is generally unnecessary as it was already performed during the design of the antibody panel.
+The manual choice of target proteins means that all ADTs already correspond to “interesting” features.
+In addition, there is little scope for further filtering when the number of ADTs is low.
+Here, we have fewer than 20 ADTs, and even for the larger datasets, the panel will usually have less than 200 features.
+These are small numbers compared to our previous selections of 1000-5000 HVGs in Chapter <a href="feature-selection.html#feature-selection">3</a>.</p>
+<p>We might consider removing the IgG controls as we know that they will not be biologically interesting.
+This probably won’t make much difference as the controls are unlikely to exhibit strong variation that might intefere with downstream steps.
+But it probably won’t hurt either, so we might as well do it:</p>
+<div class="sourceCode" id="cb312"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb312-1"><a href="protein-multiomics.html#cb312-1" aria-hidden="true"></a>selected.adt.pbmc &lt;-<span class="st"> </span><span class="op">!</span><span class="kw">grepl</span>(<span class="st">&quot;^IgG&quot;</span>, <span class="kw">rownames</span>(sce.norm.adt.pbmc))</span>
+<span id="cb312-2"><a href="protein-multiomics.html#cb312-2" aria-hidden="true"></a><span class="kw">rowData</span>(sce.norm.adt.pbmc)<span class="op">$</span>of.interest &lt;-<span class="st"> </span>selected.adt.pbmc</span>
+<span id="cb312-3"><a href="protein-multiomics.html#cb312-3" aria-hidden="true"></a><span class="kw">summary</span>(selected.adt.pbmc)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical       3      14</code></pre>
+<p>We also perform a PCA on the ADT log-abundance matrix as described in Chapter <a href="principal-components-analysis.html#principal-components-analysis">4</a>.
+This is mostly useful for datasets with larger panels to compact the data from ~200 ADTs to 10-20 PCs.
+For smaller datasets, PCA is unnecessary as the number of ADTs is comparable to the typical number of PCs.
+Regardless, it doesn’t hurt to run a PCA in such cases -
+if the number of ADTs is lower than the requested number of PCs, the PC scores will simply be a rotation of the log-abundance data.</p>
+<div class="sourceCode" id="cb314"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb314-1"><a href="protein-multiomics.html#cb314-1" aria-hidden="true"></a>sce.pca.adt.pbmc &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(</span>
+<span id="cb314-2"><a href="protein-multiomics.html#cb314-2" aria-hidden="true"></a>    sce.norm.adt.pbmc,</span>
+<span id="cb314-3"><a href="protein-multiomics.html#cb314-3" aria-hidden="true"></a>    <span class="dt">features=</span>selected.adt.pbmc,</span>
+<span id="cb314-4"><a href="protein-multiomics.html#cb314-4" aria-hidden="true"></a>    <span class="dt">number=</span><span class="dv">20</span></span>
+<span id="cb314-5"><a href="protein-multiomics.html#cb314-5" aria-hidden="true"></a>)</span>
+<span id="cb314-6"><a href="protein-multiomics.html#cb314-6" aria-hidden="true"></a><span class="kw">dim</span>(<span class="kw">reducedDim</span>(sce.pca.adt.pbmc, <span class="st">&quot;PCA&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] 7411   14</code></pre>
+<p>If we don’t want to run a PCA, we could instead use the log-normalized abundance matrix directly in downstream analyses.</p>
+<div class="sourceCode" id="cb316"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb316-1"><a href="protein-multiomics.html#cb316-1" aria-hidden="true"></a><span class="co"># Transpose to make it look like a reducedDim entry, so that we could plug it</span></span>
+<span id="cb316-2"><a href="protein-multiomics.html#cb316-2" aria-hidden="true"></a><span class="co"># into downstream algorithms by just setting reddim.type=.</span></span>
+<span id="cb316-3"><a href="protein-multiomics.html#cb316-3" aria-hidden="true"></a>norm.adt.pbmc &lt;-<span class="st"> </span><span class="kw">t</span>(<span class="kw">assay</span>(sce.norm.adt.pbmc, <span class="st">&quot;logcounts&quot;</span>)[selected.adt.pbmc,])</span>
+<span id="cb316-4"><a href="protein-multiomics.html#cb316-4" aria-hidden="true"></a><span class="kw">reducedDim</span>(sce.pca.adt.pbmc, <span class="st">&quot;selected&quot;</span>) &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(norm.adt.pbmc)</span>
+<span id="cb316-5"><a href="protein-multiomics.html#cb316-5" aria-hidden="true"></a></span>
+<span id="cb316-6"><a href="protein-multiomics.html#cb316-6" aria-hidden="true"></a><span class="co"># For example...</span></span>
+<span id="cb316-7"><a href="protein-multiomics.html#cb316-7" aria-hidden="true"></a>sce.kmeans.adt.pbmc &lt;-<span class="st"> </span><span class="kw">clusterKmeans.se</span>(sce.pca.adt.pbmc, <span class="dt">k=</span><span class="dv">10</span>, <span class="dt">reddim.type=</span><span class="st">&quot;selected&quot;</span>)</span>
+<span id="cb316-8"><a href="protein-multiomics.html#cb316-8" aria-hidden="true"></a><span class="kw">summary</span>(sce.kmeans.adt.pbmc<span class="op">$</span>clusters)</span></code></pre></div>
+<pre><code>##    1    2    3    4    5    6    7    8    9   10 
+##  916 1232  698  490  615 1249  160  549  682  820</code></pre>
+</div>
+<div id="cite-rest" class="section level2 hasAnchor" number="9.5">
+<h2><span class="header-section-number">9.5</span> The rest of the analysis<a href="protein-multiomics.html#cite-rest" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Once we have the PCs, we can use them for clustering and visualization in the same manner as described in Chapters <a href="visualization.html#visualization">5</a> and <a href="clustering.html#clustering">6</a>.
+This summarizes the heterogeneity specific to the ADT modality (Figure <a href="protein-multiomics.html#fig:cite-tsne">9.3</a>).</p>
+<div class="sourceCode" id="cb318"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb318-1"><a href="protein-multiomics.html#cb318-1" aria-hidden="true"></a>sce.nn.adt.pbmc &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.pca.adt.pbmc)</span>
+<span id="cb318-2"><a href="protein-multiomics.html#cb318-2" aria-hidden="true"></a><span class="kw">table</span>(sce.nn.adt.pbmc<span class="op">$</span>clusters)</span></code></pre></div>
+<pre><code>## 
+##    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16 
+##  702  886  956 1017  208  640  570  416  409  312  292  482  135   82  160  144</code></pre>
+<div class="sourceCode" id="cb320"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb320-1"><a href="protein-multiomics.html#cb320-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb320-2"><a href="protein-multiomics.html#cb320-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.nn.adt.pbmc, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:cite-tsne"></span>
+<img src="cite-seq_files/figure-html/cite-tsne-1.png" alt="$t$-SNE plot generated from the log-normalized abundance of each ADT in the PBMC dataset. Each point is a cell and is colored according to its assigned cluster." width="672" />
+<p class="caption">
+Figure 9.3: <span class="math inline">\(t\)</span>-SNE plot generated from the log-normalized abundance of each ADT in the PBMC dataset. Each point is a cell and is colored according to its assigned cluster.
+</p>
+</div>
+<p>We then identify markers from the log-abundance matrix, as described in Chapter <a href="marker-detection.html#marker-detection">7</a>.
+For the top ADTs, we usually observe very large effect sizes due to the binary nature of surface targets.
+However, there are also strong composition biases in this data so some caution is required when interpreting the smaller log-fold changes.</p>
+<div class="sourceCode" id="cb321"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb321-1"><a href="protein-multiomics.html#cb321-1" aria-hidden="true"></a>markers.adt.pbmc &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(sce.nn.adt.pbmc, sce.nn.adt.pbmc<span class="op">$</span>clusters)</span>
+<span id="cb321-2"><a href="protein-multiomics.html#cb321-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(markers.adt.pbmc[[<span class="st">&quot;1&quot;</span>]]) <span class="co"># Looking at the top marker tags for cluster 1.</span></span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 3 columns
+##             mean  detected       lfc
+##        &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## CD14    10.47980  1.000000  4.815979
+## CD4      8.93075  1.000000  1.263068
+## CD15     7.23453  1.000000  0.430545
+## CD56     5.42423  1.000000  0.474958
+## CD45RO   7.52737  1.000000  0.355057
+## IgG2a    3.28407  0.994302  0.209745
+## CD16     6.25177  1.000000  0.029543
+## CD25     4.45000  1.000000  0.131739
+## IgG1     3.67019  0.998575  0.123389
+## IgG2b    2.49592  0.961538  0.170127</code></pre>
+<p>We can also use the ADT-derived clusters to identify marker genes from the log-expression matrix for the RNA modality.
+This is analogous to performing FACS to isolate cell types before differential expression analyses with bulk RNA-seq.</p>
+<div class="sourceCode" id="cb323"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb323-1"><a href="protein-multiomics.html#cb323-1" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values from the RNA counts.</span></span>
+<span id="cb323-2"><a href="protein-multiomics.html#cb323-2" aria-hidden="true"></a>sce.norm.pbmc &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.pbmc)</span>
+<span id="cb323-3"><a href="protein-multiomics.html#cb323-3" aria-hidden="true"></a></span>
+<span id="cb323-4"><a href="protein-multiomics.html#cb323-4" aria-hidden="true"></a><span class="co"># Computing markers for RNA data but using the ADT-derived clusters!</span></span>
+<span id="cb323-5"><a href="protein-multiomics.html#cb323-5" aria-hidden="true"></a>markers.adt2rna.pbmc &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(sce.norm.pbmc, sce.nn.adt.pbmc<span class="op">$</span>clusters, <span class="dt">extra.columns=</span><span class="st">&quot;Symbol&quot;</span>)</span>
+<span id="cb323-6"><a href="protein-multiomics.html#cb323-6" aria-hidden="true"></a></span>
+<span id="cb323-7"><a href="protein-multiomics.html#cb323-7" aria-hidden="true"></a><span class="co"># Now looking at the top marker genes for cluster 1.</span></span>
+<span id="cb323-8"><a href="protein-multiomics.html#cb323-8" aria-hidden="true"></a><span class="kw">previewMarkers</span>(markers.adt2rna.pbmc[[<span class="st">&quot;1&quot;</span>]], <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 4 columns
+##                      Symbol      mean  detected       lfc
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000090382         LYZ   6.09956  1.000000   5.04224
+## ENSG00000101439        CST3   3.88405  1.000000   3.14760
+## ENSG00000011600      TYROBP   3.76942  1.000000   2.72675
+## ENSG00000158869      FCER1G   3.16000  0.998575   2.36430
+## ENSG00000163220      S100A9   5.93046  1.000000   4.89871
+## ENSG00000085265        FCN1   3.07327  0.994302   2.55797
+## ENSG00000163563        MNDA   2.71558  0.997151   2.26325
+## ENSG00000163131        CTSS   3.62322  0.998575   2.64997
+## ENSG00000143546      S100A8   5.24883  0.994302   4.37216
+## ENSG00000025708        TYMP   2.66359  0.995726   2.12287</code></pre>
+<p>Conversely, we could derive clusters from the RNA data and test for differential abundance of ADTs between clusters.
+This is most relevant when the ADTs represent some kind of functional readout (e.g., binding activity) instead of cell type identity.</p>
+</div>
+<div id="combining-modalities" class="section level2 hasAnchor" number="9.6">
+<h2><span class="header-section-number">9.6</span> Combining modalities<a href="protein-multiomics.html#combining-modalities" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>A more efficient use of our CITE-seq data would consider heterogeneity in both modalities simultaneously.
+In other words, the ADT and RNA data are combined in some manner prior to clustering and visualisations.
+This ensures that any unique variation in either modality will be captured in the cluster definitions.
+For example, if the antibody panel captures transient post-translation modifications like phosphorylation, this will not show up in the RNA data;
+conversely, biological processes without a surface target will not be represented in the ADT data.
+To demonstrate, let’s continue the analysis of the RNA modality of our PBMC dataset:</p>
+<div class="sourceCode" id="cb325"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb325-1"><a href="protein-multiomics.html#cb325-1" aria-hidden="true"></a>sce.var.pbmc &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.pbmc)</span>
+<span id="cb325-2"><a href="protein-multiomics.html#cb325-2" aria-hidden="true"></a>sce.pca.pbmc &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var.pbmc, <span class="dt">features=</span><span class="kw">rowData</span>(sce.var.pbmc)<span class="op">$</span>hvg, <span class="dt">number=</span><span class="dv">20</span>)</span>
+<span id="cb325-3"><a href="protein-multiomics.html#cb325-3" aria-hidden="true"></a><span class="kw">ncol</span>(<span class="kw">reducedDim</span>(sce.pca.pbmc))</span></code></pre></div>
+<pre><code>## [1] 20</code></pre>
+<p>Possibly the simplest method to combine modalities involves literally combining the matrices of ADT- and RNA-derived PC scores.
+(Or if no PCA was performed for the ADTs, the log-abundance matrix can be used instead.)
+The combined matrix contains both sets of PCs, ensuring that heterogeneity from both modalities will be considered, e.g., when computing distances and finding neighbors.
+However, naively combining the two matrices is not ideal as the number of genes is typically several orders of magnitude greater than the number of ADTs.
+This would cause the RNA modality to dominate the variance in the combined matrix, effectively sidelining any contributions from the ADT modality.</p>
+<p>Instead, we scale the modalities to balance their contributions to the combined matrix with the <code>scaleByNeighbors.se()</code> function.
+For each modality, we compute the median distance from each cell to its <span class="math inline">\(k\)</span>-nearest neighbor, which we treat as a proxy for the uninteresting variation within subpopulations.
+Each matrix of PCs is then scaled according to its median distance, equalizing the magnitude of uninteresting variation across modalities.
+This ensures that high baseline variation in one modality will not drown out interesting biological variation in another modality in the combined matrix.
+We use the nearest neighbor distance to avoid capturing genuine biological differences between subpopulations -
+otherwise, if we scaled on total variance, we would penalize the most informative modalities with the strongest heterogeneity.</p>
+<div class="sourceCode" id="cb327"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb327-1"><a href="protein-multiomics.html#cb327-1" aria-hidden="true"></a><span class="co"># We put our ADT experiment back inside the parent object so that</span></span>
+<span id="cb327-2"><a href="protein-multiomics.html#cb327-2" aria-hidden="true"></a><span class="co"># scaleByNeighbors.se can see both sets of PCs at once.</span></span>
+<span id="cb327-3"><a href="protein-multiomics.html#cb327-3" aria-hidden="true"></a><span class="kw">altExp</span>(sce.pca.pbmc, <span class="st">&quot;Antibody Capture&quot;</span>) &lt;-<span class="st"> </span>sce.pca.adt.pbmc</span>
+<span id="cb327-4"><a href="protein-multiomics.html#cb327-4" aria-hidden="true"></a></span>
+<span id="cb327-5"><a href="protein-multiomics.html#cb327-5" aria-hidden="true"></a>sce.combined.pbmc &lt;-<span class="st"> </span><span class="kw">scaleByNeighbors.se</span>(</span>
+<span id="cb327-6"><a href="protein-multiomics.html#cb327-6" aria-hidden="true"></a>    sce.pca.pbmc,</span>
+<span id="cb327-7"><a href="protein-multiomics.html#cb327-7" aria-hidden="true"></a>    <span class="dt">main.reddims=</span><span class="st">&quot;PCA&quot;</span>,</span>
+<span id="cb327-8"><a href="protein-multiomics.html#cb327-8" aria-hidden="true"></a>    <span class="dt">altexp.reddims=</span><span class="kw">c</span>(<span class="st">`</span><span class="dt">Antibody Capture</span><span class="st">`</span>=<span class="st">&quot;PCA&quot;</span>)</span>
+<span id="cb327-9"><a href="protein-multiomics.html#cb327-9" aria-hidden="true"></a>)</span>
+<span id="cb327-10"><a href="protein-multiomics.html#cb327-10" aria-hidden="true"></a><span class="kw">dim</span>(<span class="kw">reducedDim</span>(sce.combined.pbmc, <span class="st">&quot;combined&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] 7411   34</code></pre>
+<div class="sourceCode" id="cb329"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb329-1"><a href="protein-multiomics.html#cb329-1" aria-hidden="true"></a><span class="co"># Scaling applied to PCs from the main experiment, i.e., the RNA.</span></span>
+<span id="cb329-2"><a href="protein-multiomics.html#cb329-2" aria-hidden="true"></a><span class="kw">metadata</span>(sce.combined.pbmc)<span class="op">$</span>combined<span class="op">$</span>main.scaling</span></code></pre></div>
+<pre><code>## PCA 
+##   1</code></pre>
+<div class="sourceCode" id="cb331"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb331-1"><a href="protein-multiomics.html#cb331-1" aria-hidden="true"></a><span class="co"># Scaling applied to PCs from the alternative experiment, i.e., the ADTs.</span></span>
+<span id="cb331-2"><a href="protein-multiomics.html#cb331-2" aria-hidden="true"></a><span class="kw">metadata</span>(sce.combined.pbmc)<span class="op">$</span>combined<span class="op">$</span>altexp.scaling</span></code></pre></div>
+<pre><code>## $`Antibody Capture`
+##      PCA 
+## 2.195758</code></pre>
+<p>The combined matrix of PCs is convenient as it can be used in the same functions that accept a regular matrix of PCs.
+Now, we can easily accommodate multiple modalities in downstream steps like clustering and visualization (Figure <a href="protein-multiomics.html#fig:cite-combined">9.4</a>).</p>
+<div class="sourceCode" id="cb333"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb333-1"><a href="protein-multiomics.html#cb333-1" aria-hidden="true"></a>sce.nn.combined.pbmc &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.combined.pbmc, <span class="dt">reddim.type=</span><span class="st">&quot;combined&quot;</span>)</span>
+<span id="cb333-2"><a href="protein-multiomics.html#cb333-2" aria-hidden="true"></a><span class="kw">table</span>(sce.nn.combined.pbmc<span class="op">$</span>clusters)</span></code></pre></div>
+<pre><code>## 
+##    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16 
+## 1649  730 1005  763  585  510  460  375  461  208  230   91   73  158   79   34</code></pre>
+<div class="sourceCode" id="cb335"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb335-1"><a href="protein-multiomics.html#cb335-1" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.nn.combined.pbmc, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:cite-combined"></span>
+<img src="cite-seq_files/figure-html/cite-combined-1.png" alt="$t$-SnE plot of the PBMC data generated from combined ADT and RNA PCs. Each point is a cell and is colored according to the assigned cluster." width="672" />
+<p class="caption">
+Figure 9.4: <span class="math inline">\(t\)</span>-SnE plot of the PBMC data generated from combined ADT and RNA PCs. Each point is a cell and is colored according to the assigned cluster.
+</p>
+</div>
+<p>In practice, the RNA and ADT modalities are often strongly correlated when the antibody panel targets cell type-related proteins.
+Using a combined matrix does not offer much benefit in these cases - in fact, we would say that a well-designed panel is more than enough for cell type identification<a href="#fn36" class="footnote-ref" id="fnref36"><sup>36</sup></a>, without any help from gene expression at all.
+Combining modalities may even be detrimental if one of the modalities has little biological variation, e.g., if no antibodies are bound, the ADT matrix will only be contributing noise.
+So, what should we do?
+Well, our usual advice for single-cell analysis applies, a.k.a., see if we get interesting results and try something else if we don’t.</p>
+</div>
+<div id="session-information-7" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="protein-multiomics.html#session-information-7" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb336"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb336-1"><a href="protein-multiomics.html#cb336-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] scater_1.39.1               ggplot2_4.0.1              
+##  [3] scuttle_1.21.0              scrapper_1.5.10            
+##  [5] DropletUtils_1.31.0         SingleCellExperiment_1.33.0
+##  [7] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+##  [9] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [11] IRanges_2.45.0              S4Vectors_0.49.0           
+## [13] BiocGenerics_0.57.0         generics_0.1.4             
+## [15] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## [17] DropletTestFiles_1.21.0     BiocStyle_2.39.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] DBI_1.2.3                 gridExtra_2.3            
+##   [3] httr2_1.2.2               rlang_1.1.7              
+##   [5] magrittr_2.0.4            otel_0.2.0               
+##   [7] compiler_4.6.0            RSQLite_2.4.5            
+##   [9] DelayedMatrixStats_1.33.0 png_0.1-8                
+##  [11] vctrs_0.6.5               pkgconfig_2.0.3          
+##  [13] crayon_1.5.3              fastmap_1.2.0            
+##  [15] dbplyr_2.5.1              XVector_0.51.0           
+##  [17] labeling_0.4.3            rmarkdown_2.30           
+##  [19] ggbeeswarm_0.7.3          purrr_1.2.1              
+##  [21] bit_4.6.0                 xfun_0.55                
+##  [23] cachem_1.1.0              beachmat_2.27.1          
+##  [25] jsonlite_2.0.0            blob_1.2.4               
+##  [27] rhdf5filters_1.23.3       DelayedArray_0.37.0      
+##  [29] Rhdf5lib_1.33.0           BiocParallel_1.45.0      
+##  [31] irlba_2.3.5.1             parallel_4.6.0           
+##  [33] R6_2.6.1                  bslib_0.9.0              
+##  [35] RColorBrewer_1.1-3        limma_3.67.0             
+##  [37] jquerylib_0.1.4           Rcpp_1.1.1               
+##  [39] bookdown_0.46             knitr_1.51               
+##  [41] R.utils_2.13.0            Matrix_1.7-4             
+##  [43] tidyselect_1.2.1          viridis_0.6.5            
+##  [45] dichromat_2.0-0.1         abind_1.4-8              
+##  [47] yaml_2.3.12               codetools_0.2-20         
+##  [49] curl_7.0.0                lattice_0.22-7           
+##  [51] tibble_3.3.0              S7_0.2.1                 
+##  [53] withr_3.0.2               KEGGREST_1.51.1          
+##  [55] evaluate_1.0.5            BiocFileCache_3.1.0      
+##  [57] ExperimentHub_3.1.0       Biostrings_2.79.4        
+##  [59] pillar_1.11.1             BiocManager_1.30.27      
+##  [61] filelock_1.0.3            BiocVersion_3.23.1       
+##  [63] sparseMatrixStats_1.23.0  scales_1.4.0             
+##  [65] glue_1.8.0                tools_4.6.0              
+##  [67] AnnotationHub_4.1.0       BiocNeighbors_2.5.0      
+##  [69] ScaledMatrix_1.19.0       locfit_1.5-9.12          
+##  [71] cowplot_1.2.0             rhdf5_2.55.12            
+##  [73] grid_4.6.0                AnnotationDbi_1.73.0     
+##  [75] edgeR_4.9.2               beeswarm_0.4.0           
+##  [77] BiocSingular_1.27.1       HDF5Array_1.39.0         
+##  [79] vipor_0.4.7               rsvd_1.0.5               
+##  [81] cli_3.6.5                 rappdirs_0.3.3           
+##  [83] viridisLite_0.4.2         S4Arrays_1.11.1          
+##  [85] dplyr_1.1.4               gtable_0.3.6             
+##  [87] R.methodsS3_1.8.2         sass_0.4.10              
+##  [89] digest_0.6.39             ggrepel_0.9.6            
+##  [91] SparseArray_1.11.10       dqrng_0.4.1              
+##  [93] farver_2.1.2              memoise_2.0.1            
+##  [95] htmltools_0.5.9           R.oo_1.27.1              
+##  [97] lifecycle_1.0.5           h5mread_1.3.1            
+##  [99] httr_1.4.7                statmod_1.5.1            
+## [101] bit64_4.6.0-1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-stoeckius2017simultaneous">
+<p>Stoeckius, M., C. Hafemeister, W. Stephenson, B. Houck-Loomis, P. K. Chattopadhyay, H. Swerdlow, R. Satija, and P. Smibert. 2017. “Simultaneous epitope and transcriptome measurement in single cells.” <em>Nat. Methods</em> 14 (9): 865–68.</p>
+</div>
+<div id="ref-zheng2017massively">
+<p>Zheng, G. X., J. M. Terry, P. Belgrader, P. Ryvkin, Z. W. Bent, R. Wilson, S. B. Ziraldo, et al. 2017. “Massively parallel digital transcriptional profiling of single cells.” <em>Nat. Commun.</em> 8 (January): 14049.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="35">
+<li id="fn35"><p>
+In theory, we could conjugate RNA to almost anything that sticks to a cell, e.g., cholesterol, peptides, small molecule drugs… and maybe even my old friend, <em>Malat1</em>.
+Counts from these tags are analyzed in the same way as ADTs, so we’ll refer to all of them as ADTs for convenience.<a href="protein-multiomics.html#fnref35" class="footnote-back">↩︎</a></p></li>
+<li id="fn36"><p>
+At least for blood, which has been FACS’d to death.<a href="protein-multiomics.html#fnref36" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="batch-correction.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="closing-remarks.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/cite-seq.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/cite-seq.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/cite-seq.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

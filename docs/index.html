@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+<link rel="next" href="quality-control.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="header">
+<h1 class="title">Single-cell RNA-seq analysis with scrapper</h1>
+<p class="author multi-author"><em>Aaron Lun [aut, cre]</em></p>
+</div>
+<div id="introduction" class="section level1 unnumbered hasAnchor">
+<h1>Introduction<a href="index.html#introduction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p><a href="https://bioconductor.org"><img src="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" width="200" alt="Bioconductor Sticker" align="right" style="margin: 0 1em 0 1em" /></a></p>
+<p>Single-cell RNA-sequencing (scRNA-seq) - the name says it all, really.
+Long story short, we isolate single cells and we sequence their transcriptomes to quantify the expression of each gene in each cell <span class="citation">(Kołodziejczyk et al. <a href="#ref-kolodziejczyk2015technology" role="doc-biblioref">2015</a>)</span>.
+Our aim is to explore heterogeneity in a cell population at the resolution of individual cells,
+typically to identify subpopulations or states that would not be apparent from population-level (i.e., “bulk”) assays.
+Since its inception, scRNA-seq has emerged as one of the premier techniques for publishing genomics papers.
+Occasionally, it is even used to do some actual science.</p>
+<p>This book describes a computational workflow for analyzing scRNA-seq data using the <a href="https://bioconductor.org">R/Bioconductor</a> ecosystem
+<span class="citation">(Huber et al. <a href="#ref-huber2015orchestrating" role="doc-biblioref">2015</a>; A. T. L. Lun, McCarthy, and Marioni <a href="#ref-lun2016step" role="doc-biblioref">2016</a>; Amezquita et al. <a href="#ref-amezquita2020orchestrating" role="doc-biblioref">2020</a>)</span>.
+Most of the heavy lifting is performed using the <em><a href="https://bioconductor.org/packages/3.23/scrapper">scrapper</a></em> package, while <em><a href="https://bioconductor.org/packages/3.23/scater">scater</a></em> handles the plotting <span class="citation">(McCarthy et al. <a href="#ref-mccarthy2017scater" role="doc-biblioref">2017</a>)</span>.
+We rely heavily on Bioconductor data structures like the <code>SingleCellExperiment</code> class,
+so readers should check out the <a href="https://bioconductor.org/packages/3.23/SingleCellExperiment/vignettes/intro.html">associated documentation</a> if they haven’t already.
+Each chapter is devoted to a particular step in the analysis where we provide its theoretical rationale, the associated code, and some typical results from real public datasets.
+This includes:</p>
+<ul>
+<li>Quality control, to filter out cells that were damaged or not properly sequenced.</li>
+<li>Normalization, to remove cell-specific biases.</li>
+<li>Feature selection, to identify genes with interesting biologial variation.</li>
+<li>Principal components analysis, to compact and denoise the data.</li>
+<li>Visualization, to generate the all-important Figure 1 of our manuscript.</li>
+<li>Clustering, to summarize the data into groups of similar cells.</li>
+<li>Marker detection, to assign biological meaning to each cluster based on its upregulated genes.</li>
+</ul>
+<p>Truth be told, you don’t actually need to read this book if you don’t care about how/why things are done.
+Just copy and paste the following into your R session:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="index.html#cb1-1" aria-hidden="true"></a><span class="co"># Pulling out an example dataset.</span></span>
+<span id="cb1-2"><a href="index.html#cb1-2" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb1-3"><a href="index.html#cb1-3" aria-hidden="true"></a>sce.zeisel &lt;-<span class="st"> </span><span class="kw">ZeiselBrainData</span>()</span>
+<span id="cb1-4"><a href="index.html#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="index.html#cb1-5" aria-hidden="true"></a><span class="co"># Running the full analysis pipeline.</span></span>
+<span id="cb1-6"><a href="index.html#cb1-6" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb1-7"><a href="index.html#cb1-7" aria-hidden="true"></a>is.mito.zeisel &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;^mt-&quot;</span>, <span class="kw">rownames</span>(sce.zeisel))</span>
+<span id="cb1-8"><a href="index.html#cb1-8" aria-hidden="true"></a>res.zeisel &lt;-<span class="st"> </span><span class="kw">analyze.se</span>(sce.zeisel, <span class="dt">rna.qc.subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.zeisel))</span>
+<span id="cb1-9"><a href="index.html#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="index.html#cb1-10" aria-hidden="true"></a><span class="co"># Visualizing the cluster assignments for each cell:</span></span>
+<span id="cb1-11"><a href="index.html#cb1-11" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb1-12"><a href="index.html#cb1-12" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(res.zeisel<span class="op">$</span>x, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;graph.cluster&quot;</span>)</span></code></pre></div>
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" alt="" width="672" /></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="index.html#cb2-1" aria-hidden="true"></a><span class="co"># Looking at the top markers for cluster 1:</span></span>
+<span id="cb2-2"><a href="index.html#cb2-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(res.zeisel<span class="op">$</span>markers<span class="op">$</span>rna[[<span class="st">&quot;1&quot;</span>]])</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 3 columns
+##              mean  detected       lfc
+##         &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## Gad1      4.79503  1.000000   4.56949
+## Gad2      4.44192  0.996503   4.25766
+## Ndrg4     4.40310  0.996503   2.59179
+## Vstm2a    2.94119  0.965035   2.67985
+## Stmn3     4.71546  0.993007   2.64538
+## Slc6a1    3.75820  0.993007   3.08908
+## Tspyl4    3.36568  1.000000   2.15128
+## Nap1l5    4.32495  1.000000   3.09812
+## Rab3c     3.91161  0.982517   2.98746
+## Slc32a1   2.04411  0.909091   2.01340</code></pre>
+<p>And that’s it.
+Sometimes, ignorance is bliss, and it’s better to not know how the sausage is made.
+But hey - you’re already here, so why not keep reading?</p>
+<p>Any questions can be posted at <a href="https://support.bioconductor.org">Bioconductor support site</a> or the <a href="https://github.com/libscran/scrapbook">GitHub page for this book</a>.</p>
+
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-amezquita2020orchestrating">
+<p>Amezquita, R. A., A. T. L. Lun, E. Becht, V. J. Carey, L. N. Carpp, L. Geistlinger, F. Marini, et al. 2020. “Orchestrating single-cell analysis with Bioconductor.” <em>Nat. Methods</em> 17 (2): 137–45.</p>
+</div>
+<div id="ref-huber2015orchestrating">
+<p>Huber, W., V. J. Carey, R. Gentleman, S. Anders, M. Carlson, B. S. Carvalho, H. C. Bravo, et al. 2015. “Orchestrating high-throughput genomic analysis with Bioconductor.” <em>Nat. Methods</em> 12 (2): 115–21.</p>
+</div>
+<div id="ref-kolodziejczyk2015technology">
+<p>Kołodziejczyk, A. A., J. K. Kim, V. Svensson, J. C. Marioni, and S. A. Teichmann. 2015. “The technology and biology of single-cell RNA sequencing.” <em>Mol. Cell</em> 58 (4): 610–20.</p>
+</div>
+<div id="ref-lun2016step">
+<p>Lun, A. T. L., D. J. McCarthy, and J. C. Marioni. 2016. “A step-by-step workflow for low-level analysis of single-cell RNA-seq data.” <em>F1000Res.</em> 5 (August).</p>
+</div>
+<div id="ref-mccarthy2017scater">
+<p>McCarthy, D. J., K. R. Campbell, A. T. Lun, and Q. F. Wills. 2017. “Scater: pre-processing, quality control, normalization and visualization of single-cell RNA-seq data in R.” <em>Bioinformatics</em> 33 (8): 1179–86.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+
+<a href="quality-control.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/index.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/index.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/index.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

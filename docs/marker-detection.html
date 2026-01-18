@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 7 Marker gene detection | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 7 Marker gene detection | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 7 Marker gene detection | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="clustering.html"/>
+<link rel="next" href="batch-correction.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="marker-detection" class="section level1 hasAnchor" number="7">
+<h1><span class="header-section-number">Chapter 7</span> Marker gene detection<a href="marker-detection.html#marker-detection" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-5" class="section level2 hasAnchor" number="7.1">
+<h2><span class="header-section-number">7.1</span> Motivation<a href="marker-detection.html#motivation-5" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Now that we’ve got a clustering from Chapter <a href="clustering.html#clustering">6</a>, our next step is to identify the genes that drive separation between clusters.
+Genes that are strongly upregulated in a particular cluster are called “markers” as they define the corresponding cell type/state relative to other cells in the population.
+By examining the annotated functions of the marker genes, we can assign biological meaning to each cluster.
+In the simplest case, if we know that certain genes are upregulated in a particular cell type, a cluster with increased expression of those genes can be treated as a proxy for that cell type.
+More subtle cell states (e.g., activation status, stress) can also be identified based on the behavior of genes in the affected pathways.</p>
+</div>
+<div id="scoring-marker-genes" class="section level2 hasAnchor" number="7.2">
+<h2><span class="header-section-number">7.2</span> Scoring marker genes<a href="marker-detection.html#scoring-marker-genes" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="comparing-pairs-of-clusters" class="section level3 hasAnchor" number="7.2.1">
+<h3><span class="header-section-number">7.2.1</span> Comparing pairs of clusters<a href="marker-detection.html#comparing-pairs-of-clusters" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Our general strategy is to test for differential expression (DE) between clusters and examine the top DE genes from each comparison.
+Specifically, we quantify the DE between each pair of clusters by computing an effect size for each gene (Section <a href="marker-detection.html#marker-effect-sizes">7.2.2</a>).
+We then summarize the effect sizes across comparisons for each cluster into a single statistic per gene (Section <a href="marker-detection.html#marker-effect-summaries">7.2.3</a>).
+Sorting on one of the effect size summaries yields a ranking of potential marker genes for each cluster.
+To illustrate, let’s load our old friend, the PBMC dataset from 10X Genomics <span class="citation">(Zheng et al. <a href="#ref-zheng2017massively" role="doc-biblioref">2017</a>)</span>.</p>
+<div class="sourceCode" id="cb194"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb194-1"><a href="marker-detection.html#cb194-1" aria-hidden="true"></a><span class="co"># Loading in raw data from the 10X output files.</span></span>
+<span id="cb194-2"><a href="marker-detection.html#cb194-2" aria-hidden="true"></a><span class="kw">library</span>(DropletTestFiles)</span>
+<span id="cb194-3"><a href="marker-detection.html#cb194-3" aria-hidden="true"></a>raw.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">getTestFile</span>(<span class="st">&quot;tenx-2.1.0-pbmc4k/1.0.0/filtered.tar.gz&quot;</span>)</span>
+<span id="cb194-4"><a href="marker-detection.html#cb194-4" aria-hidden="true"></a>dir.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;pbmc4k&quot;</span>)</span>
+<span id="cb194-5"><a href="marker-detection.html#cb194-5" aria-hidden="true"></a><span class="kw">untar</span>(raw.path<span class="fl">.10</span>x, <span class="dt">exdir=</span>dir.path<span class="fl">.10</span>x)</span>
+<span id="cb194-6"><a href="marker-detection.html#cb194-6" aria-hidden="true"></a></span>
+<span id="cb194-7"><a href="marker-detection.html#cb194-7" aria-hidden="true"></a><span class="kw">library</span>(DropletUtils)</span>
+<span id="cb194-8"><a href="marker-detection.html#cb194-8" aria-hidden="true"></a>fname<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir.path<span class="fl">.10</span>x, <span class="st">&quot;filtered_gene_bc_matrices/GRCh38&quot;</span>)</span>
+<span id="cb194-9"><a href="marker-detection.html#cb194-9" aria-hidden="true"></a>sce<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">read10xCounts</span>(fname<span class="fl">.10</span>x, <span class="dt">col.names=</span><span class="ot">TRUE</span>)</span>
+<span id="cb194-10"><a href="marker-detection.html#cb194-10" aria-hidden="true"></a></span>
+<span id="cb194-11"><a href="marker-detection.html#cb194-11" aria-hidden="true"></a><span class="co"># Applying our default QC with outlier-based thresholds.</span></span>
+<span id="cb194-12"><a href="marker-detection.html#cb194-12" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb194-13"><a href="marker-detection.html#cb194-13" aria-hidden="true"></a>is.mito<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">grepl</span>(<span class="st">&quot;^MT-&quot;</span>, <span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>Symbol)</span>
+<span id="cb194-14"><a href="marker-detection.html#cb194-14" aria-hidden="true"></a>sce.qc<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce<span class="fl">.10</span>x, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.10</span>x))</span>
+<span id="cb194-15"><a href="marker-detection.html#cb194-15" aria-hidden="true"></a>sce.qc<span class="fl">.10</span>x &lt;-<span class="st"> </span>sce.qc<span class="fl">.10</span>x[,sce.qc<span class="fl">.10</span>x<span class="op">$</span>keep]</span>
+<span id="cb194-16"><a href="marker-detection.html#cb194-16" aria-hidden="true"></a></span>
+<span id="cb194-17"><a href="marker-detection.html#cb194-17" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb194-18"><a href="marker-detection.html#cb194-18" aria-hidden="true"></a>sce.norm<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc<span class="fl">.10</span>x, <span class="dt">size.factors=</span>sce.qc<span class="fl">.10</span>x<span class="op">$</span>sum)</span>
+<span id="cb194-19"><a href="marker-detection.html#cb194-19" aria-hidden="true"></a></span>
+<span id="cb194-20"><a href="marker-detection.html#cb194-20" aria-hidden="true"></a><span class="co"># We now choose the top HVGs.</span></span>
+<span id="cb194-21"><a href="marker-detection.html#cb194-21" aria-hidden="true"></a>sce.var<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm<span class="fl">.10</span>x, <span class="dt">more.choose.args=</span><span class="kw">list</span>(<span class="dt">top=</span><span class="dv">4000</span>))</span>
+<span id="cb194-22"><a href="marker-detection.html#cb194-22" aria-hidden="true"></a></span>
+<span id="cb194-23"><a href="marker-detection.html#cb194-23" aria-hidden="true"></a><span class="co"># Running the PCA on the HVG submatrix.</span></span>
+<span id="cb194-24"><a href="marker-detection.html#cb194-24" aria-hidden="true"></a>sce.pca<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var<span class="fl">.10</span>x, <span class="dt">features=</span><span class="kw">rowData</span>(sce.var<span class="fl">.10</span>x)<span class="op">$</span>hvg, <span class="dt">number=</span><span class="dv">25</span>)</span>
+<span id="cb194-25"><a href="marker-detection.html#cb194-25" aria-hidden="true"></a></span>
+<span id="cb194-26"><a href="marker-detection.html#cb194-26" aria-hidden="true"></a><span class="co"># Doing some graph-based clustering, t-SNEs, etc.</span></span>
+<span id="cb194-27"><a href="marker-detection.html#cb194-27" aria-hidden="true"></a>sce.nn<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.pca<span class="fl">.10</span>x)</span>
+<span id="cb194-28"><a href="marker-detection.html#cb194-28" aria-hidden="true"></a>sce.nn<span class="fl">.10</span>x</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 33694 4147 
+## metadata(3): Samples qc PCA
+## assays(2): counts logcounts
+## rownames(33694): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+##   ENSG00000268674
+## rowData names(7): ID Symbol ... residuals hvg
+## colnames(4147): AAACCTGAGACAGACC-1 AAACCTGAGCGCCTCA-1 ...
+##   TTTGTCAGTTAAGACA-1 TTTGTCATCCCAAGAT-1
+## colData names(8): Sample Barcode ... sizeFactor clusters
+## reducedDimNames(3): PCA TSNE UMAP
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
+<p>Given the clustering and the log-expression values, the <code>scoreMarkers.se()</code> function returns a data frame of marker statistics for each cluster.
+Each data frame contains the mean log-expression and the proportion of cells with detected (i.e., non-zero) expression in a particular cluster.
+It also contains multiple columns representing effect size summaries, where each column is named as <code>&lt;effect size&gt;.&lt;summary type&gt;</code>,
+e.g., <code>cohens.d.mean</code> contains the mean of the Cohen’s <span class="math inline">\(d\)</span> across all comparisons involving that cluster.
+Genes with larger <code>cohens.d.mean</code> values exhibit stronger upregulation in the current cluster compared to the average of the other clusters.
+By default, <code>scoreMarkers.se()</code> orders the rows on <code>cohens.d.mean</code>, which represents one possible ranking of markers for each cluster.</p>
+<div class="sourceCode" id="cb196"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb196-1"><a href="marker-detection.html#cb196-1" aria-hidden="true"></a>markers<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(sce.nn<span class="fl">.10</span>x, sce.nn<span class="fl">.10</span>x<span class="op">$</span>clusters, <span class="dt">extra.columns=</span><span class="st">&quot;Symbol&quot;</span>)</span>
+<span id="cb196-2"><a href="marker-detection.html#cb196-2" aria-hidden="true"></a><span class="kw">names</span>(markers<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot; &quot;11&quot;</code></pre>
+<div class="sourceCode" id="cb198"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb198-1"><a href="marker-detection.html#cb198-1" aria-hidden="true"></a><span class="co"># Examining the statistics for cluster 1.</span></span>
+<span id="cb198-2"><a href="marker-detection.html#cb198-2" aria-hidden="true"></a>chosen.cluster &lt;-<span class="st"> &quot;1&quot;</span></span>
+<span id="cb198-3"><a href="marker-detection.html#cb198-3" aria-hidden="true"></a>chosen.markers<span class="fl">.10</span>x &lt;-<span class="st"> </span>markers<span class="fl">.10</span>x[[chosen.cluster]]</span>
+<span id="cb198-4"><a href="marker-detection.html#cb198-4" aria-hidden="true"></a><span class="kw">head</span>(chosen.markers<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>## DataFrame with 6 rows and 23 columns
+##                      Symbol      mean  detected cohens.d.min cohens.d.mean
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt;    &lt;numeric&gt;     &lt;numeric&gt;
+## ENSG00000090382         LYZ   5.80862  0.998729    0.8145154       6.63007
+## ENSG00000087086         FTL   6.24421  1.000000   -0.3996035       4.98157
+## ENSG00000011600      TYROBP   4.05728  0.997459    0.4176424       4.65609
+## ENSG00000163220      S100A9   5.63461  0.996188    2.1347048       4.56463
+## ENSG00000143546      S100A8   5.37071  1.000000    2.4422557       4.30814
+## ENSG00000163131        CTSS   3.81179  0.997459   -0.0492655       3.88013
+##                 cohens.d.median cohens.d.max cohens.d.min.rank   auc.min
+##                       &lt;numeric&gt;    &lt;numeric&gt;         &lt;integer&gt; &lt;numeric&gt;
+## ENSG00000090382         7.52540      8.84770                 1  0.760525
+## ENSG00000087086         5.59914      7.23427                 1  0.406228
+## ENSG00000011600         6.13868      7.15137                 2  0.639057
+## ENSG00000163220         4.98685      5.33239                 2  0.927441
+## ENSG00000143546         4.61885      4.73656                 1  0.944957
+## ENSG00000163131         4.11857      5.45536                 2  0.494780
+##                  auc.mean auc.median   auc.max auc.min.rank delta.mean.min
+##                 &lt;numeric&gt;  &lt;numeric&gt; &lt;numeric&gt;    &lt;integer&gt;      &lt;numeric&gt;
+## ENSG00000090382  0.973853   0.998880  0.998974            1      0.8230802
+## ENSG00000087086  0.940033   0.999995  1.000000            1     -0.1740122
+## ENSG00000011600  0.941867   0.997856  0.998416            3      0.2037323
+## ENSG00000163220  0.988210   0.996637  0.996751            3      3.0134895
+## ENSG00000143546  0.990912   0.997315  0.997937            2      3.3958255
+## ENSG00000163131  0.944007   0.995314  0.997834            2     -0.0269158
+##                 delta.mean.mean delta.mean.median delta.mean.max
+##                       &lt;numeric&gt;         &lt;numeric&gt;      &lt;numeric&gt;
+## ENSG00000090382         4.47263           5.12259        5.24414
+## ENSG00000087086         2.67120           3.09281        3.28471
+## ENSG00000011600         2.65311           3.68333        3.78321
+## ENSG00000163220         4.48435           4.80883        4.85246
+## ENSG00000143546         4.50586           4.71901        4.77685
+## ENSG00000163131         2.58808           2.89583        3.34762
+##                 delta.mean.min.rank delta.detected.min delta.detected.mean
+##                           &lt;integer&gt;          &lt;numeric&gt;           &lt;numeric&gt;
+## ENSG00000090382                   1        -0.00127065          0.38767601
+## ENSG00000087086                   4         0.00000000          0.00365274
+## ENSG00000011600                   4        -0.00254130          0.44956424
+## ENSG00000163220                   2         0.04063250          0.31324397
+## ENSG00000143546                   1         0.05925926          0.42422861
+## ENSG00000163131                   5        -0.00254130          0.34497914
+##                 delta.detected.median delta.detected.max
+##                             &lt;numeric&gt;          &lt;numeric&gt;
+## ENSG00000090382            0.47919580           0.586641
+## ENSG00000087086            0.00102669           0.010989
+## ENSG00000011600            0.71614818           0.755306
+## ENSG00000163220            0.37554637           0.512672
+## ENSG00000143546            0.51712877           0.604396
+## ENSG00000163131            0.36907130           0.623682
+##                 delta.detected.min.rank
+##                               &lt;integer&gt;
+## ENSG00000090382                      43
+## ENSG00000087086                   33694
+## ENSG00000011600                      14
+## ENSG00000163220                      66
+## ENSG00000143546                      37
+## ENSG00000163131                      41</code></pre>
+<div class="sourceCode" id="cb200"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb200-1"><a href="marker-detection.html#cb200-1" aria-hidden="true"></a><span class="co"># A more concise overview.</span></span>
+<span id="cb200-2"><a href="marker-detection.html#cb200-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 4 columns
+##                      Symbol      mean  detected       lfc
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000090382         LYZ   5.80862  0.998729   4.47263
+## ENSG00000087086         FTL   6.24421  1.000000   2.67120
+## ENSG00000011600      TYROBP   4.05728  0.997459   2.65311
+## ENSG00000163220      S100A9   5.63461  0.996188   4.48435
+## ENSG00000143546      S100A8   5.37071  1.000000   4.50586
+## ENSG00000163131        CTSS   3.81179  0.997459   2.58808
+## ENSG00000101439        CST3   3.93963  0.998729   2.38272
+## ENSG00000085265        FCN1   2.75854  0.970775   2.36554
+## ENSG00000204482        LST1   2.90740  0.988564   2.05035
+## ENSG00000197956      S100A6   4.49784  0.998729   2.28517</code></pre>
+<p>We examine the top genes for some annotated biological function or cell type specificity that could be used to identify cluster 1<a href="#fn24" class="footnote-ref" id="fnref24"><sup>24</sup></a>.
+Usually the first 10-20 genes are sufficient to assign some biological meaning to the cluster,
+though we can always perform a more detailed characterization by considering additional genes from the ranking.
+We can also visualize the distribution of their expression values in each cluster (Figure <a href="marker-detection.html#fig:marker-violins-pbmc">7.1</a>),
+where the top markers should be upregulated in cluster 1 compared to most of the other clusters.</p>
+<div class="sourceCode" id="cb202"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb202-1"><a href="marker-detection.html#cb202-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb202-2"><a href="marker-detection.html#cb202-2" aria-hidden="true"></a><span class="co"># Displaying symbols instead of Ensembl IDs for easier interpretation. </span></span>
+<span id="cb202-3"><a href="marker-detection.html#cb202-3" aria-hidden="true"></a><span class="kw">plotExpression</span>(</span>
+<span id="cb202-4"><a href="marker-detection.html#cb202-4" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x,</span>
+<span id="cb202-5"><a href="marker-detection.html#cb202-5" aria-hidden="true"></a>    <span class="dt">x=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb202-6"><a href="marker-detection.html#cb202-6" aria-hidden="true"></a>    <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>, <span class="co"># for some verisimilitude</span></span>
+<span id="cb202-7"><a href="marker-detection.html#cb202-7" aria-hidden="true"></a>    <span class="dt">features=</span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>Symbol[<span class="dv">1</span><span class="op">:</span><span class="dv">6</span>],</span>
+<span id="cb202-8"><a href="marker-detection.html#cb202-8" aria-hidden="true"></a>    <span class="dt">swap_rownames=</span><span class="st">&quot;Symbol&quot;</span></span>
+<span id="cb202-9"><a href="marker-detection.html#cb202-9" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-violins-pbmc"></span>
+<img src="marker-detection_files/figure-html/marker-violins-pbmc-1.png" alt="Distribution of log-expression values for the top marker genes of cluster 1 in the PBMC dataset." width="768" />
+<p class="caption">
+Figure 7.1: Distribution of log-expression values for the top marker genes of cluster 1 in the PBMC dataset.
+</p>
+</div>
+<p>Of course, the default <code>cohens.d.mean</code> is just one of many possible choices for ranking potential marker genes.
+Different effect sizes or summary statistics can yield alternative rankings that may be more or less useful.</p>
+</div>
+<div id="marker-effect-sizes" class="section level3 hasAnchor" number="7.2.2">
+<h3><span class="header-section-number">7.2.2</span> Choice of effect size<a href="marker-detection.html#marker-effect-sizes" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>For each pairwise comparison, we compute several effect sizes to quantify the magnitude of differential expression between two clusters.
+The choice of effect size influences the types of markers that are prioritized in rankings based on that effect size.
+To demonstrate, we’ll look at the different rankings obtained for cluster 1 with each effect size.
+(For consistency and simplicity, we will use the <code>.mean</code> summary in each example.)</p>
+<p>Cohen’s <span class="math inline">\(d\)</span> is defined as the difference in the mean between groups divided by the average standard deviation across groups.
+In other words, it is the number of standard deviations that separate the means of the two groups.
+When applied to log-expression values, Cohen’s <span class="math inline">\(d\)</span> can be interpreted as a standardized log-fold change.
+Positive values indicate that the gene is upregulated in our cluster of interest,
+negative values indicate downregulation and values close to zero indicate that there is little difference.
+Cohen’s <span class="math inline">\(d\)</span> is roughly analogous to the <span class="math inline">\(t\)</span>-statistic in a two-sample <span class="math inline">\(t\)</span>-test.</p>
+<div class="sourceCode" id="cb203"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb203-1"><a href="marker-detection.html#cb203-1" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;cohens.d.mean&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                      Symbol      mean  detected       lfc cohens.d.mean
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;     &lt;numeric&gt;
+## ENSG00000090382         LYZ   5.80862  0.998729   4.47263       6.63007
+## ENSG00000087086         FTL   6.24421  1.000000   2.67120       4.98157
+## ENSG00000011600      TYROBP   4.05728  0.997459   2.65311       4.65609
+## ENSG00000163220      S100A9   5.63461  0.996188   4.48435       4.56463
+## ENSG00000143546      S100A8   5.37071  1.000000   4.50586       4.30814
+## ENSG00000163131        CTSS   3.81179  0.997459   2.58808       3.88013
+## ENSG00000101439        CST3   3.93963  0.998729   2.38272       3.76730
+## ENSG00000085265        FCN1   2.75854  0.970775   2.36554       3.43847
+## ENSG00000204482        LST1   2.90740  0.988564   2.05035       3.33141
+## ENSG00000197956      S100A6   4.49784  0.998729   2.28517       3.19315</code></pre>
+<p>The area under the curve (AUC) is the probability that a randomly chosen observation from our cluster of interest is greater than a randomly chosen observation from the other cluster.
+A value of 1 corresponds to upregulation, where all values of our cluster of interest are greater than any value from the other cluster;
+a value of 0.5 means that there is no difference in the location of the distributions;
+and a value of 0 corresponds to downregulation.
+The AUC is closely related to the <span class="math inline">\(U\)</span> statistic in the Wilcoxon ranked sum test (a.k.a., Mann-Whitney U-test).
+Both the AUC and Cohen’s <span class="math inline">\(d\)</span> tend to detect similar markers -
+the former is more robust to outliers but less sensitive to the magnitude of the differences between clusters,
+i.e., a greater difference between clusters will usually result in a larger Cohen’s <span class="math inline">\(d\)</span> but may not change the AUC much if it’s already close to 0 or 1.</p>
+<div class="sourceCode" id="cb205"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb205-1"><a href="marker-detection.html#cb205-1" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;auc.mean&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc  auc.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000143546        S100A8   5.37071  1.000000   4.50586  0.990912
+## ENSG00000163220        S100A9   5.63461  0.996188   4.48435  0.988210
+## ENSG00000090382           LYZ   5.80862  0.998729   4.47263  0.973853
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102  0.957043
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554  0.949031
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297  0.948650
+## ENSG00000163131          CTSS   3.81179  0.997459   2.58808  0.944007
+## ENSG00000197956        S100A6   4.49784  0.998729   2.28517  0.943195
+## ENSG00000011600        TYROBP   4.05728  0.997459   2.65311  0.941867
+## ENSG00000087086           FTL   6.24421  1.000000   2.67120  0.940033</code></pre>
+<p>The “delta-detected” is the difference in the proportion of cells with detected (non-zero) expression between two clusters.
+A value of 1 indicates that all cells in the cluster of interest express a gene, while all cells in the other cluster do not;
+a value of zero indicates that there is no difference in the proportion;
+and a value of -1 indicates that expression is only found in the cells of the other cluster.
+Rankings based on the delta-detected value will prioritize genes that are near-silent in the other cluster (Figure <a href="marker-detection.html#fig:marker-detected-pbmc">7.2</a>).
+When available, these genes are often very effective markers as they are only expressed in our cluster of interest.
+However, it is also possible that strong markers will not have a large delta-detected value, e.g., because they are expressed at a low constitutive level in the other cluster.</p>
+<div class="sourceCode" id="cb207"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb207-1"><a href="marker-detection.html#cb207-1" aria-hidden="true"></a>top.detected<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;delta.detected.mean&quot;</span>)</span>
+<span id="cb207-2"><a href="marker-detection.html#cb207-2" aria-hidden="true"></a>top.detected<span class="fl">.10</span>x</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc delta.detected.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;           &lt;numeric&gt;
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297            0.797889
+## ENSG00000038427          VCAN   1.95980  0.885642   1.84785            0.787284
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102            0.758067
+## ENSG00000163563          MNDA   2.50935  0.960610   2.13786            0.733194
+## ENSG00000121552          CSTA   2.30972  0.949174   1.97753            0.729536
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554            0.718534
+## ENSG00000100079        LGALS2   2.10228  0.885642   1.82007            0.705982
+## ENSG00000170458          CD14   1.39897  0.771283   1.32663            0.692697
+## ENSG00000110077        MS4A6A   1.54823  0.829733   1.24222            0.643400
+## ENSG00000127951          FGL2   1.48230  0.846252   1.22767            0.638580</code></pre>
+<div class="sourceCode" id="cb209"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb209-1"><a href="marker-detection.html#cb209-1" aria-hidden="true"></a><span class="kw">plotExpression</span>(</span>
+<span id="cb209-2"><a href="marker-detection.html#cb209-2" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x,</span>
+<span id="cb209-3"><a href="marker-detection.html#cb209-3" aria-hidden="true"></a>    <span class="dt">features=</span>top.detected<span class="fl">.10</span>x<span class="op">$</span>Symbol[<span class="dv">1</span><span class="op">:</span><span class="dv">6</span>],</span>
+<span id="cb209-4"><a href="marker-detection.html#cb209-4" aria-hidden="true"></a>    <span class="dt">swap_rownames=</span><span class="st">&quot;Symbol&quot;</span>,</span>
+<span id="cb209-5"><a href="marker-detection.html#cb209-5" aria-hidden="true"></a>    <span class="dt">x=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb209-6"><a href="marker-detection.html#cb209-6" aria-hidden="true"></a>    <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span></span>
+<span id="cb209-7"><a href="marker-detection.html#cb209-7" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-detected-pbmc"></span>
+<img src="marker-detection_files/figure-html/marker-detected-pbmc-1.png" alt="Distribution of log-expression values for the top marker genes of cluster 1 in the PBMC dataset, ranked by the mean delta-detected." width="768" />
+<p class="caption">
+Figure 7.2: Distribution of log-expression values for the top marker genes of cluster 1 in the PBMC dataset, ranked by the mean delta-detected.
+</p>
+</div>
+<p>Finally, the “delta-mean” is the difference in the mean between two clusters.
+When computed on the log-normalized expression values, this is simply a fancy name for the log-fold change between clusters.
+In most cases, Cohen’s <span class="math inline">\(d\)</span> or the AUC are better choices as they account for the variance within each cluster.
+Nonetheless, the log-fold changes are still useful as their values are easier to interpret.
+They can also help to diagnose pathological situations where large Cohen’s <span class="math inline">\(d\)</span> or AUC values are driven by small variances instead of large differences between clusters.</p>
+<div class="sourceCode" id="cb210"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb210-1"><a href="marker-detection.html#cb210-1" aria-hidden="true"></a><span class="co"># Same as the &#39;lfc&#39; column.</span></span>
+<span id="cb210-2"><a href="marker-detection.html#cb210-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;delta.mean.mean&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc delta.mean.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;       &lt;numeric&gt;
+## ENSG00000143546        S100A8   5.37071  1.000000   4.50586         4.50586
+## ENSG00000163220        S100A9   5.63461  0.996188   4.48435         4.48435
+## ENSG00000090382           LYZ   5.80862  0.998729   4.47263         4.47263
+## ENSG00000087086           FTL   6.24421  1.000000   2.67120         2.67120
+## ENSG00000011600        TYROBP   4.05728  0.997459   2.65311         2.65311
+## ENSG00000163131          CTSS   3.81179  0.997459   2.58808         2.58808
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102         2.54102
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297         2.48297
+## ENSG00000101439          CST3   3.93963  0.998729   2.38272         2.38272
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554         2.36554</code></pre>
+<p>Keep in mind that effect sizes are defined relative to other clusters in the same dataset.
+Biologically meaningful genes will not be detected as markers if they are expressed uniformly throughout the population,
+e.g., T cell markers will not be detected if only T cells are present in the dataset.
+This is usually not a problem as we should have some prior knowledge about the identity of the cell population,
+e.g., we should know we’ve isolated T cells for our experiment<a href="#fn25" class="footnote-ref" id="fnref25"><sup>25</sup></a>.
+Nonetheless, if “absolute” identification of cell types is desired, we need to use cell type annotation methods like <em><a href="https://bioconductor.org/packages/3.23/SingleR">SingleR</a></em>.</p>
+</div>
+<div id="marker-effect-summaries" class="section level3 hasAnchor" number="7.2.3">
+<h3><span class="header-section-number">7.2.3</span> Summarizing pairwise effects<a href="marker-detection.html#marker-effect-summaries" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>As mentioned above, we perform pairwise comparisons between clusters to find differentially expressed genes.
+For each gene, we obtain one effect size of a given type from each pair of clusters;
+so in a dataset with <span class="math inline">\(N\)</span> clusters, each cluster will have <span class="math inline">\(N-1\)</span> effect sizes for consideration.
+To simplify interpretation, we summarize the effect sizes for each cluster into key statistics such as the mean and median.
+This allows us to create a ranking of potential marker genes based on one of the summary statistics for a given effect size.</p>
+<p>The mean and median are the most obvious and general-purpose summary statistics.
+For cluster <span class="math inline">\(X\)</span>, a large mean effect size indicates that the gene is upregulated in <span class="math inline">\(X\)</span> compared to the average of the other groups.
+Similarly, a large median effect size indicates that the gene is upregulated in <span class="math inline">\(X\)</span> compared to most (&gt;50%) other clusters.
+The median is more robust (or less sensitive, depending on one’s perspective) than the mean to large effect sizes in a minority of comparisons, which may or may not be desirable.
+In practice, these summaries usually generate similar rankings.</p>
+<div class="sourceCode" id="cb212"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb212-1"><a href="marker-detection.html#cb212-1" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;cohens.d.median&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                      Symbol      mean  detected       lfc cohens.d.median
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;       &lt;numeric&gt;
+## ENSG00000090382         LYZ   5.80862  0.998729   4.47263         7.52540
+## ENSG00000011600      TYROBP   4.05728  0.997459   2.65311         6.13868
+## ENSG00000087086         FTL   6.24421  1.000000   2.67120         5.59914
+## ENSG00000101439        CST3   3.93963  0.998729   2.38272         5.33218
+## ENSG00000163220      S100A9   5.63461  0.996188   4.48435         4.98685
+## ENSG00000143546      S100A8   5.37071  1.000000   4.50586         4.61885
+## ENSG00000204482        LST1   2.90740  0.988564   2.05035         4.17765
+## ENSG00000163131        CTSS   3.81179  0.997459   2.58808         4.11857
+## ENSG00000085265        FCN1   2.75854  0.970775   2.36554         3.96423
+## ENSG00000204472        AIF1   2.83022  0.978399   2.09265         3.80569</code></pre>
+<p>The minimum value is the most stringent summary for identifying upregulated genes.
+A large minimum value indicates that the gene is upregulated in <span class="math inline">\(X\)</span> compared to all other clusters.
+Ranking on the minimum is a high-risk, high-reward approach;
+it can yield a concise set of excellent markers that are unique to <span class="math inline">\(X\)</span>,
+but can also overlook interesting genes if they are expressed at a similar level in any other cluster.
+The latter effect is not uncommon if the clusters correspond to closely-related cell types.
+To give a concrete example, consider a mixed population of CD4<sup>+</sup>-only, CD8<sup>+</sup>-only, double-positive and double-negative T cells.
+Neither <em>Cd4</em> or <em>Cd8</em> would be detected as subpopulation-specific markers because each gene is expressed in two subpopulations.</p>
+<div class="sourceCode" id="cb214"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb214-1"><a href="marker-detection.html#cb214-1" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;cohens.d.min&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc cohens.d.min
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;    &lt;numeric&gt;
+## ENSG00000143546        S100A8   5.37071  1.000000  4.505863     2.442256
+## ENSG00000163221       S100A12   2.59398  0.916137  2.482974     2.174899
+## ENSG00000163220        S100A9   5.63461  0.996188  4.484354     2.134705
+## ENSG00000038427          VCAN   1.95980  0.885642  1.847852     1.519953
+## ENSG00000170458          CD14   1.39897  0.771283  1.326635     1.509846
+## ENSG00000085265          FCN1   2.75854  0.970775  2.365537     1.071372
+## ENSG00000121552          CSTA   2.30972  0.949174  1.977535     1.008715
+## ENSG00000198886        MT-ND4   4.27689  1.000000  0.742434     0.935270
+## ENSG00000163563          MNDA   2.50935  0.960610  2.137860     0.926516
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399  2.541024     0.903887</code></pre>
+<p>Another interesting summary statistic is the minimum rank, a.k.a., “min-rank”.
+The min-rank is the smallest rank of each gene across all pairwise comparisons involving our cluster of interest <span class="math inline">\(X\)</span>.
+Specifically, genes are ranked within each pairwise comparison based on decreasing effect size, and then the smallest rank across all comparisons is reported for each gene.
+A gene with a small min-rank is one of the top upregulated genes in at least one comparison between <span class="math inline">\(X\)</span> and another cluster.
+Or in other words: the set of all genes with a min-rank less than or equal to <span class="math inline">\(R\)</span> is equal to the union of the top <span class="math inline">\(R\)</span> genes from all pairwise comparisons for <span class="math inline">\(X\)</span>.
+This guarantees that our set contains at least <span class="math inline">\(R\)</span> genes that can distinguish our cluster of interest from any other cluster,
+which enables a comprehensive determination of a cluster’s identity.</p>
+<div class="sourceCode" id="cb216"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb216-1"><a href="marker-detection.html#cb216-1" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&#39;Symbol&#39;</span>, <span class="dt">order.by=</span><span class="st">&quot;cohens.d.min.rank&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc cohens.d.min.rank
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;         &lt;integer&gt;
+## ENSG00000090382           LYZ   5.80862  0.998729   4.47263                 1
+## ENSG00000087086           FTL   6.24421  1.000000   2.67120                 1
+## ENSG00000143546        S100A8   5.37071  1.000000   4.50586                 1
+## ENSG00000011600        TYROBP   4.05728  0.997459   2.65311                 2
+## ENSG00000163220        S100A9   5.63461  0.996188   4.48435                 2
+## ENSG00000163131          CTSS   3.81179  0.997459   2.58808                 2
+## ENSG00000101439          CST3   3.93963  0.998729   2.38272                 2
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297                 4
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554                 5
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102                 5</code></pre>
+<div class="sourceCode" id="cb218"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb218-1"><a href="marker-detection.html#cb218-1" aria-hidden="true"></a><span class="co"># min.rank &lt;= 5 means represents the union of the top 5 genes from each</span></span>
+<span id="cb218-2"><a href="marker-detection.html#cb218-2" aria-hidden="true"></a><span class="co"># pairwise comparison between our chosen cluster and every other cluster.</span></span>
+<span id="cb218-3"><a href="marker-detection.html#cb218-3" aria-hidden="true"></a>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>Symbol[chosen.markers<span class="fl">.10</span>x<span class="op">$</span>cohens.d.min.rank <span class="op">&lt;=</span><span class="st"> </span><span class="dv">5</span>]</span></code></pre></div>
+<pre><code>##  [1] &quot;LYZ&quot;           &quot;FTL&quot;           &quot;TYROBP&quot;        &quot;S100A9&quot;       
+##  [5] &quot;S100A8&quot;        &quot;CTSS&quot;          &quot;CST3&quot;          &quot;FCN1&quot;         
+##  [9] &quot;RP11-1143G9.4&quot; &quot;S100A12&quot;       &quot;NEAT1&quot;</code></pre>
+<p>The flexibility to choose between different summary statistics is one of the strengths of our pairwise strategy.
+This allows us to explore different rankings of markers depending on our preferences.
+For example, the min-rank is a conservative choice as it guarantees separation of our cluster of interest, at the cost of including weaker DE genes in the top set of markers;
+while the minimum provides an aggressive ranking that focuses on markers that are uniquely expressed in our cluster (if any exist).
+Pairwise comparisons are also robust to differences in the relative number of cells between clusters,
+which ensures that a single large cluster does not dominate the calculation of effect sizes for all other clusters.</p>
+<!---
+We can compare this to a hypotehtical alternative approach where we define markers for each cluster by treating all other cells as a single group. 
+This is simpler as it yields a single effect size per gene, but the results will depend on the (potentially unpredictable) composition of subpopulations in the "other" group.
+If there is a single large subpopulation that makes up the majority of cells, its expression profile will determine the effect sizes for all other clusters.
+If it expresses a gene that is also a marker for your cluster (relative to the other subpopulations besides the dominant one) - too bad, you won't be seeing it in that cluster's ranking.
+--->
+</div>
+</div>
+<div id="visualizing-marker-genes" class="section level2 hasAnchor" number="7.3">
+<h2><span class="header-section-number">7.3</span> Visualizing marker genes<a href="marker-detection.html#visualizing-marker-genes" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>At this point, we suppose that we ought to create some figures to keep everyone entertained.
+We have already demonstrated how we can examine the distribution of expression values with violin plots in Figure <a href="marker-detection.html#fig:marker-violins-pbmc">7.1</a>.
+Another option is to color our <span class="math inline">\(t\)</span>-SNE plot according to the log-expression values of a specific marker in each cell (Figure <a href="marker-detection.html#fig:marker-tsne-pbmc">7.3</a>).
+Any heterogeneity in expression within our cluster might be indicative of internal structure.</p>
+<div class="sourceCode" id="cb220"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb220-1"><a href="marker-detection.html#cb220-1" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb220-2"><a href="marker-detection.html#cb220-2" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.nn<span class="fl">.10</span>x, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>),</span>
+<span id="cb220-3"><a href="marker-detection.html#cb220-3" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.nn<span class="fl">.10</span>x, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>Symbol[<span class="dv">1</span>], <span class="dt">swap_rownames=</span><span class="st">&quot;Symbol&quot;</span>),</span>
+<span id="cb220-4"><a href="marker-detection.html#cb220-4" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb220-5"><a href="marker-detection.html#cb220-5" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-tsne-pbmc"></span>
+<img src="marker-detection_files/figure-html/marker-tsne-pbmc-1.png" alt="$t$-SNE plot of the cells in the PBMC dataset, colored by the assigned cluster (top) or the log-expression of the top marker gene in cluster 1 (bottom)." width="1152" />
+<p class="caption">
+Figure 7.3: <span class="math inline">\(t\)</span>-SNE plot of the cells in the PBMC dataset, colored by the assigned cluster (top) or the log-expression of the top marker gene in cluster 1 (bottom).
+</p>
+</div>
+<p>The heatmap is a classic visualization in genomics, and scRNA-seq is no exception (Figure <a href="marker-detection.html#fig:marker-heat-pbmc">7.4</a>).
+This provides a compact summary of the relative expression of multiple markers across the cell population.
+Ideally, each marker should be consistently upregulated within our cluster of interest compared to the rest of the cells in the population.</p>
+<div class="sourceCode" id="cb221"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb221-1"><a href="marker-detection.html#cb221-1" aria-hidden="true"></a><span class="kw">plotHeatmap</span>(sce.nn<span class="fl">.10</span>x, <span class="dt">features=</span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>Symbol[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>], <span class="dt">order_columns_by=</span><span class="st">&quot;clusters&quot;</span>, <span class="dt">swap_rownames=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">center=</span><span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-heat-pbmc"></span>
+<img src="marker-detection_files/figure-html/marker-heat-pbmc-1.png" alt="Heatmap of the top markers for cluster 1 in the PBMC dataset. Each row represents a gene and each column represents a cell. Each entry is colored by the log-fold change for each cell from the mean log-expression for that gene." width="768" />
+<p class="caption">
+Figure 7.4: Heatmap of the top markers for cluster 1 in the PBMC dataset. Each row represents a gene and each column represents a cell. Each entry is colored by the log-fold change for each cell from the mean log-expression for that gene.
+</p>
+</div>
+<p>Another popular visualization is the <em><a href="https://CRAN.R-project.org/package=seurat">seurat</a></em>-style “dot plot”<a href="#fn26" class="footnote-ref" id="fnref26"><sup>26</sup></a>,
+also known as a bubble plot (Figure <a href="marker-detection.html#fig:marker-dot-pbmc">7.5</a>).
+This is more concise than the heatmap as it uses the size of each dot/bubble to represent the proportion of cells with detected expression.
+Personally, we disapprove of using variable areas to represent data as this can generate misleading visualizations<a href="#fn27" class="footnote-ref" id="fnref27"><sup>27</sup></a>,
+but hey, to each their own.</p>
+<div class="sourceCode" id="cb222"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb222-1"><a href="marker-detection.html#cb222-1" aria-hidden="true"></a><span class="kw">plotDots</span>(sce.nn<span class="fl">.10</span>x, <span class="dt">features=</span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>Symbol[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>], <span class="dt">group=</span><span class="st">&quot;clusters&quot;</span>, <span class="dt">swap_rownames=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">center=</span><span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-dot-pbmc"></span>
+<img src="marker-detection_files/figure-html/marker-dot-pbmc-1.png" alt="Dot plot of the top markers for cluster 1 in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters." width="768" />
+<p class="caption">
+Figure 7.5: Dot plot of the top markers for cluster 1 in the PBMC dataset. The size of each point represents the number of cells that express each gene in each cluster, while the color of each point represents the log-fold change between the cluster and the average across all clusters.
+</p>
+</div>
+</div>
+<div id="using-a-log-fold-change-threshold" class="section level2 hasAnchor" number="7.4">
+<h2><span class="header-section-number">7.4</span> Using a log-fold change threshold<a href="marker-detection.html#using-a-log-fold-change-threshold" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The Cohen’s <span class="math inline">\(d\)</span> and AUC consider both the magnitude of the difference between clusters as well as the variability within each cluster.
+If the variability is low, it is possible for a gene to have a large effect size even if the magnitude of the difference is small.
+These genes tend to be uninformative for cell type identification, e.g., ribosomal protein genes.
+We would prefer genes with larger log-fold changes between clusters, even if they have higher variability <span class="citation">(McCarthy and Smyth <a href="#ref-mccarthy2009treat" role="doc-biblioref">2009</a>)</span>.</p>
+<p>To favor the detection of such genes, we can compute the effect sizes relative to a log-fold change threshold.
+The definition of Cohen’s <span class="math inline">\(d\)</span> is generalized to the standardized difference between the observed log-fold change and the specified threshold.
+Similarly, the AUC is redefined as the probability of randomly picking an expression value from one cluster that is greater than a random value from the other cluster plus the threshold.
+A large positive Cohen’s <span class="math inline">\(d\)</span> and an AUC above 0.5 can only be obtained if the observed log-fold change between clusters is significantly greater than the threshold.
+(However, a negative Cohen’s <span class="math inline">\(d\)</span> or AUC below 0.5 may not represent downregulation; it may just indicate that the observed log-fold change is less than the specified threshold.)</p>
+<div class="sourceCode" id="cb223"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb223-1"><a href="marker-detection.html#cb223-1" aria-hidden="true"></a>markers.threshold<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(</span>
+<span id="cb223-2"><a href="marker-detection.html#cb223-2" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x,</span>
+<span id="cb223-3"><a href="marker-detection.html#cb223-3" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x<span class="op">$</span>clusters,</span>
+<span id="cb223-4"><a href="marker-detection.html#cb223-4" aria-hidden="true"></a>    <span class="dt">extra.columns=</span><span class="st">&#39;Symbol&#39;</span>,</span>
+<span id="cb223-5"><a href="marker-detection.html#cb223-5" aria-hidden="true"></a>    <span class="dt">more.marker.args=</span><span class="kw">list</span>(<span class="dt">threshold=</span><span class="dv">2</span>)</span>
+<span id="cb223-6"><a href="marker-detection.html#cb223-6" aria-hidden="true"></a>)</span>
+<span id="cb223-7"><a href="marker-detection.html#cb223-7" aria-hidden="true"></a></span>
+<span id="cb223-8"><a href="marker-detection.html#cb223-8" aria-hidden="true"></a>chosen.markers.threshold<span class="fl">.10</span>x &lt;-<span class="st"> </span>markers.threshold<span class="fl">.10</span>x[[chosen.cluster]]</span>
+<span id="cb223-9"><a href="marker-detection.html#cb223-9" aria-hidden="true"></a></span>
+<span id="cb223-10"><a href="marker-detection.html#cb223-10" aria-hidden="true"></a><span class="co"># Default ordering by the mean of Cohen&#39;s d.</span></span>
+<span id="cb223-11"><a href="marker-detection.html#cb223-11" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers.threshold<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">post.columns=</span><span class="st">&quot;cohens.d.mean&quot;</span>) </span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc cohens.d.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;     &lt;numeric&gt;
+## ENSG00000090382           LYZ   5.80862  0.998729   4.47263      3.777706
+## ENSG00000163220        S100A9   5.63461  0.996188   4.48435      2.556023
+## ENSG00000143546        S100A8   5.37071  1.000000   4.50586      2.411830
+## ENSG00000011600        TYROBP   4.05728  0.997459   2.65311      1.190628
+## ENSG00000087086           FTL   6.24421  1.000000   2.67120      1.158359
+## ENSG00000163131          CTSS   3.81179  0.997459   2.58808      0.836300
+## ENSG00000101439          CST3   3.93963  0.998729   2.38272      0.703171
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102      0.686771
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554      0.614933
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297      0.517954</code></pre>
+<div class="sourceCode" id="cb225"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb225-1"><a href="marker-detection.html#cb225-1" aria-hidden="true"></a><span class="co"># Also looking at the order by the mean of the AUCs. </span></span>
+<span id="cb225-2"><a href="marker-detection.html#cb225-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers.threshold<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">order.by=</span><span class="st">&quot;auc.mean&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc  auc.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000163220        S100A9   5.63461  0.996188   4.48435  0.929055
+## ENSG00000143546        S100A8   5.37071  1.000000   4.50586  0.928191
+## ENSG00000090382           LYZ   5.80862  0.998729   4.47263  0.880932
+## ENSG00000087086           FTL   6.24421  1.000000   2.67120  0.807194
+## ENSG00000163131          CTSS   3.81179  0.997459   2.58808  0.713752
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102  0.686833
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554  0.678680
+## ENSG00000101439          CST3   3.93963  0.998729   2.38272  0.662480
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297  0.656001
+## ENSG00000011600        TYROBP   4.05728  0.997459   2.65311  0.640162</code></pre>
+<p>In general, we only use a threshold if irrelevant genes with low variances are interfering with our interpretation of the clusters.
+Weakly expressed genes will often have low log-fold changes due to the pseudo-count shrinkage (Chapter <a href="normalization.html#normalization">2</a>),
+and genes that separate closely-related clusters will usually have smaller log-fold changes.
+Prematurely using a large threshold will prevent the detection of these potentially interesting genes.</p>
+</div>
+<div id="marker-block" class="section level2 hasAnchor" number="7.5">
+<h2><span class="header-section-number">7.5</span> Blocking on uninteresting factors<a href="marker-detection.html#marker-block" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Larger datasets may contain multiple blocks of cells where the differences between blocks are uninteresting, e.g., batch effects, variability between donors.
+These differences can interfere with marker gene detection by
+(i) inflating the variance within each cluster and
+(ii) distorting the log-fold changes if the cluster composition varies between blocks.
+To avoid these issues, we block on any uninteresting factors when computing the effect sizes.
+Let’s demonstrate on a mouse trophoblast dataset <span class="citation">(A. T. L. Lun et al. <a href="#ref-lun2017assessing" role="doc-biblioref">2017</a>)</span> generated across two plates,
+where any differences between plates are technical and should not be allowed to influence the marker statistics.</p>
+<div class="sourceCode" id="cb227"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb227-1"><a href="marker-detection.html#cb227-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb227-2"><a href="marker-detection.html#cb227-2" aria-hidden="true"></a>sce.tropho &lt;-<span class="st"> </span><span class="kw">LunSpikeInData</span>(<span class="st">&quot;tropho&quot;</span>)</span>
+<span id="cb227-3"><a href="marker-detection.html#cb227-3" aria-hidden="true"></a>sce.tropho<span class="op">$</span>block &lt;-<span class="st"> </span><span class="kw">factor</span>(sce.tropho<span class="op">$</span>block)</span>
+<span id="cb227-4"><a href="marker-detection.html#cb227-4" aria-hidden="true"></a><span class="kw">table</span>(sce.tropho<span class="op">$</span>block) <span class="co"># i.e., plate of origin.</span></span></code></pre></div>
+<pre><code>## 
+## 20160906 20170201 
+##       96       96</code></pre>
+<div class="sourceCode" id="cb229"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb229-1"><a href="marker-detection.html#cb229-1" aria-hidden="true"></a><span class="co"># Computing the QC metrics. For brevity, we&#39;ll skip the spike-ins. </span></span>
+<span id="cb229-2"><a href="marker-detection.html#cb229-2" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb229-3"><a href="marker-detection.html#cb229-3" aria-hidden="true"></a>is.mito.tropho &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">any</span>(<span class="kw">seqnames</span>(<span class="kw">rowRanges</span>(sce.tropho))<span class="op">==</span><span class="st">&quot;MT&quot;</span>))</span>
+<span id="cb229-4"><a href="marker-detection.html#cb229-4" aria-hidden="true"></a>sce.qc.tropho &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.tropho, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.tropho), <span class="dt">block=</span>sce.tropho<span class="op">$</span>block)</span>
+<span id="cb229-5"><a href="marker-detection.html#cb229-5" aria-hidden="true"></a>sce.qc.tropho &lt;-<span class="st"> </span>sce.tropho[,sce.qc.tropho<span class="op">$</span>keep]</span>
+<span id="cb229-6"><a href="marker-detection.html#cb229-6" aria-hidden="true"></a></span>
+<span id="cb229-7"><a href="marker-detection.html#cb229-7" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb229-8"><a href="marker-detection.html#cb229-8" aria-hidden="true"></a>sce.norm.tropho &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.tropho, <span class="dt">size.factors=</span>sce.qc.tropho<span class="op">$</span>sum, <span class="dt">block=</span>sce.qc.tropho<span class="op">$</span>block)</span>
+<span id="cb229-9"><a href="marker-detection.html#cb229-9" aria-hidden="true"></a></span>
+<span id="cb229-10"><a href="marker-detection.html#cb229-10" aria-hidden="true"></a><span class="co"># We now choose the top HVGs.</span></span>
+<span id="cb229-11"><a href="marker-detection.html#cb229-11" aria-hidden="true"></a>sce.var.tropho &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.tropho, <span class="dt">block=</span>sce.norm.tropho<span class="op">$</span>block)</span>
+<span id="cb229-12"><a href="marker-detection.html#cb229-12" aria-hidden="true"></a></span>
+<span id="cb229-13"><a href="marker-detection.html#cb229-13" aria-hidden="true"></a><span class="co"># Running the PCA on the HVG submatrix.</span></span>
+<span id="cb229-14"><a href="marker-detection.html#cb229-14" aria-hidden="true"></a>sce.pca.tropho &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var.tropho, <span class="dt">features=</span><span class="kw">rowData</span>(sce.var.tropho)<span class="op">$</span>hvg, <span class="dt">block=</span>sce.var.tropho<span class="op">$</span>block)</span>
+<span id="cb229-15"><a href="marker-detection.html#cb229-15" aria-hidden="true"></a></span>
+<span id="cb229-16"><a href="marker-detection.html#cb229-16" aria-hidden="true"></a><span class="co"># Doing some graph-based clustering.</span></span>
+<span id="cb229-17"><a href="marker-detection.html#cb229-17" aria-hidden="true"></a>sce.nn.tropho &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.pca.tropho)</span></code></pre></div>
+<p>We set <code>block=</code> to instruct <code>scoreMarkers.se()</code> to perform the pairwise comparisons separately in each block, i.e., plate.
+Specifically, for a comparison between two clusters, we compute one effect size per plate where we only use cells in that plate.
+By performing comparisons within each plate, we cancel out any differences between plates so that they do not interfere with our effect sizes.
+The per-plate effect sizes are then averaged across plates to obtain a single value per comparison,
+using a weighted mean that accounts for the number of cells involved in the comparison in each plate.
+A similar average across plates is computed for the mean log-expression and proportion of detected cells.</p>
+<div class="sourceCode" id="cb230"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb230-1"><a href="marker-detection.html#cb230-1" aria-hidden="true"></a>markers.tropho &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(sce.nn.tropho, sce.nn.tropho<span class="op">$</span>clusters, <span class="dt">block=</span>sce.nn.tropho<span class="op">$</span>block)</span>
+<span id="cb230-2"><a href="marker-detection.html#cb230-2" aria-hidden="true"></a><span class="kw">previewMarkers</span>(markers.tropho[[<span class="st">&quot;1&quot;</span>]])</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 3 columns
+##                         mean  detected       lfc
+##                    &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSMUSG00000027306   6.50487  0.914894   4.19102
+## ENSMUSG00000006398  10.20393  1.000000   1.33125
+## ENSMUSG00000084301   6.90226  1.000000   1.30211
+## ENSMUSG00000083407   3.02553  0.936170   1.63986
+## ENSMUSG00000083907   4.10552  1.000000   1.59130
+## ENSMUSG00000001403   9.20855  1.000000   1.99050
+## ENSMUSG00000074802   5.14600  0.872340   2.90355
+## ENSMUSG00000030867   8.95573  1.000000   2.10757
+## ENSMUSG00000048574   8.75497  1.000000   1.03204
+## ENSMUSG00000030654   9.94568  1.000000   1.18929</code></pre>
+<p>By default, we do not explicitly penalize genes that behave inconsistently across blocks.
+This is generally unnecessary as the average favors genes with large effect sizes in the same direction in all blocks.
+That said, it is theoretically possible for a top marker to have highly variable effect sizes across plates, as long as the average is large.
+We can check this by visualizing the expression profile of a gene of interest with respect to the plate (Figure <a href="marker-detection.html#fig:markers-violin-block">7.6</a>).
+Ideally, our gene would behave consistently across plates.</p>
+<div class="sourceCode" id="cb232"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb232-1"><a href="marker-detection.html#cb232-1" aria-hidden="true"></a><span class="kw">plotExpression</span>(</span>
+<span id="cb232-2"><a href="marker-detection.html#cb232-2" aria-hidden="true"></a>    sce.nn.tropho,</span>
+<span id="cb232-3"><a href="marker-detection.html#cb232-3" aria-hidden="true"></a>    <span class="dt">features=</span><span class="kw">rownames</span>(markers.tropho[[<span class="st">&quot;1&quot;</span>]])[<span class="dv">1</span>],</span>
+<span id="cb232-4"><a href="marker-detection.html#cb232-4" aria-hidden="true"></a>    <span class="dt">x=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb232-5"><a href="marker-detection.html#cb232-5" aria-hidden="true"></a>    <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb232-6"><a href="marker-detection.html#cb232-6" aria-hidden="true"></a>    <span class="dt">other_fields=</span><span class="st">&quot;block&quot;</span></span>
+<span id="cb232-7"><a href="marker-detection.html#cb232-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb232-8"><a href="marker-detection.html#cb232-8" aria-hidden="true"></a><span class="st">    </span><span class="kw">facet_grid</span>(<span class="op">~</span>block)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:markers-violin-block"></span>
+<img src="marker-detection_files/figure-html/markers-violin-block-1.png" alt="Distribution of expression values for the top-ranked marker gene (ENSMUSG00000027306) of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel)." width="768" />
+<p class="caption">
+Figure 7.6: Distribution of expression values for the top-ranked marker gene (ENSMUSG00000027306) of cluster 1 in the trophoblast dataset. Distributions are shown for each cluster (x-axis) in each plate (panel).
+</p>
+</div>
+<p>If we really want to enforce consistent DE across blocks, we can ask <code>scoreMarkers.se()</code> to instead compute a quantile instead of a weighted mean.
+For example, rankings derived from the minimum effect size across blocks will focus on genes that exhibit large changes in the same direction within each block.</p>
+<div class="sourceCode" id="cb233"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb233-1"><a href="marker-detection.html#cb233-1" aria-hidden="true"></a>markers.min.tropho &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(</span>
+<span id="cb233-2"><a href="marker-detection.html#cb233-2" aria-hidden="true"></a>    sce.nn.tropho,</span>
+<span id="cb233-3"><a href="marker-detection.html#cb233-3" aria-hidden="true"></a>    sce.nn.tropho<span class="op">$</span>clusters,</span>
+<span id="cb233-4"><a href="marker-detection.html#cb233-4" aria-hidden="true"></a>    <span class="dt">block=</span>sce.nn.tropho<span class="op">$</span>block,</span>
+<span id="cb233-5"><a href="marker-detection.html#cb233-5" aria-hidden="true"></a>    <span class="dt">more.marker.args=</span><span class="kw">list</span>(</span>
+<span id="cb233-6"><a href="marker-detection.html#cb233-6" aria-hidden="true"></a>        <span class="dt">block.average.policy=</span><span class="st">&quot;quantile&quot;</span>,</span>
+<span id="cb233-7"><a href="marker-detection.html#cb233-7" aria-hidden="true"></a>        <span class="dt">block.quantile=</span><span class="dv">0</span> <span class="co"># i.e., minimum.</span></span>
+<span id="cb233-8"><a href="marker-detection.html#cb233-8" aria-hidden="true"></a>    )</span>
+<span id="cb233-9"><a href="marker-detection.html#cb233-9" aria-hidden="true"></a>)</span>
+<span id="cb233-10"><a href="marker-detection.html#cb233-10" aria-hidden="true"></a><span class="kw">previewMarkers</span>(markers.min.tropho[[<span class="st">&quot;1&quot;</span>]])</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 3 columns
+##                         mean  detected       lfc
+##                    &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSMUSG00000027306   6.46814  0.909091  4.083865
+## ENSMUSG00000006398   9.99817  1.000000  1.114116
+## ENSMUSG00000001403   9.19752  1.000000  1.782523
+## ENSMUSG00000084301   6.78050  1.000000  1.113203
+## ENSMUSG00000030867   8.73720  1.000000  1.855625
+## ENSMUSG00000083907   3.94614  1.000000  1.346573
+## ENSMUSG00000029177   8.42776  1.000000  0.690333
+## ENSMUSG00000083407   2.61290  0.880000  1.247344
+## ENSMUSG00000048574   8.52426  1.000000  0.933816
+## ENSMUSG00000084133   7.38314  1.000000  0.894224</code></pre>
+<p>Blocking in <code>scoreMarkers.se()</code> assumes that each pair of clusters is present in at least one block in order to perform a comparison within the block.
+In scenarios where cells from two clusters never co-occur in the same block,
+the associated pairwise comparison will be impossible and is ignored during calculation of summary statistics.
+This can be problematic in rare situations where the blocks are perfectly confounded with the clusters,
+though marker detection is likely to be the least of our concerns with an experimental design of this calibre.</p>
+</div>
+<div id="more-uses-for-the-marker-scores" class="section level2 hasAnchor" number="7.6">
+<h2><span class="header-section-number">7.6</span> More uses for the marker scores<a href="marker-detection.html#more-uses-for-the-marker-scores" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Our discussion above focuses on genes that are upregulated in our cluster of interest, as these are the easiest to interpret and experimentally validate.
+However, a cluster may occasionally be defined by downregulation of some genes relative to the rest of the cell population.
+In such cases, we can reverse the rankings to see if there is any consistent downregulation compared to other clusters.
+Alternatively, we can recognize that any downregulated genes in cluster <span class="math inline">\(X\)</span> should manifest as upregulated genes in other clusters when compared to <span class="math inline">\(X\)</span>.
+By using a summary like the min-rank, we guarantee that these genes will show up somewhere, i.e., as markers of other clusters.
+(Other summaries are less effective as the upregulation only applies to comparisons against <span class="math inline">\(X\)</span> and may not cause a noticeable increase in the mean/median summary.)</p>
+<div class="sourceCode" id="cb235"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb235-1"><a href="marker-detection.html#cb235-1" aria-hidden="true"></a><span class="co"># Ordering by increasing Cohen&#39;s d.</span></span>
+<span id="cb235-2"><a href="marker-detection.html#cb235-2" aria-hidden="true"></a>reversed.chosen.markers<span class="fl">.10</span>x &lt;-<span class="st"> </span>chosen.markers<span class="fl">.10</span>x[<span class="kw">order</span>(chosen.markers<span class="fl">.10</span>x<span class="op">$</span>cohens.d.mean),]</span>
+<span id="cb235-3"><a href="marker-detection.html#cb235-3" aria-hidden="true"></a><span class="kw">previewMarkers</span>(reversed.chosen.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">post.columns=</span><span class="st">&quot;cohens.d.mean&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                      Symbol      mean  detected       lfc cohens.d.mean
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;     &lt;numeric&gt;
+## ENSG00000213741       RPS29  3.946430  1.000000 -1.062005      -2.31360
+## ENSG00000177954       RPS27  5.043689  1.000000 -0.830939      -2.26035
+## ENSG00000100316        RPL3  3.650995  0.997459 -0.953517      -1.94125
+## ENSG00000198242      RPL23A  3.480505  0.996188 -0.996558      -1.93683
+## ENSG00000168028        RPSA  1.923204  0.869123 -1.394956      -1.79849
+## ENSG00000149273        RPS3  3.569838  0.996188 -0.870643      -1.70630
+## ENSG00000227507         LTB  0.579215  0.428208 -1.448969      -1.67086
+## ENSG00000071082       RPL31  3.228407  0.987294 -0.893312      -1.57149
+## ENSG00000105372       RPS19  4.003734  0.998729 -0.727010      -1.53771
+## ENSG00000137154        RPS6  4.130116  0.997459 -0.699234      -1.48973</code></pre>
+<p>Occasionally, we are only interested in markers for a subset of the clusters.
+Imagine that we have a set of closely-related clusters and we want to identify the genes that distinguish these clusters from each other.
+The summary statistics generated from all clusters might not be satisfactory as they will not prioritize genes with weak upregulation between related clusters.
+(Except for min-rank, where these genes would at least show up near the top of the ranking.
+But they would be surrounded by many irrelevant genes from comparisons to other clusters.)
+Instead, we can just compute marker scores from the cells in the selected subset of clusters:</p>
+<div class="sourceCode" id="cb237"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb237-1"><a href="marker-detection.html#cb237-1" aria-hidden="true"></a><span class="co"># Let&#39;s pretend that clusters 1, 2 and 3 are of particular interest and</span></span>
+<span id="cb237-2"><a href="marker-detection.html#cb237-2" aria-hidden="true"></a><span class="co"># we want to find markers between them.</span></span>
+<span id="cb237-3"><a href="marker-detection.html#cb237-3" aria-hidden="true"></a>subset.clusters<span class="fl">.10</span>x &lt;-<span class="st"> </span>sce.nn<span class="fl">.10</span>x<span class="op">$</span>clusters <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;1&quot;</span>, <span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span>)</span>
+<span id="cb237-4"><a href="marker-detection.html#cb237-4" aria-hidden="true"></a>subset.markers<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(</span>
+<span id="cb237-5"><a href="marker-detection.html#cb237-5" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x[,subset.clusters<span class="fl">.10</span>x],</span>
+<span id="cb237-6"><a href="marker-detection.html#cb237-6" aria-hidden="true"></a>    sce.nn<span class="fl">.10</span>x<span class="op">$</span>clusters[subset.clusters<span class="fl">.10</span>x],</span>
+<span id="cb237-7"><a href="marker-detection.html#cb237-7" aria-hidden="true"></a>    <span class="dt">extra.columns=</span><span class="st">&quot;Symbol&quot;</span></span>
+<span id="cb237-8"><a href="marker-detection.html#cb237-8" aria-hidden="true"></a>)</span>
+<span id="cb237-9"><a href="marker-detection.html#cb237-9" aria-hidden="true"></a></span>
+<span id="cb237-10"><a href="marker-detection.html#cb237-10" aria-hidden="true"></a><span class="co"># Now let&#39;s have a look at the top markers for cluster 2.</span></span>
+<span id="cb237-11"><a href="marker-detection.html#cb237-11" aria-hidden="true"></a><span class="kw">previewMarkers</span>(subset.markers<span class="fl">.10</span>x[[<span class="st">&quot;2&quot;</span>]], <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 4 columns
+##                      Symbol      mean  detected       lfc
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000008517        IL32   3.02931  0.979466  1.977099
+## ENSG00000227507         LTB   3.37330  0.991786  1.778829
+## ENSG00000277734        TRAC   2.53751  0.973306  1.308343
+## ENSG00000168685        IL7R   1.73999  0.839836  1.205725
+## ENSG00000167286        CD3D   1.91705  0.942505  0.896106
+## ENSG00000166710         B2M   6.25505  1.000000  0.487200
+## ENSG00000213741       RPS29   5.40264  1.000000  0.632544
+## ENSG00000206503       HLA-A   3.74897  0.997947  0.836841
+## ENSG00000116824         CD2   1.21460  0.770021  0.801813
+## ENSG00000234745       HLA-B   4.70730  1.000000  0.618141</code></pre>
+<p>For more control on the selected markers, we can filter our data frame on the available statistics.
+For example, we might only consider genes as markers if they have detected proportions above 50%,
+a mean log-expression greater than 1,
+an average difference in the detected proportions above 50%,
+and an average log-fold change above 1.
+We tend to avoid <em>a priori</em> filtering as it is difficult to choose thresholds that are generally applicable.
+Nonetheless, it can be useful to refine the set of markers once we know what we’re interested in.</p>
+<div class="sourceCode" id="cb239"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb239-1"><a href="marker-detection.html#cb239-1" aria-hidden="true"></a>filtered.markers<span class="fl">.10</span>x &lt;-<span class="st"> </span>chosen.markers<span class="fl">.10</span>x[</span>
+<span id="cb239-2"><a href="marker-detection.html#cb239-2" aria-hidden="true"></a>    chosen.markers<span class="fl">.10</span>x<span class="op">$</span>detected <span class="op">&gt;=</span><span class="st"> </span><span class="fl">0.5</span> <span class="op">&amp;</span></span>
+<span id="cb239-3"><a href="marker-detection.html#cb239-3" aria-hidden="true"></a><span class="st">    </span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>mean <span class="op">&gt;=</span><span class="st"> </span><span class="dv">1</span> <span class="op">&amp;</span></span>
+<span id="cb239-4"><a href="marker-detection.html#cb239-4" aria-hidden="true"></a><span class="st">    </span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>delta.detected.mean <span class="op">&gt;=</span><span class="st"> </span><span class="fl">0.5</span> <span class="op">&amp;</span></span>
+<span id="cb239-5"><a href="marker-detection.html#cb239-5" aria-hidden="true"></a><span class="st">    </span>chosen.markers<span class="fl">.10</span>x<span class="op">$</span>delta.mean.mean <span class="op">&gt;=</span><span class="st"> </span><span class="dv">1</span>,</span>
+<span id="cb239-6"><a href="marker-detection.html#cb239-6" aria-hidden="true"></a>]</span>
+<span id="cb239-7"><a href="marker-detection.html#cb239-7" aria-hidden="true"></a><span class="kw">previewMarkers</span>(filtered.markers<span class="fl">.10</span>x, <span class="dt">pre.columns=</span><span class="st">&quot;Symbol&quot;</span>, <span class="dt">post.columns=</span><span class="kw">c</span>(<span class="st">&quot;delta.detected.mean&quot;</span>))</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 5 columns
+##                        Symbol      mean  detected       lfc delta.detected.mean
+##                   &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;           &lt;numeric&gt;
+## ENSG00000085265          FCN1   2.75854  0.970775   2.36554            0.718534
+## ENSG00000204482          LST1   2.90740  0.988564   2.05035            0.581743
+## ENSG00000121552          CSTA   2.30972  0.949174   1.97753            0.729536
+## ENSG00000204472          AIF1   2.83022  0.978399   2.09265            0.615761
+## ENSG00000257764 RP11-1143G9.4   2.86253  0.978399   2.54102            0.758067
+## ENSG00000163563          MNDA   2.50935  0.960610   2.13786            0.733194
+## ENSG00000163221       S100A12   2.59398  0.916137   2.48297            0.797889
+## ENSG00000038427          VCAN   1.95980  0.885642   1.84785            0.787284
+## ENSG00000100079        LGALS2   2.10228  0.885642   1.82007            0.705982
+## ENSG00000025708          TYMP   2.15622  0.932656   1.56581            0.567270</code></pre>
+</div>
+<div id="marker-p-value-invalidity" class="section level2 hasAnchor" number="7.7">
+<h2><span class="header-section-number">7.7</span> Invalidity of <span class="math inline">\(p\)</span>-values<a href="marker-detection.html#marker-p-value-invalidity" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In the old days, we used to report <span class="math inline">\(p\)</span>-values along with the effect sizes for the detected markers.
+After all, Cohen’s <span class="math inline">\(d\)</span> and the AUC are closely related to <span class="math inline">\(t\)</span>-tests and the Wilcoxon ranked sum test, respectively.
+Unfortunately, the statistical interpretation of <span class="math inline">\(p\)</span>-values is compromised when identifying cluster-specific markers.</p>
+<p>The first issue is that of “data dredging” (also known as fishing or data snooping) when the DE analysis is performed on the same data used to define the clusters.
+We are more likely to get a positive result when we use a dataset to test a hypothesis generated from that data.
+Or more simply - clustering will separate cells by expression, so of course we will get low <span class="math inline">\(p\)</span>-values when we compare between clusters!
+To illustrate, let’s simulate i.i.d. normal values, perform <span class="math inline">\(k\)</span>-means clustering and test for DE between clusters of cells with Wilcoxon ranked sum tests.
+Our input data is random so we’d expect a uniform distribution of <span class="math inline">\(p\)</span>-values under the null hypothesis, but instead it is skewed towards low values (Figure <a href="marker-detection.html#fig:pval-dist">7.7</a>).
+This means that we can detect “significant” differences between clusters even in the absence of any real substructure in the data.</p>
+<div class="sourceCode" id="cb241"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb241-1"><a href="marker-detection.html#cb241-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">0</span>)</span>
+<span id="cb241-2"><a href="marker-detection.html#cb241-2" aria-hidden="true"></a>y &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(<span class="dv">1000000</span>), <span class="dt">ncol=</span><span class="dv">200</span>)</span>
+<span id="cb241-3"><a href="marker-detection.html#cb241-3" aria-hidden="true"></a>clusters &lt;-<span class="st"> </span><span class="kw">kmeans</span>(<span class="kw">t</span>(y), <span class="dt">centers=</span><span class="dv">2</span>)<span class="op">$</span>cluster</span>
+<span id="cb241-4"><a href="marker-detection.html#cb241-4" aria-hidden="true"></a>out &lt;-<span class="st"> </span><span class="kw">apply</span>(y, <span class="dv">1</span>, <span class="dt">FUN=</span><span class="cf">function</span>(x) {</span>
+<span id="cb241-5"><a href="marker-detection.html#cb241-5" aria-hidden="true"></a>    <span class="kw">wilcox.test</span>(x[clusters<span class="op">==</span><span class="dv">1</span>], x[clusters<span class="op">==</span><span class="dv">2</span>])<span class="op">$</span>p.value</span>
+<span id="cb241-6"><a href="marker-detection.html#cb241-6" aria-hidden="true"></a>})</span>
+<span id="cb241-7"><a href="marker-detection.html#cb241-7" aria-hidden="true"></a><span class="kw">hist</span>(out, <span class="dt">col=</span><span class="st">&quot;grey80&quot;</span>, <span class="dt">xlab=</span><span class="st">&quot;p-value&quot;</span>, <span class="dt">main=</span><span class="st">&quot;&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:pval-dist"></span>
+<img src="marker-detection_files/figure-html/pval-dist-1.png" alt="Distribution of $p$-values from a DE analysis between two clusters in a simulation with no true subpopulation structure." width="672" />
+<p class="caption">
+Figure 7.7: Distribution of <span class="math inline">\(p\)</span>-values from a DE analysis between two clusters in a simulation with no true subpopulation structure.
+</p>
+</div>
+<p>Another problem is that many <span class="math inline">\(p\)</span>-value calculations treat counts from different cells in the same cluster as replicate observations.
+This is not the most relevant level of replication when cells are derived from the same biological sample, i.e., cell culture, animal or patient.
+DE analyses that treat cells as replicates fail to properly model the sample-to-sample variability <span class="citation">(A. T. L. Lun and Marioni <a href="#ref-lun2017overcoming" role="doc-biblioref">2017</a>)</span>.
+This is arguably the more important level of replication as different samples will necessarily be generated if the experiment is to be repeated.
+In other words, if the experiment involved a single biological sample, the sample size is actually just 1, regardless of how many individual cells were assayed.
+By treating cells as replicates, we overstate our sample size and obtain much lower <span class="math inline">\(p\)</span>-values than would be appropriate.</p>
+<p>In short, the <span class="math inline">\(p\)</span>-values for marker genes don’t make much sense from a statistical perspective.
+We can still use them for ranking, but at that point, we might as well make our life simpler and use the effect sizes directly.
+If we really want to determine whether some markers are “real”, the best approach is to perform a separate validation experiment with an independent replicate cell population.
+A typical strategy is to use different experimental techniques like FACS, FISH, qPCR or IHC to find a subpopulation that expresses the marker(s) of interest.
+This confirms that the subpopulation actually exists and is not an artifact of the scRNA-seq protocol or the computational analysis.</p>
+</div>
+<div id="gene-set-enrichment" class="section level2 hasAnchor" number="7.8">
+<h2><span class="header-section-number">7.8</span> Gene set enrichment<a href="marker-detection.html#gene-set-enrichment" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We can summarize the biological functions of our top-ranked marker genes with gene set enrichment analyses.
+Here, we extract predefined sets of genes for specific pathways or processes and check if any gene set is overrepresented among our set of top markers.
+This reduces some of the hassle of manually examining the annotation for each gene to assign biological meaning to each cluster.
+To illustrate, we’ll use the gene ontology (GO)’s biological process (BP) subcategory,
+which defines gene sets associated with known biological processes <span class="citation">(Ashburner et al. <a href="#ref-ashburner2000gene" role="doc-biblioref">2000</a>)</span>.
+We might also consider other useful gene set collections like KEGG and REACTOME - see the <a href="https://www.gsea-msigdb.org/gsea/msigdb/human/genesets.jsp">MSigDB overview</a> for details.</p>
+<div class="sourceCode" id="cb242"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb242-1"><a href="marker-detection.html#cb242-1" aria-hidden="true"></a><span class="kw">library</span>(msigdbr)</span>
+<span id="cb242-2"><a href="marker-detection.html#cb242-2" aria-hidden="true"></a>go.bp.df &lt;-<span class="st"> </span><span class="kw">msigdbr</span>(<span class="dt">species=</span><span class="st">&quot;Homo sapiens&quot;</span>, <span class="dt">collection=</span><span class="st">&quot;C5&quot;</span>, <span class="dt">subcollection=</span><span class="st">&quot;GO:BP&quot;</span>)</span>
+<span id="cb242-3"><a href="marker-detection.html#cb242-3" aria-hidden="true"></a>go.bp.sets &lt;-<span class="st"> </span><span class="kw">split</span>(go.bp.df<span class="op">$</span>ensembl_gene, go.bp.df<span class="op">$</span>gs_name)</span></code></pre></div>
+<p>We use the hypergeometric test to quantify enrichment of each gene set among the top markers for cluster 1.
+The <span class="math inline">\(p\)</span>-value of each gene set is determined by the number of shared genes between each GO set and the top markers, relative to the size of the GO set.
+More strongly enriched sets will have lower <span class="math inline">\(p\)</span>-values and should be prioritized for interpretation.
+Here, we have chosen the top 100 markers but different values can be used depending on how many markers are of interest.</p>
+<div class="sourceCode" id="cb243"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb243-1"><a href="marker-detection.html#cb243-1" aria-hidden="true"></a><span class="co"># Choosing the top 100 genes with positive Cohen&#39;s d values.</span></span>
+<span id="cb243-2"><a href="marker-detection.html#cb243-2" aria-hidden="true"></a>top.chosen<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">head</span>(<span class="kw">rownames</span>(chosen.markers<span class="fl">.10</span>x)[chosen.markers<span class="fl">.10</span>x<span class="op">$</span>cohens.d.mean <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], <span class="dv">100</span>)</span>
+<span id="cb243-3"><a href="marker-detection.html#cb243-3" aria-hidden="true"></a></span>
+<span id="cb243-4"><a href="marker-detection.html#cb243-4" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb243-5"><a href="marker-detection.html#cb243-5" aria-hidden="true"></a>enrich.chosen<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">testEnrichment</span>(top.chosen<span class="fl">.10</span>x, go.bp.sets, <span class="dt">universe=</span><span class="kw">rownames</span>(chosen.markers<span class="fl">.10</span>x))</span>
+<span id="cb243-6"><a href="marker-detection.html#cb243-6" aria-hidden="true"></a></span>
+<span id="cb243-7"><a href="marker-detection.html#cb243-7" aria-hidden="true"></a><span class="co"># Prioritizing the most enriched gene sets for examination.</span></span>
+<span id="cb243-8"><a href="marker-detection.html#cb243-8" aria-hidden="true"></a>enrich.chosen<span class="fl">.10</span>x &lt;-<span class="st"> </span>enrich.chosen<span class="fl">.10</span>x[<span class="kw">order</span>(enrich.chosen<span class="fl">.10</span>x<span class="op">$</span>p.value),,drop=<span class="ot">FALSE</span>]</span>
+<span id="cb243-9"><a href="marker-detection.html#cb243-9" aria-hidden="true"></a><span class="kw">head</span>(enrich.chosen<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>## DataFrame with 6 rows and 3 columns
+##                                                                                  overlap
+##                                                                                &lt;integer&gt;
+## GOBP_BIOLOGICAL_PROCESS_INVOLVED_IN_INTERSPECIES_INTERACTION_BETWEEN_ORGANISMS        42
+## GOBP_INFLAMMATORY_RESPONSE                                                            30
+## GOBP_DEFENSE_RESPONSE_TO_OTHER_ORGANISM                                               34
+## GOBP_REGULATION_OF_IMMUNE_SYSTEM_PROCESS                                              35
+## GOBP_REGULATION_OF_RESPONSE_TO_EXTERNAL_STIMULUS                                      30
+## GOBP_REGULATION_OF_DEFENSE_RESPONSE                                                   27
+##                                                                                     size
+##                                                                                &lt;integer&gt;
+## GOBP_BIOLOGICAL_PROCESS_INVOLVED_IN_INTERSPECIES_INTERACTION_BETWEEN_ORGANISMS      1811
+## GOBP_INFLAMMATORY_RESPONSE                                                           896
+## GOBP_DEFENSE_RESPONSE_TO_OTHER_ORGANISM                                             1318
+## GOBP_REGULATION_OF_IMMUNE_SYSTEM_PROCESS                                            1639
+## GOBP_REGULATION_OF_RESPONSE_TO_EXTERNAL_STIMULUS                                    1110
+## GOBP_REGULATION_OF_DEFENSE_RESPONSE                                                  847
+##                                                                                    p.value
+##                                                                                  &lt;numeric&gt;
+## GOBP_BIOLOGICAL_PROCESS_INVOLVED_IN_INTERSPECIES_INTERACTION_BETWEEN_ORGANISMS 3.99853e-27
+## GOBP_INFLAMMATORY_RESPONSE                                                     1.72416e-23
+## GOBP_DEFENSE_RESPONSE_TO_OTHER_ORGANISM                                        4.39440e-23
+## GOBP_REGULATION_OF_IMMUNE_SYSTEM_PROCESS                                       3.94085e-21
+## GOBP_REGULATION_OF_RESPONSE_TO_EXTERNAL_STIMULUS                               7.52208e-21
+## GOBP_REGULATION_OF_DEFENSE_RESPONSE                                            1.44840e-20</code></pre>
+<div class="sourceCode" id="cb245"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb245-1"><a href="marker-detection.html#cb245-1" aria-hidden="true"></a><span class="co"># Focusing on some of the smaller, more specific gene sets.</span></span>
+<span id="cb245-2"><a href="marker-detection.html#cb245-2" aria-hidden="true"></a><span class="kw">head</span>(enrich.chosen<span class="fl">.10</span>x[enrich.chosen<span class="fl">.10</span>x<span class="op">$</span>size <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>,,<span class="dt">drop=</span><span class="ot">FALSE</span>])</span></code></pre></div>
+<pre><code>## DataFrame with 6 rows and 3 columns
+##                                                                         overlap
+##                                                                       &lt;integer&gt;
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN         7
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_PEPTIDE_ANTIGEN                   8
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_ANTIGEN                 7
+## GOBP_RESPONSE_TO_FUNGUS                                                       8
+## GOBP_NEUTROPHIL_CHEMOTAXIS                                                    8
+## GOBP_GRANULOCYTE_ACTIVATION                                                   7
+##                                                                            size
+##                                                                       &lt;integer&gt;
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN        39
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_PEPTIDE_ANTIGEN                  69
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_ANTIGEN                48
+## GOBP_RESPONSE_TO_FUNGUS                                                      80
+## GOBP_NEUTROPHIL_CHEMOTAXIS                                                   81
+## GOBP_GRANULOCYTE_ACTIVATION                                                  56
+##                                                                           p.value
+##                                                                         &lt;numeric&gt;
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_PEPTIDE_ANTIGEN 2.33097e-11
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_PEPTIDE_ANTIGEN           3.25895e-11
+## GOBP_ANTIGEN_PROCESSING_AND_PRESENTATION_OF_EXOGENOUS_ANTIGEN         1.09183e-10
+## GOBP_RESPONSE_TO_FUNGUS                                               1.10001e-10
+## GOBP_NEUTROPHIL_CHEMOTAXIS                                            1.21760e-10
+## GOBP_GRANULOCYTE_ACTIVATION                                           3.37318e-10</code></pre>
+<p>If we need more detail about a particular set, we can examine the behavior of its constituent genes.</p>
+<div class="sourceCode" id="cb247"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb247-1"><a href="marker-detection.html#cb247-1" aria-hidden="true"></a>top.set<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">rownames</span>(enrich.chosen<span class="fl">.10</span>x)[<span class="dv">1</span>]</span>
+<span id="cb247-2"><a href="marker-detection.html#cb247-2" aria-hidden="true"></a>overlaps.top.set<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">intersect</span>(go.bp.sets[[top.set<span class="fl">.10</span>x]], top.chosen<span class="fl">.10</span>x)</span>
+<span id="cb247-3"><a href="marker-detection.html#cb247-3" aria-hidden="true"></a><span class="kw">previewMarkers</span>(</span>
+<span id="cb247-4"><a href="marker-detection.html#cb247-4" aria-hidden="true"></a>    chosen.markers<span class="fl">.10</span>x[<span class="kw">rownames</span>(chosen.markers<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>overlaps.top.set<span class="fl">.10</span>x,],</span>
+<span id="cb247-5"><a href="marker-detection.html#cb247-5" aria-hidden="true"></a>    <span class="dt">pre.column=</span><span class="st">&quot;Symbol&quot;</span>,</span>
+<span id="cb247-6"><a href="marker-detection.html#cb247-6" aria-hidden="true"></a>    <span class="dt">rows=</span><span class="ot">NULL</span> <span class="co"># List all of the top genes in this set.</span></span>
+<span id="cb247-7"><a href="marker-detection.html#cb247-7" aria-hidden="true"></a>)</span></code></pre></div>
+<pre><code>## DataFrame with 42 rows and 4 columns
+##                      Symbol      mean  detected       lfc
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSG00000090382         LYZ   5.80862  0.998729   4.47263
+## ENSG00000011600      TYROBP   4.05728  0.997459   2.65311
+## ENSG00000163220      S100A9   5.63461  0.996188   4.48435
+## ENSG00000143546      S100A8   5.37071  1.000000   4.50586
+## ENSG00000163131        CTSS   3.81179  0.997459   2.58808
+## ...                     ...       ...       ...       ...
+## ENSG00000051523        CYBA  3.266806  0.993647  0.810757
+## ENSG00000135046       ANXA1  1.701281  0.836086  0.846713
+## ENSG00000116701        NCF2  0.778700  0.564168  0.594712
+## ENSG00000103490      PYCARD  1.388051  0.815756  0.733532
+## ENSG00000111729      CLEC4A  0.691981  0.519695  0.566143</code></pre>
+<p>Alternatively, we can aggregate the expression profiles of each set’s genes into a single per-cell score.
+Scores are defined as the column sums of a rank-1 approximation of the submatrix of the log-expression values corresponding to the genes in the set <span class="citation">(Bueno et al. <a href="#ref-bueno2016comprehensive" role="doc-biblioref">2016</a>)</span>.
+This effectively performs a PCA to collapse the submatrix into a single dimension, enriching for the biological signal associated with the set’s annotated function.
+The resulting scores are primarily useful for visualizing set activity (Figure <a href="marker-detection.html#fig:marker-tsne-gsea">7.8</a>).
+We tend not to use gene set scores for quantitative analyses as they are difficult to interpret.
+Should the score be higher in a cell that weakly upregulates many genes in the set, or a cell that strongly upregulates a few genes in the set?
+What if two cells have the same score but express different subsets of genes in the set?
+These complications can be minimized by operating on individual genes whenever possible -
+for example, instead of testing for differences in gene set scores between subpopulations,
+we could examine the distribution of effect sizes for the same comparison across all genes in the set,
+which is easier to interpret and more informative.</p>
+<div class="sourceCode" id="cb249"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb249-1"><a href="marker-detection.html#cb249-1" aria-hidden="true"></a>top.set.score<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">scoreGeneSet.se</span>(sce.nn<span class="fl">.10</span>x, go.bp.sets[[top.set<span class="fl">.10</span>x]])</span>
+<span id="cb249-2"><a href="marker-detection.html#cb249-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.nn<span class="fl">.10</span>x, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="kw">data.frame</span>(<span class="dt">Score=</span>top.set.score<span class="fl">.10</span>x<span class="op">$</span>scores))</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:marker-tsne-gsea"></span>
+<img src="marker-detection_files/figure-html/marker-tsne-gsea-1.png" alt="$t$-SNE plot of the cells in the PBMC dataset, colored by the activity of the `GOBP_BIOLOGICAL_PROCESS_INVOLVED_IN_INTERSPECIES_INTERACTION_BETWEEN_ORGANISMS` gene set." width="672" />
+<p class="caption">
+Figure 7.8: <span class="math inline">\(t\)</span>-SNE plot of the cells in the PBMC dataset, colored by the activity of the <code>GOBP_BIOLOGICAL_PROCESS_INVOLVED_IN_INTERSPECIES_INTERACTION_BETWEEN_ORGANISMS</code> gene set.
+</p>
+</div>
+<p>Note that many Bioconductor packages implement methods for quantifying gene set enrichment, e.g., <em><a href="https://bioconductor.org/packages/3.23/fgsea">fgsea</a></em>, <em><a href="https://bioconductor.org/packages/3.23/goseq">goseq</a></em>, <em><a href="https://bioconductor.org/packages/3.23/limma">limma</a></em>, to name a few.
+We like the hypergeometric test as it is simple and focuses on the top markers, but any function can be used as long as it can accept a ranking of genes.
+In all cases, we would recommend only using the enrichment <span class="math inline">\(p\)</span>-values to rank the gene sets, not to make any statements about statistical significance.
+Many of these methods compute their <span class="math inline">\(p\)</span>-values by assuming that genes are independent under the null hypothesis.
+In a biological system with highly coordinated pathways and processes, this is unlikely to be true, potentially inflating the type I error beyond the threshold for significance.</p>
+<!---
+Focusing on the top markers add some robustness as changes in rank among lower-ranked genes has no effect on the result.
+By comparison, other methods care about the entire ranking so if a mild shift in the ranking of mostly-irrelevant genes can affect the p-value.
+-->
+</div>
+<div id="session-information-5" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="marker-detection.html#session-information-5" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb250"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb250-1"><a href="marker-detection.html#cb250-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] msigdbr_25.1.1              ensembldb_2.35.0           
+##  [3] AnnotationFilter_1.35.0     GenomicFeatures_1.63.1     
+##  [5] AnnotationDbi_1.73.0        scRNAseq_2.25.0            
+##  [7] scater_1.39.1               ggplot2_4.0.1              
+##  [9] scuttle_1.21.0              scrapper_1.5.10            
+## [11] DropletUtils_1.31.0         SingleCellExperiment_1.33.0
+## [13] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+## [15] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [17] IRanges_2.45.0              S4Vectors_0.49.0           
+## [19] BiocGenerics_0.57.0         generics_0.1.4             
+## [21] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## [23] DropletTestFiles_1.21.0     BiocStyle_2.39.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3        jsonlite_2.0.0           
+##   [3] magrittr_2.0.4            gypsum_1.7.0             
+##   [5] ggbeeswarm_0.7.3          farver_2.1.2             
+##   [7] rmarkdown_2.30            BiocIO_1.21.0            
+##   [9] vctrs_0.6.5               memoise_2.0.1            
+##  [11] Rsamtools_2.27.0          DelayedMatrixStats_1.33.0
+##  [13] RCurl_1.98-1.17           htmltools_0.5.9          
+##  [15] S4Arrays_1.11.1           AnnotationHub_4.1.0      
+##  [17] curl_7.0.0                BiocNeighbors_2.5.0      
+##  [19] Rhdf5lib_1.33.0           SparseArray_1.11.10      
+##  [21] rhdf5_2.55.12             alabaster.base_1.11.1    
+##  [23] sass_0.4.10               bslib_0.9.0              
+##  [25] alabaster.sce_1.11.0      httr2_1.2.2              
+##  [27] cachem_1.1.0              GenomicAlignments_1.47.0 
+##  [29] lifecycle_1.0.5           pkgconfig_2.0.3          
+##  [31] rsvd_1.0.5                Matrix_1.7-4             
+##  [33] R6_2.6.1                  fastmap_1.2.0            
+##  [35] digest_0.6.39             dqrng_0.4.1              
+##  [37] irlba_2.3.5.1             ExperimentHub_3.1.0      
+##  [39] RSQLite_2.4.5             beachmat_2.27.1          
+##  [41] filelock_1.0.3            labeling_0.4.3           
+##  [43] httr_1.4.7                abind_1.4-8              
+##  [45] compiler_4.6.0            bit64_4.6.0-1            
+##  [47] withr_3.0.2               S7_0.2.1                 
+##  [49] BiocParallel_1.45.0       viridis_0.6.5            
+##  [51] DBI_1.2.3                 alabaster.ranges_1.11.0  
+##  [53] alabaster.schemas_1.11.0  HDF5Array_1.39.0         
+##  [55] R.utils_2.13.0            rappdirs_0.3.3           
+##  [57] DelayedArray_0.37.0       rjson_0.2.23             
+##  [59] tools_4.6.0               vipor_0.4.7              
+##  [61] otel_0.2.0                beeswarm_0.4.0           
+##  [63] R.oo_1.27.1               glue_1.8.0               
+##  [65] h5mread_1.3.1             restfulr_0.0.16          
+##  [67] rhdf5filters_1.23.3       grid_4.6.0               
+##  [69] gtable_0.3.6              R.methodsS3_1.8.2        
+##  [71] BiocSingular_1.27.1       ScaledMatrix_1.19.0      
+##  [73] XVector_0.51.0            ggrepel_0.9.6            
+##  [75] BiocVersion_3.23.1        pillar_1.11.1            
+##  [77] babelgene_22.9            limma_3.67.0             
+##  [79] dplyr_1.1.4               BiocFileCache_3.1.0      
+##  [81] lattice_0.22-7            rtracklayer_1.71.3       
+##  [83] bit_4.6.0                 tidyselect_1.2.1         
+##  [85] locfit_1.5-9.12           Biostrings_2.79.4        
+##  [87] knitr_1.51                gridExtra_2.3            
+##  [89] bookdown_0.46             ProtGenerics_1.43.0      
+##  [91] edgeR_4.9.2               xfun_0.55                
+##  [93] statmod_1.5.1             pheatmap_1.0.13          
+##  [95] UCSC.utils_1.7.1          lazyeval_0.2.2           
+##  [97] yaml_2.3.12               cigarillo_1.1.0          
+##  [99] evaluate_1.0.5            codetools_0.2-20         
+## [101] tibble_3.3.0              alabaster.matrix_1.11.0  
+## [103] BiocManager_1.30.27       cli_3.6.5                
+## [105] jquerylib_0.1.4           GenomeInfoDb_1.47.2      
+## [107] dichromat_2.0-0.1         Rcpp_1.1.1               
+## [109] dbplyr_2.5.1              png_0.1-8                
+## [111] XML_3.99-0.20             parallel_4.6.0           
+## [113] assertthat_0.2.1          blob_1.2.4               
+## [115] sparseMatrixStats_1.23.0  bitops_1.0-9             
+## [117] alabaster.se_1.11.0       viridisLite_0.4.2        
+## [119] scales_1.4.0              purrr_1.2.1              
+## [121] crayon_1.5.3              rlang_1.1.7              
+## [123] cowplot_1.2.0             KEGGREST_1.51.1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-ashburner2000gene">
+<p>Ashburner, M., C. A. Ball, J. A. Blake, D. Botstein, H. Butler, J. M. Cherry, A. P. Davis, et al. 2000. “Gene ontology: tool for the unification of biology.” <em>Nat. Genet.</em> 25 (1): 25–29.</p>
+</div>
+<div id="ref-bueno2016comprehensive">
+<p>Bueno, R., E. W. Stawiski, L. D. Goldstein, S. Durinck, A. De Rienzo, Z. Modrusan, F. Gnad, et al. 2016. “Comprehensive genomic analysis of malignant pleural mesothelioma identifies recurrent mutations, gene fusions and splicing alterations.” <em>Nat. Genet.</em> 48 (4): 407–16.</p>
+</div>
+<div id="ref-lun2017assessing">
+<p>Lun, A. T. L., F. J. Calero-Nieto, L. Haim-Vilmovsky, B. Gottgens, and J. C. Marioni. 2017. “Assessing the reliability of spike-in normalization for analyses of single-cell RNA sequencing data.” <em>Genome Res.</em> 27 (11): 1795–1806.</p>
+</div>
+<div id="ref-lun2017overcoming">
+<p>Lun, A. T. L., and J. C. Marioni. 2017. “Overcoming confounding plate effects in differential expression analyses of single-cell RNA-seq data.” <em>Biostatistics</em> 18 (3): 451–64.</p>
+</div>
+<div id="ref-mccarthy2009treat">
+<p>McCarthy, D. J., and G. K. Smyth. 2009. “Testing significance relative to a fold-change threshold is a TREAT.” <em>Bioinformatics</em> 25 (6): 765–71.</p>
+</div>
+<div id="ref-zheng2017massively">
+<p>Zheng, G. X., J. M. Terry, P. Belgrader, P. Ryvkin, Z. W. Bent, R. Wilson, S. B. Ziraldo, et al. 2017. “Massively parallel digital transcriptional profiling of single cells.” <em>Nat. Commun.</em> 8 (January): 14049.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="24">
+<li id="fn24"><p>
+As of time of writing, the top genes were <em>LYZ</em>, <em>S100A8</em> and <em>MNDA</em>, suggesting that this cluster contains monocytes.
+But I’m not an immunologist, so take that with a grain of salt.<a href="marker-detection.html#fnref24" class="footnote-back">↩︎</a></p></li>
+<li id="fn25"><p>
+scRNA-seq experiments aren’t exactly cheap, either, so we should have some idea about what we’re putting into the sequencer.<a href="marker-detection.html#fnref25" class="footnote-back">↩︎</a></p></li>
+<li id="fn26"><p>
+Back in my day, a “dot plot” referred to a visualization of a pairwise sequence alignment.
+Bet most of you young’uns don’t know about that.<a href="marker-detection.html#fnref26" class="footnote-back">↩︎</a></p></li>
+<li id="fn27"><p>
+For starters, an <span class="math inline">\(X\)</span>-fold change to the area of the bubble is only a <span class="math inline">\(\sqrt{X}\)</span>-change to the radius, which requires more mental arithmetic when comparing adjacent bubbles.
+Also, if a bubble is too small, we can’t see its contents clearly, effectively discarding the data encoded by its color.
+It gets even worse for certain configurations of the bubble plot where the color represents the mean of the <em>non-zero</em> expression values;
+here, we need to mentally integrate the color of each bubble by its area to get the mean expression for comparisons between clusters.<a href="marker-detection.html#fnref27" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="clustering.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="batch-correction.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/marker-detection.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/marker-detection.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/marker-detection.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

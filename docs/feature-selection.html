@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 3 Feature selection | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 3 Feature selection | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 3 Feature selection | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="normalization.html"/>
+<link rel="next" href="principal-components-analysis.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="feature-selection" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">Chapter 3</span> Feature selection<a href="feature-selection.html#feature-selection" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-1" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> Motivation<a href="feature-selection.html#motivation-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We often use scRNA-seq data in exploratory analyses to characterize heterogeneity across the cell population.
+Procedures like clustering and dimensionality reduction compare cells based on their gene expression profiles,
+which involves aggregating per-gene differences into a single (dis)similarity metric between a pair of cells.
+The choice of genes in this calculation has a major impact on the behavior of the metric and the performance of downstream methods.
+We want to select genes that contain useful information about the biology of the system while removing genes that contain random noise.
+In addition to improving signal, this reduces the size of the data to improve computational efficiency of later steps.</p>
+</div>
+<div id="selecting-highly-variable-genes" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> Selecting highly variable genes<a href="feature-selection.html#selecting-highly-variable-genes" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="modelling-the-mean-variance-trend" class="section level3 hasAnchor" number="3.2.1">
+<h3><span class="header-section-number">3.2.1</span> Modelling the mean-variance trend<a href="feature-selection.html#modelling-the-mean-variance-trend" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Our aim is to select the most highly variable genes (HVGs) based on their expression across the population.
+This assumes that genuine biological differences will manifest as increased variation in the affected genes,
+compared to other genes that are only affected by technical noise or a baseline level of “uninteresting” biological variation (e.g., from transcriptional bursting).
+To demonstrate, we’ll load the classic PBMC dataset from 10X Genomics <span class="citation">(Zheng et al. <a href="#ref-zheng2017massively" role="doc-biblioref">2017</a>)</span>:</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb78-1"><a href="feature-selection.html#cb78-1" aria-hidden="true"></a><span class="co"># Loading in raw data from the 10X output files.</span></span>
+<span id="cb78-2"><a href="feature-selection.html#cb78-2" aria-hidden="true"></a><span class="kw">library</span>(DropletTestFiles)</span>
+<span id="cb78-3"><a href="feature-selection.html#cb78-3" aria-hidden="true"></a>raw.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">getTestFile</span>(<span class="st">&quot;tenx-2.1.0-pbmc4k/1.0.0/filtered.tar.gz&quot;</span>)</span>
+<span id="cb78-4"><a href="feature-selection.html#cb78-4" aria-hidden="true"></a>dir.path<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">tempdir</span>(), <span class="st">&quot;pbmc4k&quot;</span>)</span>
+<span id="cb78-5"><a href="feature-selection.html#cb78-5" aria-hidden="true"></a><span class="kw">untar</span>(raw.path<span class="fl">.10</span>x, <span class="dt">exdir=</span>dir.path<span class="fl">.10</span>x)</span>
+<span id="cb78-6"><a href="feature-selection.html#cb78-6" aria-hidden="true"></a></span>
+<span id="cb78-7"><a href="feature-selection.html#cb78-7" aria-hidden="true"></a><span class="kw">library</span>(DropletUtils)</span>
+<span id="cb78-8"><a href="feature-selection.html#cb78-8" aria-hidden="true"></a>fname<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir.path<span class="fl">.10</span>x, <span class="st">&quot;filtered_gene_bc_matrices/GRCh38&quot;</span>)</span>
+<span id="cb78-9"><a href="feature-selection.html#cb78-9" aria-hidden="true"></a>sce<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">read10xCounts</span>(fname<span class="fl">.10</span>x, <span class="dt">col.names=</span><span class="ot">TRUE</span>)</span>
+<span id="cb78-10"><a href="feature-selection.html#cb78-10" aria-hidden="true"></a></span>
+<span id="cb78-11"><a href="feature-selection.html#cb78-11" aria-hidden="true"></a><span class="co"># Applying our default QC with outlier-based thresholds.</span></span>
+<span id="cb78-12"><a href="feature-selection.html#cb78-12" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb78-13"><a href="feature-selection.html#cb78-13" aria-hidden="true"></a>is.mito<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">grepl</span>(<span class="st">&quot;^MT-&quot;</span>, <span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>Symbol)</span>
+<span id="cb78-14"><a href="feature-selection.html#cb78-14" aria-hidden="true"></a>sce.qc<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce<span class="fl">.10</span>x, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.10</span>x))</span>
+<span id="cb78-15"><a href="feature-selection.html#cb78-15" aria-hidden="true"></a>sce.qc<span class="fl">.10</span>x &lt;-<span class="st"> </span>sce.qc<span class="fl">.10</span>x[,sce.qc<span class="fl">.10</span>x<span class="op">$</span>keep]</span>
+<span id="cb78-16"><a href="feature-selection.html#cb78-16" aria-hidden="true"></a></span>
+<span id="cb78-17"><a href="feature-selection.html#cb78-17" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb78-18"><a href="feature-selection.html#cb78-18" aria-hidden="true"></a>sce.norm<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc<span class="fl">.10</span>x, <span class="dt">size.factors=</span>sce.qc<span class="fl">.10</span>x<span class="op">$</span>sum)</span>
+<span id="cb78-19"><a href="feature-selection.html#cb78-19" aria-hidden="true"></a>sce.norm<span class="fl">.10</span>x</span></code></pre></div>
+<pre><code>## class: SingleCellExperiment 
+## dim: 33694 4147 
+## metadata(2): Samples qc
+## assays(2): counts logcounts
+## rownames(33694): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+##   ENSG00000268674
+## rowData names(2): ID Symbol
+## colnames(4147): AAACCTGAGACAGACC-1 AAACCTGAGCGCCTCA-1 ...
+##   TTTGTCAGTTAAGACA-1 TTTGTCATCCCAAGAT-1
+## colData names(7): Sample Barcode ... keep sizeFactor
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
+<p>We compute the variance of the log-normalized expression values for each gene across all cells <span class="citation">(A. T. L. Lun, McCarthy, and Marioni <a href="#ref-lun2016step" role="doc-biblioref">2016</a>)</span>.
+We then fit a trend to the variances with respect to the mean (Figure <a href="feature-selection.html#fig:trend-plot-pbmc">3.1</a>).
+HVGs are identified as the top <span class="math inline">\(H\)</span> genes with the largest residuals above the trend, where <span class="math inline">\(H\)</span> is typically between 1000 and 5000.
+We use the variances of the log-transformed values to ensure that the feature selection is based on the same matrix values that are used in downstream steps.
+Genes with the largest variances will contribute most to the distances between cells during procedures like clustering and dimensionality reduction.</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="feature-selection.html#cb80-1" aria-hidden="true"></a>sce.var<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm<span class="fl">.10</span>x)</span>
+<span id="cb80-2"><a href="feature-selection.html#cb80-2" aria-hidden="true"></a></span>
+<span id="cb80-3"><a href="feature-selection.html#cb80-3" aria-hidden="true"></a><span class="co"># Let&#39;s have a peek at the statistics for the top HVGs.</span></span>
+<span id="cb80-4"><a href="feature-selection.html#cb80-4" aria-hidden="true"></a>rd<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var<span class="fl">.10</span>x)</span>
+<span id="cb80-5"><a href="feature-selection.html#cb80-5" aria-hidden="true"></a>ordered.residual<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">order</span>(rd<span class="fl">.10</span>x<span class="op">$</span>residuals, <span class="dt">decreasing=</span><span class="ot">TRUE</span>)</span>
+<span id="cb80-6"><a href="feature-selection.html#cb80-6" aria-hidden="true"></a>rd<span class="fl">.10</span>x[<span class="kw">head</span>(ordered.residual<span class="fl">.10</span>x),<span class="kw">c</span>(<span class="st">&quot;Symbol&quot;</span>, <span class="st">&quot;means&quot;</span>, <span class="st">&quot;variances&quot;</span>, <span class="st">&quot;fitted&quot;</span>, <span class="st">&quot;residuals&quot;</span>, <span class="st">&quot;hvg&quot;</span>)]</span></code></pre></div>
+<pre><code>## DataFrame with 6 rows and 6 columns
+##                      Symbol     means variances    fitted residuals       hvg
+##                 &lt;character&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;logical&gt;
+## ENSG00000090382         LYZ   1.86235   4.92849  0.700584   4.22790      TRUE
+## ENSG00000163220      S100A9   1.82739   4.34678  0.703548   3.64323      TRUE
+## ENSG00000143546      S100A8   1.60171   4.18943  0.714048   3.47538      TRUE
+## ENSG00000204287     HLA-DRA   2.08390   3.74121  0.676334   3.06487      TRUE
+## ENSG00000019582        CD74   2.89021   3.41935  0.590209   2.82914      TRUE
+## ENSG00000101439        CST3   1.40312   2.89004  0.714812   2.17523      TRUE</code></pre>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb82-1"><a href="feature-selection.html#cb82-1" aria-hidden="true"></a><span class="co"># Look at the number of top HVGs.</span></span>
+<span id="cb82-2"><a href="feature-selection.html#cb82-2" aria-hidden="true"></a>is.hvg<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var<span class="fl">.10</span>x)<span class="op">$</span>hvg</span>
+<span id="cb82-3"><a href="feature-selection.html#cb82-3" aria-hidden="true"></a><span class="kw">sum</span>(is.hvg<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>## [1] 4000</code></pre>
+<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb84-1"><a href="feature-selection.html#cb84-1" aria-hidden="true"></a><span class="kw">plot</span>(rd<span class="fl">.10</span>x<span class="op">$</span>means, rd<span class="fl">.10</span>x<span class="op">$</span>variances,</span>
+<span id="cb84-2"><a href="feature-selection.html#cb84-2" aria-hidden="true"></a>    <span class="dt">col=</span><span class="kw">ifelse</span>(is.hvg<span class="fl">.10</span>x, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;grey&quot;</span>), <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="dv">1</span>,</span>
+<span id="cb84-3"><a href="feature-selection.html#cb84-3" aria-hidden="true"></a>    <span class="dt">xlab=</span><span class="st">&quot;Mean of log-expression&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Variance of log-expression&quot;</span>)</span>
+<span id="cb84-4"><a href="feature-selection.html#cb84-4" aria-hidden="true"></a><span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="dt">col=</span><span class="kw">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;grey&quot;</span>), <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">legend=</span><span class="kw">c</span>(<span class="st">&quot;HVG&quot;</span>, <span class="st">&quot;not HVG&quot;</span>))</span>
+<span id="cb84-5"><a href="feature-selection.html#cb84-5" aria-hidden="true"></a></span>
+<span id="cb84-6"><a href="feature-selection.html#cb84-6" aria-hidden="true"></a><span class="co"># Just using approxfun() to make a nice-looking curve for us.</span></span>
+<span id="cb84-7"><a href="feature-selection.html#cb84-7" aria-hidden="true"></a>trend<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">approxfun</span>(rd<span class="fl">.10</span>x<span class="op">$</span>means, rd<span class="fl">.10</span>x<span class="op">$</span>fitted)</span>
+<span id="cb84-8"><a href="feature-selection.html#cb84-8" aria-hidden="true"></a><span class="kw">curve</span>(trend<span class="fl">.10</span>x, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;dodgerblue&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:trend-plot-pbmc"></span>
+<img src="feature-selection_files/figure-html/trend-plot-pbmc-1.png" alt="Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene, colored according to whether it was chosen as a HVG. The blue line represents the trend fitted to all genes." width="672" />
+<p class="caption">
+Figure 3.1: Variance of the log-normalized expression values across all genes in the PBMC data set, as a function of the mean. Each point represents a gene, colored according to whether it was chosen as a HVG. The blue line represents the trend fitted to all genes.
+</p>
+</div>
+<p>We use residuals to select HVGs to account for the mean-variance relationship in scRNA-seq data.
+Our assumption is that, at any given mean, the variation in expression for most genes is driven by uninteresting processes like sampling noise.
+The fitted value of the trend at any given gene’s mean represents a mean-dependent estimate of its uninteresting variation,
+while the residuals represent the “interesting” variation for each gene and can be used as the metric for HVG selection.
+By comparison, if we just used the total variance without any trend, the choice of HVGs would be driven more by the gene’s abundance than its biological heterogeneity.
+(In other words, the log-transformation is not a variance-stabilizing transformation<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a>.)
+This would cause us to neglect lower-abundance genes that exhibit increased variation.</p>
+<p>Once we have our top HVGs, we can use them in downstream steps like principal components analysis.
+We’ll discuss this more in Chapter <a href="principal-components-analysis.html#principal-components-analysis">4</a>, but it is as simple as using only the subset of HVGs in the analysis:</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="feature-selection.html#cb85-1" aria-hidden="true"></a>sce.pcs<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var<span class="fl">.10</span>x, <span class="dt">features=</span>is.hvg<span class="fl">.10</span>x)</span></code></pre></div>
+</div>
+<div id="choosing-the-number-of-hvgs" class="section level3 hasAnchor" number="3.2.2">
+<h3><span class="header-section-number">3.2.2</span> Choosing the number of HVGs<a href="feature-selection.html#choosing-the-number-of-hvgs" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>How many HVGs should we use in our downstream analyses, i.e., what is the “best” value of <span class="math inline">\(H\)</span>?
+A larger set of HVGs will reduce the risk of discarding interesting biological signal by retaining more potentially relevant genes,
+at the cost of adding noise from irrelevant genes that might obscure that signal.
+It’s difficult to determine the optimal trade-off for any given application as the distinction between noise and signal is context-dependent.
+For example, variation in the activation status of certain immune cells may not be interesting when we only want to identify the cell types;
+the former can even interfere with the latter by encouraging the formation of clusters based on activation strength instead.</p>
+<p>Our recommendation is to simply pick a “reasonable” <span class="math inline">\(H\)</span> - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
+If we can answer our scientific question, then our choice is good enough; if not, we can just try another value.
+There’s nothing wrong with trying different parameters during data exploration<a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a>.
+In fact, different choices of <span class="math inline">\(H\)</span> can provide new perspectives of the same dataset by changing the balance between signal and noise,
+so we might discover new population structure that would not be apparent with other parameters.
+Don’t spend too much time worrying about obtaining the “optimal” value.</p>
+<p>If we really want to ensure that all biological structure is preserved, we could define the set of HVGs as all genes with variances above the trend.
+This avoids any judgement calls about the definition of “interesting” variation, giving an opportunity for weaker population structure to manifest.
+It is most useful for rare and/or weakly-separated subpopulations where the relevant marker genes are not variable enough to sneak into the top <span class="math inline">\(H\)</span> genes.
+The obvious cost is that more noise is also captured, which can reduce the resolution of subpopulations;
+and we need to perform more computational work in each downstream step, as more genes are involved.</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb86-1"><a href="feature-selection.html#cb86-1" aria-hidden="true"></a><span class="co"># Setting top=Inf to select all genes with positive residuals.</span></span>
+<span id="cb86-2"><a href="feature-selection.html#cb86-2" aria-hidden="true"></a>hvgs.all<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">chooseHighlyVariableGenes</span>(rd<span class="fl">.10</span>x<span class="op">$</span>residuals, <span class="dt">top=</span><span class="ot">Inf</span>)</span>
+<span id="cb86-3"><a href="feature-selection.html#cb86-3" aria-hidden="true"></a><span class="kw">length</span>(hvgs.all<span class="fl">.10</span>x)</span></code></pre></div>
+<pre><code>## [1] 11679</code></pre>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="feature-selection.html#cb88-1" aria-hidden="true"></a><span class="co"># This can be used just like our other HVGs.</span></span>
+<span id="cb88-2"><a href="feature-selection.html#cb88-2" aria-hidden="true"></a>sce.all<span class="fl">.10</span>x &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var<span class="fl">.10</span>x, <span class="dt">features=</span>hvgs.all<span class="fl">.10</span>x)</span></code></pre></div>
+</div>
+</div>
+<div id="variance-block" class="section level2 hasAnchor" number="3.3">
+<h2><span class="header-section-number">3.3</span> Blocking on uninteresting factors<a href="feature-selection.html#variance-block" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Larger datasets may contain multiple blocks of cells that exhibit uninteresting differences in gene expression, e.g., batch effects, variability between donors.
+We are not interested in HVGs that are driven by these differences; instead, we want to focus on genes that are highly variable within each block.
+We demonstrate using some trophoblast scRNA-seq data generated across two plates <span class="citation">(A. T. L. Lun et al. <a href="#ref-lun2017assessing" role="doc-biblioref">2017</a>)</span>:</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb89-1"><a href="feature-selection.html#cb89-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb89-2"><a href="feature-selection.html#cb89-2" aria-hidden="true"></a>sce.tropho &lt;-<span class="st"> </span><span class="kw">LunSpikeInData</span>(<span class="st">&quot;tropho&quot;</span>)</span>
+<span id="cb89-3"><a href="feature-selection.html#cb89-3" aria-hidden="true"></a><span class="kw">table</span>(sce.tropho<span class="op">$</span>block) <span class="co"># i.e., the plate of origin. </span></span></code></pre></div>
+<pre><code>## 
+## 20160906 20170201 
+##       96       96</code></pre>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb91-1"><a href="feature-selection.html#cb91-1" aria-hidden="true"></a><span class="co"># Computing the QC metrics.</span></span>
+<span id="cb91-2"><a href="feature-selection.html#cb91-2" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb91-3"><a href="feature-selection.html#cb91-3" aria-hidden="true"></a>is.mito.tropho &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">any</span>(<span class="kw">seqnames</span>(<span class="kw">rowRanges</span>(sce.tropho))<span class="op">==</span><span class="st">&quot;MT&quot;</span>))</span>
+<span id="cb91-4"><a href="feature-selection.html#cb91-4" aria-hidden="true"></a>sce.qc.tropho &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb91-5"><a href="feature-selection.html#cb91-5" aria-hidden="true"></a>    sce.tropho,</span>
+<span id="cb91-6"><a href="feature-selection.html#cb91-6" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.tropho),</span>
+<span id="cb91-7"><a href="feature-selection.html#cb91-7" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb91-8"><a href="feature-selection.html#cb91-8" aria-hidden="true"></a>    <span class="dt">block=</span>sce.tropho<span class="op">$</span>block</span>
+<span id="cb91-9"><a href="feature-selection.html#cb91-9" aria-hidden="true"></a>)</span>
+<span id="cb91-10"><a href="feature-selection.html#cb91-10" aria-hidden="true"></a>sce.qc.tropho &lt;-<span class="st"> </span>sce.qc.tropho[,sce.qc.tropho<span class="op">$</span>keep]</span>
+<span id="cb91-11"><a href="feature-selection.html#cb91-11" aria-hidden="true"></a></span>
+<span id="cb91-12"><a href="feature-selection.html#cb91-12" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb91-13"><a href="feature-selection.html#cb91-13" aria-hidden="true"></a>sce.norm.tropho &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(</span>
+<span id="cb91-14"><a href="feature-selection.html#cb91-14" aria-hidden="true"></a>    sce.qc.tropho,</span>
+<span id="cb91-15"><a href="feature-selection.html#cb91-15" aria-hidden="true"></a>    <span class="dt">size.factors=</span>sce.qc.tropho<span class="op">$</span>sum,</span>
+<span id="cb91-16"><a href="feature-selection.html#cb91-16" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc.tropho<span class="op">$</span>block</span>
+<span id="cb91-17"><a href="feature-selection.html#cb91-17" aria-hidden="true"></a>)</span></code></pre></div>
+<p>Setting <code>block=</code> instructs <code>chooseRnaHvgs.se()</code> to compute the mean and variance for each gene within each plate.
+This ensures that any systematic technical differences between plates (e.g., in sequencing depth) will not inflate the variance estimates.
+It will also fit a separate trend for each plate, which accommodates differences in the mean-variance relationships between plates.
+In this case, there are only minor differences between the trends in Figure <a href="feature-selection.html#fig:trend-plot-tropho">3.2</a>, which indicates that the experiment was tightly replicated across plates.</p>
+<div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb92-1"><a href="feature-selection.html#cb92-1" aria-hidden="true"></a>sce.var.tropho &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(</span>
+<span id="cb92-2"><a href="feature-selection.html#cb92-2" aria-hidden="true"></a>    sce.norm.tropho,</span>
+<span id="cb92-3"><a href="feature-selection.html#cb92-3" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc.tropho<span class="op">$</span>block,</span>
+<span id="cb92-4"><a href="feature-selection.html#cb92-4" aria-hidden="true"></a>    <span class="dt">include.per.block=</span><span class="ot">TRUE</span> <span class="co"># only needed for plotting.</span></span>
+<span id="cb92-5"><a href="feature-selection.html#cb92-5" aria-hidden="true"></a>)</span>
+<span id="cb92-6"><a href="feature-selection.html#cb92-6" aria-hidden="true"></a></span>
+<span id="cb92-7"><a href="feature-selection.html#cb92-7" aria-hidden="true"></a>per.block &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var.tropho)<span class="op">$</span>per.block</span>
+<span id="cb92-8"><a href="feature-selection.html#cb92-8" aria-hidden="true"></a><span class="kw">par</span>(<span class="dt">mfrow=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb92-9"><a href="feature-selection.html#cb92-9" aria-hidden="true"></a><span class="cf">for</span> (block <span class="cf">in</span> <span class="kw">colnames</span>(per.block)) {</span>
+<span id="cb92-10"><a href="feature-selection.html#cb92-10" aria-hidden="true"></a>    current &lt;-<span class="st"> </span>per.block[[block]]</span>
+<span id="cb92-11"><a href="feature-selection.html#cb92-11" aria-hidden="true"></a>    <span class="kw">plot</span>(current<span class="op">$</span>means, current<span class="op">$</span>variances,</span>
+<span id="cb92-12"><a href="feature-selection.html#cb92-12" aria-hidden="true"></a>        <span class="dt">xlab=</span><span class="st">&quot;Mean of log-expression&quot;</span>,</span>
+<span id="cb92-13"><a href="feature-selection.html#cb92-13" aria-hidden="true"></a>        <span class="dt">ylab=</span><span class="st">&quot;Variance of log-expression&quot;</span>,</span>
+<span id="cb92-14"><a href="feature-selection.html#cb92-14" aria-hidden="true"></a>        <span class="dt">main=</span>block, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="fl">0.5</span>)</span>
+<span id="cb92-15"><a href="feature-selection.html#cb92-15" aria-hidden="true"></a>    trend &lt;-<span class="st"> </span><span class="kw">approxfun</span>(current<span class="op">$</span>means, current<span class="op">$</span>fitted)</span>
+<span id="cb92-16"><a href="feature-selection.html#cb92-16" aria-hidden="true"></a>    <span class="kw">curve</span>(trend, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;dodgerblue&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb92-17"><a href="feature-selection.html#cb92-17" aria-hidden="true"></a>}</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:trend-plot-tropho"></span>
+<img src="feature-selection_files/figure-html/trend-plot-tropho-1.png" alt="Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue." width="960" />
+<p class="caption">
+Figure 3.2: Variance of the log-normalized expression values across all genes in the trophoblast data set, as a function of the mean after blocking on the plate of origin. Each plot represents the results for a single plate. Each point represents a gene and the fitted trend is shown in blue.
+</p>
+</div>
+<p><code>chooseRnaHVgs.se()</code> also combines information across blocks by reporting the weighted mean of each statistic,
+where the weight is determined by the size of number of cells in each plate.
+We use the mean residuals to select our top HVGs as described previously.
+This ensures that each block contributes some information about the variability of each gene.
+High variability in any block can increase the residual for a gene, giving it an opportunity to be selected as a HVG.</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb93-1"><a href="feature-selection.html#cb93-1" aria-hidden="true"></a><span class="kw">rowData</span>(sce.var.tropho)[,<span class="kw">c</span>(<span class="st">&quot;means&quot;</span>, <span class="st">&quot;variances&quot;</span>, <span class="st">&quot;fitted&quot;</span>, <span class="st">&quot;residuals&quot;</span>)] <span class="co"># mean across blocks.</span></span></code></pre></div>
+<pre><code>## DataFrame with 46603 rows and 4 columns
+##                        means variances    fitted residuals
+##                    &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSMUSG00000102693 0.0000000  0.000000  0.000000 0.0000000
+## ENSMUSG00000064842 0.0000000  0.000000  0.000000 0.0000000
+## ENSMUSG00000051951 0.0351964  0.190773  0.145564 0.0452092
+## ENSMUSG00000102851 0.0000000  0.000000  0.000000 0.0000000
+## ENSMUSG00000103377 0.0993010  0.536793  0.389798 0.1469946
+## ...                      ...       ...       ...       ...
+## ENSMUSG00000094431         0         0         0         0
+## ENSMUSG00000094621         0         0         0         0
+## ENSMUSG00000098647         0         0         0         0
+## ENSMUSG00000096730         0         0         0         0
+## ENSMUSG00000095742         0         0         0         0</code></pre>
+<div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb95-1"><a href="feature-selection.html#cb95-1" aria-hidden="true"></a>hvgs.tropho &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var.tropho)<span class="op">$</span>hvg</span>
+<span id="cb95-2"><a href="feature-selection.html#cb95-2" aria-hidden="true"></a><span class="kw">sum</span>(hvgs.tropho)</span></code></pre></div>
+<pre><code>## [1] 4000</code></pre>
+<p>Alternatively, we could focus on genes are consistently variable within each block by asking <code>chooseRnaHvgs.se()</code> to compute a quantile instead of a weighted mean.
+For example, we could report the minimum residual across blocks, which means that genes will only be considered as HVGs if they have large positive residuals in each block.
+This tends to scale poorly as it becomes too stringent with a large number of blocks.</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb97-1"><a href="feature-selection.html#cb97-1" aria-hidden="true"></a>sce.var.min.tropho &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(</span>
+<span id="cb97-2"><a href="feature-selection.html#cb97-2" aria-hidden="true"></a>    sce.norm.tropho,</span>
+<span id="cb97-3"><a href="feature-selection.html#cb97-3" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc.tropho<span class="op">$</span>block,</span>
+<span id="cb97-4"><a href="feature-selection.html#cb97-4" aria-hidden="true"></a>    <span class="dt">more.var.args=</span><span class="kw">list</span>(</span>
+<span id="cb97-5"><a href="feature-selection.html#cb97-5" aria-hidden="true"></a>        <span class="dt">block.average.policy=</span><span class="st">&quot;quantile&quot;</span>,</span>
+<span id="cb97-6"><a href="feature-selection.html#cb97-6" aria-hidden="true"></a>        <span class="dt">block.quantile=</span><span class="dv">0</span> <span class="co"># i.e., minimum.</span></span>
+<span id="cb97-7"><a href="feature-selection.html#cb97-7" aria-hidden="true"></a>    )</span>
+<span id="cb97-8"><a href="feature-selection.html#cb97-8" aria-hidden="true"></a>)</span>
+<span id="cb97-9"><a href="feature-selection.html#cb97-9" aria-hidden="true"></a><span class="kw">rowData</span>(sce.var.min.tropho)[,<span class="kw">c</span>(<span class="st">&quot;means&quot;</span>, <span class="st">&quot;variances&quot;</span>, <span class="st">&quot;fitted&quot;</span>, <span class="st">&quot;residuals&quot;</span>)] <span class="co"># minimum across blocks.</span></span></code></pre></div>
+<pre><code>## DataFrame with 46603 rows and 4 columns
+##                        means variances    fitted residuals
+##                    &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## ENSMUSG00000102693 0.0000000  0.000000  0.000000  0.000000
+## ENSMUSG00000064842 0.0000000  0.000000  0.000000  0.000000
+## ENSMUSG00000051951 0.0000000  0.000000  0.000000  0.000000
+## ENSMUSG00000102851 0.0000000  0.000000  0.000000  0.000000
+## ENSMUSG00000103377 0.0780524  0.469098  0.322909  0.146189
+## ...                      ...       ...       ...       ...
+## ENSMUSG00000094431         0         0         0         0
+## ENSMUSG00000094621         0         0         0         0
+## ENSMUSG00000098647         0         0         0         0
+## ENSMUSG00000096730         0         0         0         0
+## ENSMUSG00000095742         0         0         0         0</code></pre>
+<p>It is generally expected that <code>block=</code> will be used for uninteresting factors of variation.
+In this case, the plate of origin is a technical factor that should be ignored.
+However, imagine instead that each plate corresponds to a different treatment condition.
+In such cases, we might not use <code>block=</code> to ensure that our variance estimates can capture the differences between treatments.
+We discuss these considerations in more detail in Chapter <a href="batch-correction.html#batch-correction">8</a>.</p>
+<p>As an aside, the wave-like shape observed in Figure <a href="feature-selection.html#fig:trend-plot-tropho">3.2</a> is typical of the mean-variance relationship in log-expression values.
+A linear increase in the variance is observed as the mean increases from zero, as larger variances are obviously possible when the counts are not all equal to zero.
+In contrast, the relative contribution of sampling noise decreases at high abundances, resulting in a downward trend.
+The peak represents the point at which these two competing effects cancel each other out.</p>
+</div>
+<div id="refining-the-trend-fit" class="section level2 hasAnchor" number="3.4">
+<h2><span class="header-section-number">3.4</span> Refining the trend fit<a href="feature-selection.html#refining-the-trend-fit" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The trend fit in <code>chooseRnaHvgs.se()</code> uses the LOWESS non-parametric smoother <span class="citation">(Cleveland <a href="#ref-cleveland1979robust" role="doc-biblioref">1979</a>)</span> by default.
+This slides a window across the x-coordinates and performs a linear regression within each window to obtain the fitted value for the point at the window’s center.
+The size of the window varies between points, expanding or contracting until it contains some proportion of all points in the dataset (by default, 30%).
+This mostly works well but can be suboptimal in very sparse intervals of the x-axis.
+To demonstrate, let’s have a look at a human pancreas dataset from <span class="citation">Segerstolpe et al. (<a href="#ref-segerstolpe2016singlecell" role="doc-biblioref">2016</a>)</span>:</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb99-1"><a href="feature-selection.html#cb99-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb99-2"><a href="feature-selection.html#cb99-2" aria-hidden="true"></a>sce.seger &lt;-<span class="st"> </span><span class="kw">SegerstolpePancreasData</span>()</span>
+<span id="cb99-3"><a href="feature-selection.html#cb99-3" aria-hidden="true"></a></span>
+<span id="cb99-4"><a href="feature-selection.html#cb99-4" aria-hidden="true"></a><span class="co"># For simplicity, we&#39;ll focus on one of the donors. </span></span>
+<span id="cb99-5"><a href="feature-selection.html#cb99-5" aria-hidden="true"></a>sce.seger &lt;-<span class="st"> </span>sce.seger[,sce.seger<span class="op">$</span>individual<span class="op">==</span><span class="st">&quot;H2&quot;</span>]</span>
+<span id="cb99-6"><a href="feature-selection.html#cb99-6" aria-hidden="true"></a></span>
+<span id="cb99-7"><a href="feature-selection.html#cb99-7" aria-hidden="true"></a><span class="co"># For reasons unknown to us, the data supplied by the authors contain</span></span>
+<span id="cb99-8"><a href="feature-selection.html#cb99-8" aria-hidden="true"></a><span class="co"># duplicated row names, so we&#39;ll just get rid of those to avoid confusion.</span></span>
+<span id="cb99-9"><a href="feature-selection.html#cb99-9" aria-hidden="true"></a>sce.seger &lt;-<span class="st"> </span>sce.seger[<span class="op">!</span><span class="kw">duplicated</span>(<span class="kw">rownames</span>(sce.seger)),]</span>
+<span id="cb99-10"><a href="feature-selection.html#cb99-10" aria-hidden="true"></a></span>
+<span id="cb99-11"><a href="feature-selection.html#cb99-11" aria-hidden="true"></a><span class="co"># Running QC. Seems like they don&#39;t have any data for the mitochondrial genes,</span></span>
+<span id="cb99-12"><a href="feature-selection.html#cb99-12" aria-hidden="true"></a><span class="co"># unfortunately, but they do have spike-ins so we&#39;ll just use those instead.</span></span>
+<span id="cb99-13"><a href="feature-selection.html#cb99-13" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb99-14"><a href="feature-selection.html#cb99-14" aria-hidden="true"></a>sce.qc.seger &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.seger, <span class="dt">subsets=</span><span class="kw">list</span>(), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb99-15"><a href="feature-selection.html#cb99-15" aria-hidden="true"></a></span>
+<span id="cb99-16"><a href="feature-selection.html#cb99-16" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb99-17"><a href="feature-selection.html#cb99-17" aria-hidden="true"></a>sce.norm.seger &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.seger, <span class="dt">size.factors=</span>sce.qc.seger<span class="op">$</span>sum)</span></code></pre></div>
+<p>There are very few genes at high abundances, which forces the LOWESS window to expand to contain more points.
+This reduces sensitivity of the fitted trend to the behavior of the high-abundance genes (Figure <a href="feature-selection.html#fig:trend-plot-seger">3.3</a>).
+We can improve the fit by tinkering with some of the trend fitting options.
+In particular, setting <code>use.min.width=TRUE</code> will switch to a different strategy to defining the window around each point,
+which improves sensitivity in sparse intervals at the risk of overfitting.</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb100-1"><a href="feature-selection.html#cb100-1" aria-hidden="true"></a>sce.default.seger &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.seger)</span>
+<span id="cb100-2"><a href="feature-selection.html#cb100-2" aria-hidden="true"></a>sce.minw.seger &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.seger, <span class="dt">more.var.args=</span><span class="kw">list</span>(<span class="dt">use.min.width=</span><span class="ot">TRUE</span>))</span>
+<span id="cb100-3"><a href="feature-selection.html#cb100-3" aria-hidden="true"></a></span>
+<span id="cb100-4"><a href="feature-selection.html#cb100-4" aria-hidden="true"></a>rd.default.seger &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.default.seger)</span>
+<span id="cb100-5"><a href="feature-selection.html#cb100-5" aria-hidden="true"></a><span class="kw">plot</span>(rd.default.seger<span class="op">$</span>means, rd.default.seger<span class="op">$</span>variances,</span>
+<span id="cb100-6"><a href="feature-selection.html#cb100-6" aria-hidden="true"></a>    <span class="dt">xlab=</span><span class="st">&quot;Mean of log-expression&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Variance of log-expression&quot;</span>, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="fl">0.5</span>)</span>
+<span id="cb100-7"><a href="feature-selection.html#cb100-7" aria-hidden="true"></a>trend.default.seger &lt;-<span class="st"> </span><span class="kw">approxfun</span>(rd.default.seger<span class="op">$</span>means, rd.default.seger<span class="op">$</span>fitted)</span>
+<span id="cb100-8"><a href="feature-selection.html#cb100-8" aria-hidden="true"></a><span class="kw">curve</span>(trend.default.seger, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;dodgerblue&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb100-9"><a href="feature-selection.html#cb100-9" aria-hidden="true"></a></span>
+<span id="cb100-10"><a href="feature-selection.html#cb100-10" aria-hidden="true"></a>rd.minw.seger &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.minw.seger)</span>
+<span id="cb100-11"><a href="feature-selection.html#cb100-11" aria-hidden="true"></a>trend.minw.seger &lt;-<span class="st"> </span><span class="kw">approxfun</span>(rd.minw.seger<span class="op">$</span>means, rd.minw.seger<span class="op">$</span>fitted)</span>
+<span id="cb100-12"><a href="feature-selection.html#cb100-12" aria-hidden="true"></a><span class="kw">curve</span>(trend.minw.seger, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;salmon&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb100-13"><a href="feature-selection.html#cb100-13" aria-hidden="true"></a><span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>, <span class="dt">col=</span><span class="kw">c</span>(<span class="st">&quot;dodgerblue&quot;</span>, <span class="st">&quot;salmon&quot;</span>), <span class="dt">legend=</span><span class="kw">c</span>(<span class="st">&quot;default&quot;</span>, <span class="st">&quot;min-width&quot;</span>))</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:trend-plot-seger"></span>
+<img src="feature-selection_files/figure-html/trend-plot-seger-1.png" alt="Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the lines represent trends fitted with different parameters." width="672" />
+<p class="caption">
+Figure 3.3: Variance of the log-normalized expression values across all genes in one donor of the Segerstople pancreas data set, as a function of the mean. Each point represents a gene while the lines represent trends fitted with different parameters.
+</p>
+</div>
+<p>In practice, the parametrization of the trend fitting doesn’t matter all that much.
+There are so few genes in these sparse intervals that their (lack of) selection as HVGs won’t have a major effect on downstream analyses.
+But sometimes it’s just nice to look at some well-fitted curves.</p>
+</div>
+<div id="selecting-a-priori-genes-of-interest" class="section level2 hasAnchor" number="3.5">
+<h2><span class="header-section-number">3.5</span> Selecting <em>a priori</em> genes of interest<a href="feature-selection.html#selecting-a-priori-genes-of-interest" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>A blunt yet effective feature selection strategy is to use pre-defined sets of interesting genes.
+The aim is to focus on specific aspects of biological heterogeneity that may be masked by other factors when using unsupervised methods for HVG selection.
+For example, to study transcriptional changes during the earliest stages of cell fate commitment <span class="citation">(Messmer et al. <a href="#ref-messmer2019transcriptional" role="doc-biblioref">2019</a>)</span>,
+we might focus only on lineage markers to avoid interference from variability in other pathways (e.g., cell cycle, metabolism).
+Using scRNA-seq data in this manner is conceptually equivalent to a fluorescence activated cell sorting (FACS) experiment,
+with the convenience of being able to (re)define the features of interest at any time.
+We provide some examples of <em>a priori</em> selection based on MSigDB gene sets <span class="citation">(Liberzon et al. <a href="#ref-liberzon2015msigdb" role="doc-biblioref">2015</a>)</span> below:</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb101-1"><a href="feature-selection.html#cb101-1" aria-hidden="true"></a><span class="kw">library</span>(msigdbr)</span>
+<span id="cb101-2"><a href="feature-selection.html#cb101-2" aria-hidden="true"></a>c7.sets &lt;-<span class="st"> </span><span class="kw">msigdbr</span>(<span class="dt">species =</span> <span class="st">&quot;Homo sapiens&quot;</span>, <span class="dt">category =</span> <span class="st">&quot;C7&quot;</span>)</span>
+<span id="cb101-3"><a href="feature-selection.html#cb101-3" aria-hidden="true"></a><span class="kw">head</span>(<span class="kw">unique</span>(c7.sets<span class="op">$</span>gs_name))</span></code></pre></div>
+<pre><code>## [1] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_1DY_DN&quot;
+## [2] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_1DY_UP&quot;
+## [3] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_3DY_DN&quot;
+## [4] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_3DY_UP&quot;
+## [5] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_6HR_DN&quot;
+## [6] &quot;ANDERSON_BLOOD_CN54GP140_ADJUVANTED_WITH_GLA_AF_AGE_18_45YO_6HR_UP&quot;</code></pre>
+<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb103-1"><a href="feature-selection.html#cb103-1" aria-hidden="true"></a><span class="co"># Using the Goldrath sets to distinguish CD8 subtypes</span></span>
+<span id="cb103-2"><a href="feature-selection.html#cb103-2" aria-hidden="true"></a>cd8.sets &lt;-<span class="st"> </span>c7.sets[<span class="kw">grep</span>(<span class="st">&quot;GOLDRATH&quot;</span>, c7.sets<span class="op">$</span>gs_name),]</span>
+<span id="cb103-3"><a href="feature-selection.html#cb103-3" aria-hidden="true"></a>cd8.genes &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>cd8.sets<span class="op">$</span>ensembl_gene</span>
+<span id="cb103-4"><a href="feature-selection.html#cb103-4" aria-hidden="true"></a><span class="kw">summary</span>(cd8.genes)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical   32851     843</code></pre>
+<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb105-1"><a href="feature-selection.html#cb105-1" aria-hidden="true"></a><span class="co"># Using GSE11924 to distinguish between T helper subtypes</span></span>
+<span id="cb105-2"><a href="feature-selection.html#cb105-2" aria-hidden="true"></a>th.sets &lt;-<span class="st"> </span>c7.sets[<span class="kw">grep</span>(<span class="st">&quot;GSE11924&quot;</span>, c7.sets<span class="op">$</span>gs_name),]</span>
+<span id="cb105-3"><a href="feature-selection.html#cb105-3" aria-hidden="true"></a>th.genes &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>th.sets<span class="op">$</span>ensembl_gene</span>
+<span id="cb105-4"><a href="feature-selection.html#cb105-4" aria-hidden="true"></a><span class="kw">summary</span>(th.genes)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical   31722    1972</code></pre>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb107-1"><a href="feature-selection.html#cb107-1" aria-hidden="true"></a><span class="co"># Using GSE11961 to distinguish between B cell subtypes</span></span>
+<span id="cb107-2"><a href="feature-selection.html#cb107-2" aria-hidden="true"></a>b.sets &lt;-<span class="st"> </span>c7.sets[<span class="kw">grep</span>(<span class="st">&quot;GSE11961&quot;</span>, c7.sets<span class="op">$</span>gs_name),]</span>
+<span id="cb107-3"><a href="feature-selection.html#cb107-3" aria-hidden="true"></a>b.genes &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>b.sets<span class="op">$</span>ensembl_gene</span>
+<span id="cb107-4"><a href="feature-selection.html#cb107-4" aria-hidden="true"></a><span class="kw">summary</span>(b.genes)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical   27995    5699</code></pre>
+<p>Don’t be ashamed to take advantage of prior biological knowledge during feature selection to address specific hypotheses!
+We say this because a common refrain in genomics is that the data analysis should be “unbiased”, i.e., free from any biological preconceptions.
+Which is fine and all, but such “biases” are already present at every stage, starting with experimental design and ending with the interpretation of the data.
+So if we already know what we’re looking for, why not make life simpler and just go for it?
+Of course, the downside of focusing on pre-defined genes is that it will limit our capacity to detect novel or unexpected aspects of variation.
+Thus, this kind of focused analysis should be complementary to (rather than a replacement for) the unsupervised feature selection strategies discussed above.</p>
+<p>Alternatively, we can invert this reasoning to remove genes that are unlikely to be of interest prior to downstream analyses.
+This eliminates unwanted variation that could mask relevant biology and interfere with interpretation of the results.
+Ribosomal protein genes or mitochondrial genes are common candidates for removal,
+especially in situations with varying levels of cell damage within a population.
+For immune cell subsets, we might also be inclined to remove immunoglobulin genes and T cell receptor genes
+for which clonal expression introduces (possibly irrelevant) population structure.</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb109-1"><a href="feature-selection.html#cb109-1" aria-hidden="true"></a><span class="co"># Identifying ribosomal proteins:</span></span>
+<span id="cb109-2"><a href="feature-selection.html#cb109-2" aria-hidden="true"></a>ribo.discard &lt;-<span class="st"> </span><span class="kw">grepl</span>(<span class="st">&quot;^RP[SL]</span><span class="ch">\\</span><span class="st">d+&quot;</span>, <span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>Symbol)</span>
+<span id="cb109-3"><a href="feature-selection.html#cb109-3" aria-hidden="true"></a><span class="kw">sum</span>(ribo.discard)</span></code></pre></div>
+<pre><code>## [1] 99</code></pre>
+<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb111-1"><a href="feature-selection.html#cb111-1" aria-hidden="true"></a><span class="co"># A more curated approach for identifying ribosomal protein genes:</span></span>
+<span id="cb111-2"><a href="feature-selection.html#cb111-2" aria-hidden="true"></a>c2.sets &lt;-<span class="st"> </span><span class="kw">msigdbr</span>(<span class="dt">species =</span> <span class="st">&quot;Homo sapiens&quot;</span>, <span class="dt">category =</span> <span class="st">&quot;C2&quot;</span>)</span>
+<span id="cb111-3"><a href="feature-selection.html#cb111-3" aria-hidden="true"></a>ribo.set &lt;-<span class="st"> </span>c2.sets[c2.sets<span class="op">$</span>gs_name<span class="op">==</span><span class="st">&quot;KEGG_RIBOSOME&quot;</span>,]<span class="op">$</span>ensembl_gene</span>
+<span id="cb111-4"><a href="feature-selection.html#cb111-4" aria-hidden="true"></a>ribo.discard &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>ribo.set</span>
+<span id="cb111-5"><a href="feature-selection.html#cb111-5" aria-hidden="true"></a><span class="kw">sum</span>(ribo.discard)</span></code></pre></div>
+<pre><code>## [1] 87</code></pre>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb113-1"><a href="feature-selection.html#cb113-1" aria-hidden="true"></a><span class="kw">library</span>(AnnotationHub)</span>
+<span id="cb113-2"><a href="feature-selection.html#cb113-2" aria-hidden="true"></a>edb &lt;-<span class="st"> </span><span class="kw">AnnotationHub</span>()[[<span class="st">&quot;AH73881&quot;</span>]]</span>
+<span id="cb113-3"><a href="feature-selection.html#cb113-3" aria-hidden="true"></a>anno &lt;-<span class="st"> </span><span class="kw">select</span>(edb, <span class="dt">keys=</span><span class="kw">rowData</span>(sce<span class="fl">.10</span>x)<span class="op">$</span>ID, <span class="dt">keytype=</span><span class="st">&quot;GENEID&quot;</span>, </span>
+<span id="cb113-4"><a href="feature-selection.html#cb113-4" aria-hidden="true"></a>    <span class="dt">columns=</span><span class="st">&quot;TXBIOTYPE&quot;</span>)</span>
+<span id="cb113-5"><a href="feature-selection.html#cb113-5" aria-hidden="true"></a></span>
+<span id="cb113-6"><a href="feature-selection.html#cb113-6" aria-hidden="true"></a><span class="co"># Removing immunoglobulin variable chains:</span></span>
+<span id="cb113-7"><a href="feature-selection.html#cb113-7" aria-hidden="true"></a>igv.set &lt;-<span class="st"> </span>anno<span class="op">$</span>GENEID[anno<span class="op">$</span>TXBIOTYPE <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;IG_V_gene&quot;</span>, <span class="st">&quot;IG_V_pseudogene&quot;</span>)]</span>
+<span id="cb113-8"><a href="feature-selection.html#cb113-8" aria-hidden="true"></a>igv.discard &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>igv.set</span>
+<span id="cb113-9"><a href="feature-selection.html#cb113-9" aria-hidden="true"></a><span class="kw">sum</span>(igv.discard)</span></code></pre></div>
+<pre><code>## [1] 326</code></pre>
+<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb115-1"><a href="feature-selection.html#cb115-1" aria-hidden="true"></a><span class="co"># Removing TCR variable chains:</span></span>
+<span id="cb115-2"><a href="feature-selection.html#cb115-2" aria-hidden="true"></a>tcr.set &lt;-<span class="st"> </span>anno<span class="op">$</span>GENEID[anno<span class="op">$</span>TXBIOTYPE <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;TR_V_gene&quot;</span>, <span class="st">&quot;TR_V_pseudogene&quot;</span>)]</span>
+<span id="cb115-3"><a href="feature-selection.html#cb115-3" aria-hidden="true"></a>tcr.discard &lt;-<span class="st"> </span><span class="kw">rownames</span>(sce<span class="fl">.10</span>x) <span class="op">%in%</span><span class="st"> </span>tcr.set</span>
+<span id="cb115-4"><a href="feature-selection.html#cb115-4" aria-hidden="true"></a><span class="kw">sum</span>(tcr.discard)</span></code></pre></div>
+<pre><code>## [1] 138</code></pre>
+<p>In practice, we tend to err on the side of caution and abstain from preemptive filtering on biological function
+until these genes are demonstrably problematic in downstream analyses.</p>
+</div>
+<div id="quantifying-technical-noise" class="section level2 hasAnchor" number="3.6">
+<h2><span class="header-section-number">3.6</span> Quantifying technical noise<a href="feature-selection.html#quantifying-technical-noise" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Back in the old days, everyone was obsessed with modelling the gene-wise variability in scRNA-seq data <span class="citation">(Brennecke et al. <a href="#ref-brennecke2013accounting" role="doc-biblioref">2013</a>; Vallejos, Marioni, and Richardson <a href="#ref-vallejos2015basics" role="doc-biblioref">2015</a>; Kim et al. <a href="#ref-kim2015characterizing" role="doc-biblioref">2015</a>)</span>.
+Spike-in transcripts were critical to this effort as they allowed us to decompose each gene’s variance into technical and biological components.
+As spike-ins should not be subject to biological effects, the variance in spike-in expression could be used as an estimate of the technical component.
+Subtracting this from the variance of an endogenous gene at a similar abundance would then yield an estimate of the biological component.
+Sadly, those days are gone and people don’t care about variance decomposition anymore.
+But for old times’ sake, we’ll demonstrate how to do this with the <span class="citation">Zeisel et al. (<a href="#ref-zeisel2015brain" role="doc-biblioref">2015</a>)</span> dataset:</p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="feature-selection.html#cb117-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb117-2"><a href="feature-selection.html#cb117-2" aria-hidden="true"></a>sce.zeisel &lt;-<span class="st"> </span><span class="kw">ZeiselBrainData</span>()</span>
+<span id="cb117-3"><a href="feature-selection.html#cb117-3" aria-hidden="true"></a>is.mito.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.zeisel)<span class="op">$</span>featureType<span class="op">==</span><span class="st">&quot;mito&quot;</span></span>
+<span id="cb117-4"><a href="feature-selection.html#cb117-4" aria-hidden="true"></a></span>
+<span id="cb117-5"><a href="feature-selection.html#cb117-5" aria-hidden="true"></a><span class="co"># Performing some QC to set up the dataset prior to normalization.</span></span>
+<span id="cb117-6"><a href="feature-selection.html#cb117-6" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb117-7"><a href="feature-selection.html#cb117-7" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.zeisel, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.zeisel), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb117-8"><a href="feature-selection.html#cb117-8" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span>sce.qc.zeisel[,sce.qc.zeisel<span class="op">$</span>keep]</span></code></pre></div>
+<p>We compute log-normalized expression values for endogenous genes and spike-in transcripts with their respective size factors.
+We still use the library size factors for the endogenous genes as we are not interested in changes in total RNA content.
+Both sets of size factors are centered to preserve the scale of the original counts, ensuring that normalized abundances are comparable between genes and spike-ins.
+(This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
+for brevity, we won’t show that here.)</p>
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="feature-selection.html#cb118-1" aria-hidden="true"></a>sce.norm.zeisel &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.zeisel, <span class="dt">size.factors=</span>sce.qc.zeisel<span class="op">$</span>sum)</span>
+<span id="cb118-2"><a href="feature-selection.html#cb118-2" aria-hidden="true"></a>sce.ercc &lt;-<span class="st"> </span><span class="kw">altExp</span>(sce.norm.zeisel, <span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb118-3"><a href="feature-selection.html#cb118-3" aria-hidden="true"></a>sce.norm.ercc &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.ercc, <span class="dt">size.factors=</span>sce.ercc<span class="op">$</span>sum)</span></code></pre></div>
+<p>We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure <a href="feature-selection.html#fig:trend-plot-spike-in">3.4</a>).
+At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
+This assumes that an endogenous gene is subject to the same technical noise as a spike-in transcript of the same abundance.</p>
+<div class="sourceCode" id="cb119"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb119-1"><a href="feature-selection.html#cb119-1" aria-hidden="true"></a>sce.var.zeisel &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.zeisel, <span class="dt">more.var.args=</span><span class="kw">list</span>(<span class="dt">use.min.width=</span><span class="ot">TRUE</span>))</span>
+<span id="cb119-2"><a href="feature-selection.html#cb119-2" aria-hidden="true"></a>sce.var.ercc &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.ercc)</span>
+<span id="cb119-3"><a href="feature-selection.html#cb119-3" aria-hidden="true"></a></span>
+<span id="cb119-4"><a href="feature-selection.html#cb119-4" aria-hidden="true"></a>var.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var.zeisel)</span>
+<span id="cb119-5"><a href="feature-selection.html#cb119-5" aria-hidden="true"></a><span class="kw">plot</span>(var.zeisel<span class="op">$</span>means, var.zeisel<span class="op">$</span>variances,</span>
+<span id="cb119-6"><a href="feature-selection.html#cb119-6" aria-hidden="true"></a>    <span class="dt">xlab=</span><span class="st">&quot;Mean of log-expression&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Variance of log-expression&quot;</span>, <span class="dt">pch=</span><span class="dv">16</span>, <span class="dt">cex=</span><span class="fl">0.5</span>)</span>
+<span id="cb119-7"><a href="feature-selection.html#cb119-7" aria-hidden="true"></a>trend.gene.zeisel &lt;-<span class="st"> </span><span class="kw">approxfun</span>(var.zeisel<span class="op">$</span>means, var.zeisel<span class="op">$</span>fitted)</span>
+<span id="cb119-8"><a href="feature-selection.html#cb119-8" aria-hidden="true"></a><span class="kw">curve</span>(trend.gene.zeisel, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;dodgerblue&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb119-9"><a href="feature-selection.html#cb119-9" aria-hidden="true"></a></span>
+<span id="cb119-10"><a href="feature-selection.html#cb119-10" aria-hidden="true"></a>var.ercc &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var.ercc)</span>
+<span id="cb119-11"><a href="feature-selection.html#cb119-11" aria-hidden="true"></a><span class="kw">points</span>(var.ercc<span class="op">$</span>means, var.ercc<span class="op">$</span>variances, <span class="dt">pch=</span><span class="dv">4</span>)</span>
+<span id="cb119-12"><a href="feature-selection.html#cb119-12" aria-hidden="true"></a>trend.spike.zeisel &lt;-<span class="st"> </span><span class="kw">approxfun</span>(var.ercc<span class="op">$</span>means, var.ercc<span class="op">$</span>fitted, <span class="dt">rule=</span><span class="dv">2</span>)</span>
+<span id="cb119-13"><a href="feature-selection.html#cb119-13" aria-hidden="true"></a><span class="kw">curve</span>(trend.spike.zeisel, <span class="dt">add=</span><span class="ot">TRUE</span>, <span class="dt">col=</span><span class="st">&quot;salmon&quot;</span>, <span class="dt">lwd=</span><span class="dv">2</span>, <span class="dt">lty=</span><span class="dv">2</span>)</span>
+<span id="cb119-14"><a href="feature-selection.html#cb119-14" aria-hidden="true"></a></span>
+<span id="cb119-15"><a href="feature-selection.html#cb119-15" aria-hidden="true"></a><span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="kw">c</span>(<span class="st">&quot;gene&quot;</span>, <span class="st">&quot;spike-in&quot;</span>), <span class="dt">pch=</span><span class="kw">c</span>(<span class="dv">16</span>, <span class="dv">4</span>))</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:trend-plot-spike-in"></span>
+<img src="feature-selection_files/figure-html/trend-plot-spike-in-1.png" alt="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)." width="672" />
+<p class="caption">
+Figure 3.4: Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red).
+</p>
+</div>
+<p>To decompose each gene’s variance into the technical and biological components,
+we estimate the fitted value of the spike-in trend at that gene’s mean and subtract it from the gene’s total variance.
+We could then use the biological component to select HVGs via <code>chooseHighlyVariableGenes()</code>.</p>
+<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb120-1"><a href="feature-selection.html#cb120-1" aria-hidden="true"></a>tech.var.zeisel &lt;-<span class="st"> </span><span class="kw">trend.spike.zeisel</span>(var.zeisel<span class="op">$</span>means)</span>
+<span id="cb120-2"><a href="feature-selection.html#cb120-2" aria-hidden="true"></a><span class="kw">summary</span>(tech.var.zeisel)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.0398  0.1453  0.1478  0.2691  0.3582  0.7162</code></pre>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb122-1"><a href="feature-selection.html#cb122-1" aria-hidden="true"></a>bio.var.zeisel &lt;-<span class="st"> </span>var.zeisel<span class="op">$</span>variances <span class="op">-</span><span class="st"> </span>tech.var.zeisel</span>
+<span id="cb122-2"><a href="feature-selection.html#cb122-2" aria-hidden="true"></a><span class="kw">summary</span>(bio.var.zeisel)</span></code></pre></div>
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+## -0.14529 -0.13304 -0.00356  0.07844  0.12841 15.08152</code></pre>
+<p>In practice, this doesn’t provide much benefit over the residuals from the trend fitted to the endogenous genes.
+Oh well.</p>
+</div>
+<div id="session-information-1" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="feature-selection.html#session-information-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb124-1"><a href="feature-selection.html#cb124-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] AnnotationHub_4.1.0         BiocFileCache_3.1.0        
+##  [3] dbplyr_2.5.1                msigdbr_25.1.1             
+##  [5] ensembldb_2.35.0            AnnotationFilter_1.35.0    
+##  [7] GenomicFeatures_1.63.1      AnnotationDbi_1.73.0       
+##  [9] scRNAseq_2.25.0             scrapper_1.5.10            
+## [11] DropletUtils_1.31.0         SingleCellExperiment_1.33.0
+## [13] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+## [15] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [17] IRanges_2.45.0              S4Vectors_0.49.0           
+## [19] BiocGenerics_0.57.0         generics_0.1.4             
+## [21] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## [23] DropletTestFiles_1.21.0    
+## 
+## loaded via a namespace (and not attached):
+##   [1] DBI_1.2.3                 bitops_1.0-9             
+##   [3] httr2_1.2.2               rlang_1.1.7              
+##   [5] magrittr_2.0.4            otel_0.2.0               
+##   [7] gypsum_1.7.0              compiler_4.6.0           
+##   [9] RSQLite_2.4.5             DelayedMatrixStats_1.33.0
+##  [11] png_0.1-8                 vctrs_0.6.5              
+##  [13] ProtGenerics_1.43.0       pkgconfig_2.0.3          
+##  [15] crayon_1.5.3              fastmap_1.2.0            
+##  [17] XVector_0.51.0            scuttle_1.21.0           
+##  [19] Rsamtools_2.27.0          rmarkdown_2.30           
+##  [21] UCSC.utils_1.7.1          purrr_1.2.1              
+##  [23] bit_4.6.0                 xfun_0.55                
+##  [25] cachem_1.1.0              beachmat_2.27.1          
+##  [27] cigarillo_1.1.0           GenomeInfoDb_1.47.2      
+##  [29] jsonlite_2.0.0            blob_1.2.4               
+##  [31] rhdf5filters_1.23.3       DelayedArray_0.37.0      
+##  [33] Rhdf5lib_1.33.0           BiocParallel_1.45.0      
+##  [35] parallel_4.6.0            R6_2.6.1                 
+##  [37] bslib_0.9.0               limma_3.67.0             
+##  [39] rtracklayer_1.71.3        jquerylib_0.1.4          
+##  [41] assertthat_0.2.1          Rcpp_1.1.1               
+##  [43] bookdown_0.46             knitr_1.51               
+##  [45] R.utils_2.13.0            Matrix_1.7-4             
+##  [47] tidyselect_1.2.1          abind_1.4-8              
+##  [49] yaml_2.3.12               codetools_0.2-20         
+##  [51] curl_7.0.0                alabaster.sce_1.11.0     
+##  [53] lattice_0.22-7            tibble_3.3.0             
+##  [55] withr_3.0.2               KEGGREST_1.51.1          
+##  [57] evaluate_1.0.5            alabaster.schemas_1.11.0 
+##  [59] ExperimentHub_3.1.0       Biostrings_2.79.4        
+##  [61] pillar_1.11.1             BiocManager_1.30.27      
+##  [63] filelock_1.0.3            RCurl_1.98-1.17          
+##  [65] BiocVersion_3.23.1        alabaster.base_1.11.1    
+##  [67] sparseMatrixStats_1.23.0  alabaster.ranges_1.11.0  
+##  [69] glue_1.8.0                lazyeval_0.2.2           
+##  [71] alabaster.matrix_1.11.0   tools_4.6.0              
+##  [73] BiocIO_1.21.0             BiocNeighbors_2.5.0      
+##  [75] GenomicAlignments_1.47.0  locfit_1.5-9.12          
+##  [77] babelgene_22.9            XML_3.99-0.20            
+##  [79] rhdf5_2.55.12             grid_4.6.0               
+##  [81] edgeR_4.9.2               HDF5Array_1.39.0         
+##  [83] restfulr_0.0.16           cli_3.6.5                
+##  [85] rappdirs_0.3.3            S4Arrays_1.11.1          
+##  [87] dplyr_1.1.4               alabaster.se_1.11.0      
+##  [89] R.methodsS3_1.8.2         sass_0.4.10              
+##  [91] digest_0.6.39             SparseArray_1.11.10      
+##  [93] dqrng_0.4.1               rjson_0.2.23             
+##  [95] memoise_2.0.1             htmltools_0.5.9          
+##  [97] R.oo_1.27.1               lifecycle_1.0.5          
+##  [99] h5mread_1.3.1             httr_1.4.7               
+## [101] statmod_1.5.1             bit64_4.6.0-1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-brennecke2013accounting">
+<p>Brennecke, P., S. Anders, J. K. Kim, A. A. Kołodziejczyk, X. Zhang, V. Proserpio, B. Baying, et al. 2013. “Accounting for technical noise in single-cell RNA-seq experiments.” <em>Nat. Methods</em> 10 (11): 1093–5.</p>
+</div>
+<div id="ref-cleveland1979robust">
+<p>Cleveland, W. S. 1979. “Robust Locally Weighted Regression and Smoothing Scatterplots.” <em>J. Am. Stat. Assoc.</em> 74 (368): 829–36.</p>
+</div>
+<div id="ref-kim2015characterizing">
+<p>Kim, J. K., A. A. Kołodziejczyk, T. Illicic, S. A. Teichmann, and J. C. Marioni. 2015. “Characterizing noise structure in single-cell RNA-seq distinguishes genuine from technical stochastic allelic expression.” <em>Nat. Commun.</em> 6: 8687.</p>
+</div>
+<div id="ref-liberzon2015msigdb">
+<p>Liberzon, A., C. Birger, H. Thorvaldsdóttir, M. Ghandi, J. P. Mesirov, and P. Tamayo. 2015. “The Molecular Signatures Database (MSigDB) hallmark gene set collection.” <em>Cell. Syst.</em> 1 (6): 417–25.</p>
+</div>
+<div id="ref-lun2017assessing">
+<p>Lun, A. T. L., F. J. Calero-Nieto, L. Haim-Vilmovsky, B. Gottgens, and J. C. Marioni. 2017. “Assessing the reliability of spike-in normalization for analyses of single-cell RNA sequencing data.” <em>Genome Res.</em> 27 (11): 1795–1806.</p>
+</div>
+<div id="ref-lun2016step">
+<p>Lun, A. T. L., D. J. McCarthy, and J. C. Marioni. 2016. “A step-by-step workflow for low-level analysis of single-cell RNA-seq data.” <em>F1000Res.</em> 5 (August).</p>
+</div>
+<div id="ref-messmer2019transcriptional">
+<p>Messmer, T., F. von Meyenn, A. Savino, F. Santos, H. Mohammed, A. T. L. Lun, J. C. Marioni, and W. Reik. 2019. “Transcriptional heterogeneity in naive and primed human pluripotent stem cells at single-cell resolution.” <em>Cell. Rep.</em> 26 (4): 815–24.</p>
+</div>
+<div id="ref-segerstolpe2016singlecell">
+<p>Segerstolpe, A., A. Palasantza, P. Eliasson, E. M. Andersson, A. C. Andreasson, X. Sun, S. Picelli, et al. 2016. “Single-cell transcriptome profiling of human pancreatic islets in health and type 2 diabetes.” <em>Cell Metab.</em> 24 (4): 593–607.</p>
+</div>
+<div id="ref-vallejos2015basics">
+<p>Vallejos, C. A., J. C. Marioni, and S. Richardson. 2015. “BASiCS: Bayesian analysis of single-cell sequencing data.” <em>PLoS Comput. Biol.</em> 11 (6): e1004333.</p>
+</div>
+<div id="ref-zeisel2015brain">
+<p>Zeisel, A., A. B. Munoz-Manchado, S. Codeluppi, P. Lonnerberg, G. La Manno, A. Jureus, S. Marques, et al. 2015. “Brain structure. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq.” <em>Science</em> 347 (6226): 1138–42.</p>
+</div>
+<div id="ref-zheng2017massively">
+<p>Zheng, G. X., J. M. Terry, P. Belgrader, P. Ryvkin, Z. W. Bent, R. Wilson, S. B. Ziraldo, et al. 2017. “Massively parallel digital transcriptional profiling of single cells.” <em>Nat. Commun.</em> 8 (January): 14049.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="7">
+<li id="fn7"><p>
+And even VSTs need to deal with a trend at small counts.
+A gene with a mean of zero will also have a variance of zero, and the variance has to become positive with increasing mean, so at some point, a trend will manifest.<a href="feature-selection.html#fnref7" class="footnote-back">↩︎</a></p></li>
+<li id="fn8"><p>
+It would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
+In such cases, it would be improper to shop around for the best parameters that gives us the result that we want.
+Fortunately, single-cell analyses have looser standards as we often don’t know what we’re looking for.<a href="feature-selection.html#fnref8" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="normalization.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="principal-components-analysis.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/feature-selection.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/feature-selection.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/feature-selection.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

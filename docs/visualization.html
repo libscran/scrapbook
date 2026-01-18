@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 5 Visualization | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 5 Visualization | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 5 Visualization | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="principal-components-analysis.html"/>
+<link rel="next" href="clustering.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="visualization" class="section level1 hasAnchor" number="5">
+<h1><span class="header-section-number">Chapter 5</span> Visualization<a href="visualization.html#visualization" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-3" class="section level2 hasAnchor" number="5.1">
+<h2><span class="header-section-number">5.1</span> Motivation<a href="visualization.html#motivation-3" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>One of the major aims of scRNA-seq data analysis is to generate a pretty figure that visualizes the distribution of cells<a href="#fn12" class="footnote-ref" id="fnref12"><sup>12</sup></a>.
+This is not straightforward as our data contains too many dimensions, even after PCA (Chapter <a href="principal-components-analysis.html#principal-components-analysis">4</a>).
+We can’t just create FACS-style biaxial plots of each gene/PC against another as there would be too many plots to examine.
+Instead, we use more aggressive dimensionality reduction methods that can represent our population structure in a two-dimensional embedding.
+The idea is to facilitate interpretation of the data by creating a visual “map” of its heterogeneity,
+where similar cells are placed next to each other in the embedding while dissimilar cells are further apart.</p>
+</div>
+<div id="t-stochastic-neighbor-embedding" class="section level2 hasAnchor" number="5.2">
+<h2><span class="header-section-number">5.2</span> <span class="math inline">\(t\)</span>-stochastic neighbor embedding<a href="visualization.html#t-stochastic-neighbor-embedding" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Historically, scRNA-seq data analyses were synonymous with <span class="math inline">\(t\)</span>-stochastic neighbor embedding (<span class="math inline">\(t\)</span>-SNE) <span class="citation">(Van der Maaten and Hinton <a href="#ref-van2008visualizing" role="doc-biblioref">2008</a>)</span>.
+This method attempts to find a low-dimensional representation of the data that preserves the relationships between each point and its neighbors in the high-dimensional space.
+Unlike PCA, <span class="math inline">\(t\)</span>-SNE is not restricted to linear transformations, nor is it obliged to accurately represent distances between distant populations.
+This means that it has much more freedom in how it arranges cells in low-dimensional space, enabling it to separate many distinct clusters in a complex population.
+To demonstrate, let’s pull out the <span class="citation">Zeisel et al. (<a href="#ref-zeisel2015brain" role="doc-biblioref">2015</a>)</span> dataset again:</p>
+<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb138-1"><a href="visualization.html#cb138-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb138-2"><a href="visualization.html#cb138-2" aria-hidden="true"></a>sce.zeisel &lt;-<span class="st"> </span><span class="kw">ZeiselBrainData</span>()</span>
+<span id="cb138-3"><a href="visualization.html#cb138-3" aria-hidden="true"></a>is.mito.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.zeisel)<span class="op">$</span>featureType<span class="op">==</span><span class="st">&quot;mito&quot;</span></span>
+<span id="cb138-4"><a href="visualization.html#cb138-4" aria-hidden="true"></a></span>
+<span id="cb138-5"><a href="visualization.html#cb138-5" aria-hidden="true"></a><span class="co"># Performing some QC to set up the dataset prior to normalization.</span></span>
+<span id="cb138-6"><a href="visualization.html#cb138-6" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb138-7"><a href="visualization.html#cb138-7" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.zeisel, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.zeisel), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb138-8"><a href="visualization.html#cb138-8" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span>sce.qc.zeisel[,sce.qc.zeisel<span class="op">$</span>keep]</span>
+<span id="cb138-9"><a href="visualization.html#cb138-9" aria-hidden="true"></a></span>
+<span id="cb138-10"><a href="visualization.html#cb138-10" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb138-11"><a href="visualization.html#cb138-11" aria-hidden="true"></a>sce.norm.zeisel &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.zeisel, <span class="dt">size.factors=</span>sce.qc.zeisel<span class="op">$</span>sum)</span>
+<span id="cb138-12"><a href="visualization.html#cb138-12" aria-hidden="true"></a></span>
+<span id="cb138-13"><a href="visualization.html#cb138-13" aria-hidden="true"></a><span class="co"># Computing the variances and choosing top HVGs.</span></span>
+<span id="cb138-14"><a href="visualization.html#cb138-14" aria-hidden="true"></a>sce.var.zeisel &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(</span>
+<span id="cb138-15"><a href="visualization.html#cb138-15" aria-hidden="true"></a>    sce.norm.zeisel,</span>
+<span id="cb138-16"><a href="visualization.html#cb138-16" aria-hidden="true"></a>    <span class="dt">more.var.args=</span><span class="kw">list</span>(<span class="dt">use.min.width=</span><span class="ot">TRUE</span>),</span>
+<span id="cb138-17"><a href="visualization.html#cb138-17" aria-hidden="true"></a>    <span class="dt">more.choose.args=</span><span class="kw">list</span>(<span class="dt">top=</span><span class="dv">2000</span>)</span>
+<span id="cb138-18"><a href="visualization.html#cb138-18" aria-hidden="true"></a>)</span>
+<span id="cb138-19"><a href="visualization.html#cb138-19" aria-hidden="true"></a></span>
+<span id="cb138-20"><a href="visualization.html#cb138-20" aria-hidden="true"></a><span class="co"># Performing the PCA.</span></span>
+<span id="cb138-21"><a href="visualization.html#cb138-21" aria-hidden="true"></a>sce.pcs.zeisel &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var.zeisel, <span class="dt">features=</span><span class="kw">rowData</span>(sce.var.zeisel)<span class="op">$</span>hvg, <span class="dt">number=</span><span class="dv">25</span>)</span></code></pre></div>
+<p>We compute the <span class="math inline">\(t\)</span>-SNE from the PC scores to take advantage of the data compaction and noise removal of the PCA.
+Specifically, we calculate distances in the PC space<a href="#fn13" class="footnote-ref" id="fnref13"><sup>13</sup></a>
+to identify the nearest neighbors for each cell, which are then used for <span class="math inline">\(t\)</span>-SNE layout optimization.
+This yields a 2-dimensional embedding in which neighboring cells have similar expression profiles.
+In Figure <a href="visualization.html#fig:tsne-brain">5.1</a>, we see that cells organize into distinct subpopulations corresponding to their cell types.</p>
+<div class="sourceCode" id="cb139"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb139-1"><a href="visualization.html#cb139-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb139-2"><a href="visualization.html#cb139-2" aria-hidden="true"></a>sce.tsne.zeisel &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.pcs.zeisel)</span>
+<span id="cb139-3"><a href="visualization.html#cb139-3" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.tsne.zeisel, <span class="dt">dimred=</span><span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:tsne-brain"></span>
+<img src="visualization_files/figure-html/tsne-brain-1.png" alt="$t$-SNE plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, colored according to the authors' published annotation." width="672" />
+<p class="caption">
+Figure 5.1: <span class="math inline">\(t\)</span>-SNE plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, colored according to the authors’ published annotation.
+</p>
+</div>
+<p>As with everything in scRNA-seq, <span class="math inline">\(t\)</span>-SNE is sensitive to a variety of different parameter choices (discussed <a href="http://distill.pub/2016/misread-tsne/">here</a> in some depth).
+One obvious parameter is the random seed used to initialize the coordinates for each cell in the two-dimensional space.
+Changing the seed will yield a different embedding (Figure <a href="visualization.html#fig:tsne-brain-seed">5.2</a>),
+though they usually have enough qualitative similarities that the interpretation of the plot is unaffected.</p>
+<div class="sourceCode" id="cb140"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb140-1"><a href="visualization.html#cb140-1" aria-hidden="true"></a>sce.tsne.seed.zeisel &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.pcs.zeisel, <span class="dt">more.tsne.args=</span><span class="kw">list</span>(<span class="dt">seed=</span><span class="dv">123456</span>))</span>
+<span id="cb140-2"><a href="visualization.html#cb140-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.tsne.seed.zeisel, <span class="dt">dimred=</span><span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:tsne-brain-seed"></span>
+<img src="visualization_files/figure-html/tsne-brain-seed-1.png" alt="$t$-SNE plot constructed from the top PCs in the Zeisel brain dataset with a different seed. Each point represents a cell, colored according to the authors' published annotation." width="672" />
+<p class="caption">
+Figure 5.2: <span class="math inline">\(t\)</span>-SNE plot constructed from the top PCs in the Zeisel brain dataset with a different seed. Each point represents a cell, colored according to the authors’ published annotation.
+</p>
+</div>
+<p>The perplexity is another important parameter that determines the granularity of the visualization.
+Low perplexities will favor resolution of finer structure while higher values focus on the broad organization of subpopulations.
+We can test different perplexity values to obtain different perspectives of the data (Figure <a href="visualization.html#fig:tsne-perplexity">5.3</a>),
+depending on whether we are interested in local or global structure.</p>
+<div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb141-1"><a href="visualization.html#cb141-1" aria-hidden="true"></a>sce.tsne.p5.zeisel &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.pcs.zeisel, <span class="dt">perplexity=</span><span class="dv">5</span>)</span>
+<span id="cb141-2"><a href="visualization.html#cb141-2" aria-hidden="true"></a>sce.tsne.p50.zeisel &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.pcs.zeisel, <span class="dt">perplexity=</span><span class="dv">50</span>)</span>
+<span id="cb141-3"><a href="visualization.html#cb141-3" aria-hidden="true"></a></span>
+<span id="cb141-4"><a href="visualization.html#cb141-4" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb141-5"><a href="visualization.html#cb141-5" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.tsne.p5.zeisel, <span class="dt">dimred=</span><span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;perplexity = 5&quot;</span>),</span>
+<span id="cb141-6"><a href="visualization.html#cb141-6" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.tsne.p50.zeisel, <span class="dt">dimred=</span><span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;perplexity = 50&quot;</span>),</span>
+<span id="cb141-7"><a href="visualization.html#cb141-7" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb141-8"><a href="visualization.html#cb141-8" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:tsne-perplexity"></span>
+<img src="visualization_files/figure-html/tsne-perplexity-1.png" alt="$t$-SNE plots constructed from the top PCs in the Zeisel brain dataset, using a range of perplexity values. Each point represents a cell, coloured according to its annotation." width="1152" />
+<p class="caption">
+Figure 5.3: <span class="math inline">\(t\)</span>-SNE plots constructed from the top PCs in the Zeisel brain dataset, using a range of perplexity values. Each point represents a cell, coloured according to its annotation.
+</p>
+</div>
+<p>We’d recommend interpreting these <span class="math inline">\(t\)</span>-SNE plots with a grain of salt.
+<span class="math inline">\(t\)</span>-SNE will inflate dense clusters and compress sparse ones, so we cannot use the relative size on the plot as a measure of subpopulation heterogeneity.
+The algorithm is not obliged to preserve the relative locations of non-neighboring clusters, so we cannot use their positions to determine relationships between distant clusters.
+Many liberties were taken with the data in order to squish it into a two-dimensional representation, so it’s worth being skeptical of the fidelity of that representation.
+That said, the <span class="math inline">\(t\)</span>-SNE plots are pretty and historically popular so get used to seeing them<a href="#fn14" class="footnote-ref" id="fnref14"><sup>14</sup></a>.</p>
+<div id="uniform-manifold-approximation-and-projection" class="section level3 hasAnchor" number="5.2.1">
+<h3><span class="header-section-number">5.2.1</span> Uniform manifold approximation and projection<a href="visualization.html#uniform-manifold-approximation-and-projection" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>These days, <span class="math inline">\(t\)</span>-SNE has largely been supplanted in the community’s consciousness by uniform manifold approximation and projection (UMAP) <span class="citation">(McInnes and Healy <a href="#ref-mcInnes2018umap" role="doc-biblioref">2018</a>)</span>.
+UMAP is roughly similar to <span class="math inline">\(t\)</span>-SNE in that it also tries to find a low-dimensional representation that preserves relationships between neighbors in high-dimensional space.
+However, the two methods are based on different theoretical principles that manifest as different visualizations.
+Compared to <span class="math inline">\(t\)</span>-SNE, UMAP tends to produce more compact visual clusters with more empty space between them.
+We demonstrate on the Zeisel dataset where the UMAP is calculated on nearest neighbors identified from the PCs (Figure <a href="visualization.html#fig:umap-brain">5.4</a>).</p>
+<div class="sourceCode" id="cb142"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb142-1"><a href="visualization.html#cb142-1" aria-hidden="true"></a>sce.umap.zeisel &lt;-<span class="st"> </span><span class="kw">runUmap.se</span>(sce.pcs.zeisel)</span>
+<span id="cb142-2"><a href="visualization.html#cb142-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.umap.zeisel, <span class="dt">dimred=</span><span class="st">&quot;UMAP&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:umap-brain"></span>
+<img src="visualization_files/figure-html/umap-brain-1.png" alt="UMAP plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, coloured according to the published annotation." width="672" />
+<p class="caption">
+Figure 5.4: UMAP plot constructed from the top PCs in the Zeisel brain dataset. Each point represents a cell, coloured according to the published annotation.
+</p>
+</div>
+<p>Like <span class="math inline">\(t\)</span>-SNE, UMAP has its own suite of parameters that affect the visualization (see the documentation <a href="https://umap-learn.readthedocs.io/en/latest/parameters.html">here</a>).
+The number of neighbors is most analogous to <span class="math inline">\(t\)</span>-SNE’s perplexity, where lower values focus on the local structure around each cell (Figure <a href="visualization.html#fig:umap-neighbors">5.5</a>).</p>
+<div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb143-1"><a href="visualization.html#cb143-1" aria-hidden="true"></a>sce.umap.n3.zeisel &lt;-<span class="st"> </span><span class="kw">runUmap.se</span>(sce.pcs.zeisel, <span class="dt">num.neighbors=</span><span class="dv">3</span>)</span>
+<span id="cb143-2"><a href="visualization.html#cb143-2" aria-hidden="true"></a>sce.umap.n30.zeisel &lt;-<span class="st"> </span><span class="kw">runUmap.se</span>(sce.pcs.zeisel, <span class="dt">num.neighbors=</span><span class="dv">30</span>)</span>
+<span id="cb143-3"><a href="visualization.html#cb143-3" aria-hidden="true"></a></span>
+<span id="cb143-4"><a href="visualization.html#cb143-4" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb143-5"><a href="visualization.html#cb143-5" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.umap.n3.zeisel, <span class="dt">dimred=</span><span class="st">&quot;UMAP&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;neighbors = 3&quot;</span>),</span>
+<span id="cb143-6"><a href="visualization.html#cb143-6" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.umap.n30.zeisel, <span class="dt">dimred=</span><span class="st">&quot;UMAP&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;neighbors = 30&quot;</span>),</span>
+<span id="cb143-7"><a href="visualization.html#cb143-7" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb143-8"><a href="visualization.html#cb143-8" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:umap-neighbors"></span>
+<img src="visualization_files/figure-html/umap-neighbors-1.png" alt="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of neighbors. Each point represents a cell, coloured according to its annotation." width="1152" />
+<p class="caption">
+Figure 5.5: UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of neighbors. Each point represents a cell, coloured according to its annotation.
+</p>
+</div>
+<p>Another influential parameter is the minimum distance between points in the embedding.
+Larger values will generally inflate the visual clusters and reduce the amount of whitespace in the plot (Figure <a href="visualization.html#fig:umap-mindist">5.6</a>).
+Sometimes it’s worth fiddling around with some of these parameters to get a prettier plot.</p>
+<div class="sourceCode" id="cb144"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb144-1"><a href="visualization.html#cb144-1" aria-hidden="true"></a>sce.umap.d01.zeisel &lt;-<span class="st"> </span><span class="kw">runUmap.se</span>(sce.pcs.zeisel, <span class="dt">min.dist=</span><span class="fl">0.01</span>)</span>
+<span id="cb144-2"><a href="visualization.html#cb144-2" aria-hidden="true"></a>sce.umap.d5.zeisel &lt;-<span class="st"> </span><span class="kw">runUmap.se</span>(sce.pcs.zeisel, <span class="dt">min.dist=</span><span class="fl">0.5</span>)</span>
+<span id="cb144-3"><a href="visualization.html#cb144-3" aria-hidden="true"></a></span>
+<span id="cb144-4"><a href="visualization.html#cb144-4" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb144-5"><a href="visualization.html#cb144-5" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.umap.d01.zeisel, <span class="dt">dimred=</span><span class="st">&quot;UMAP&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;mindist = 0.01&quot;</span>),</span>
+<span id="cb144-6"><a href="visualization.html#cb144-6" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.umap.d5.zeisel, <span class="dt">dimred=</span><span class="st">&quot;UMAP&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;mindist = 0.5&quot;</span>),</span>
+<span id="cb144-7"><a href="visualization.html#cb144-7" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb144-8"><a href="visualization.html#cb144-8" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:umap-mindist"></span>
+<img src="visualization_files/figure-html/umap-mindist-1.png" alt="UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of minimum distances. Each point represents a cell, coloured according to its annotation." width="1152" />
+<p class="caption">
+Figure 5.6: UMAP plots constructed from the top PCs in the Zeisel brain dataset, using a range of minimum distances. Each point represents a cell, coloured according to its annotation.
+</p>
+</div>
+<p>The choice between UMAP or <span class="math inline">\(t\)</span>-SNE is mostly down to personal preference.
+It seems that most people find the UMAP to be nicer to look at, possibly because of the cleaner separation between clusters.
+UMAP also has an advantage in that its default initialization (derived from the nearest-neighbors graph) is better at capturing the global structure <span class="citation">(Kobak and Linderman <a href="#ref-kobak2021initialization" role="doc-biblioref">2021</a>)</span>;
+however, this is not applicable when distant subpopulations are completely disconnected in the graph.
+From a practical perspective, UMAP is often faster than <span class="math inline">\(t\)</span>-SNE, which is an important consideration for large datasets.
+In any case, much of the same skepticism that we expressed for <span class="math inline">\(t\)</span>-SNE is still applicable to UMAP, as a great deal of information is lost when flattening the data into two dimensions.</p>
+<p>If we can’t decide between a UMAP and a <span class="math inline">\(t\)</span>-SNE, we can just compute them both<a href="#fn15" class="footnote-ref" id="fnref15"><sup>15</sup></a> via the <code>runAllNeighborSteps.se()</code> function.
+This runs both functions in parallel, along with the graph-based clustering described in Chapter <a href="clustering.html#clustering">6</a>.
+It also optimizes the nearest neighbor search by performing it once and re-using the results across multiple graph-related functions.</p>
+<div class="sourceCode" id="cb145"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb145-1"><a href="visualization.html#cb145-1" aria-hidden="true"></a>sce.nn.zeisel &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.pcs.zeisel)</span>
+<span id="cb145-2"><a href="visualization.html#cb145-2" aria-hidden="true"></a><span class="kw">reducedDimNames</span>(sce.nn.zeisel)</span></code></pre></div>
+<pre><code>## [1] &quot;PCA&quot;  &quot;TSNE&quot; &quot;UMAP&quot;</code></pre>
+</div>
+</div>
+<div id="more-comments-on-interpretation" class="section level2 hasAnchor" number="5.3">
+<h2><span class="header-section-number">5.3</span> More comments on interpretation<a href="visualization.html#more-comments-on-interpretation" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>All of these visualizations necessarily distort the relationships between cells to fit high-dimensional data into a 2-dimensional space.
+It’s fair to question whether the results of such distortions can be trusted.
+As a general rule, focusing on local neighborhoods provides the safest interpretation of <span class="math inline">\(t\)</span>-SNE and UMAP plots.
+These methods spend considerable effort to ensure that each cell’s nearest neighbors in the input high-dimensional space are still its neighbors in the output two-dimensional embedding.
+Thus, if we see multiple cell types or clusters in a single unbroken “island” in the embedding, we could infer that those populations were also close neighbors in higher-dimensional space.</p>
+<p>Less can be said about non-neighboring cells/clusters as there is no guarantee that large distances are faithfully recapitulated in the embedding.
+We can conclude that cells in distinct visual clusters are indeed different, but comparing distances between clusters is usually pointless<a href="#fn16" class="footnote-ref" id="fnref16"><sup>16</sup></a>.
+As a thought exercise, imagine a dataset with 4 cell types arranged in three-dimensional space as a regular tetrahedron<a href="#fn17" class="footnote-ref" id="fnref17"><sup>17</sup></a>.
+All cell types are equally distant from each other, but it is impossible to preserve this property in a two-dimensional embedding.
+This can lead to some incorrect conclusions about the relative (dis)similarity of the different cell types if we are not careful with our interpretation of the plot.</p>
+<p>Personally, we only use the <span class="math inline">\(t\)</span>-SNE/UMAP coordinates for visualization.
+Other steps like clustering still use the higher-rank representation (i.e., the PCs)
+to leverage all of the information in the data without any of the compromises required to obtain a two-dimensional embedding.
+In theory, we could use the <span class="math inline">\(t\)</span>-SNE/UMAP coordinates directly for clustering to ensure that any results are directly consistent with the visualization<a href="#fn18" class="footnote-ref" id="fnref18"><sup>18</sup></a>.
+We don’t do this as we don’t want our analysis results to change whenever we tweak the parameters to beautify our visualizations.</p>
+</div>
+<div id="other-visualization-methods" class="section level2 hasAnchor" number="5.4">
+<h2><span class="header-section-number">5.4</span> Other visualization methods<a href="visualization.html#other-visualization-methods" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Here’s a non-exhaustive list of other visualization methods in R/Bioconductor packages:</p>
+<ul>
+<li>Interpolation-based <span class="math inline">\(t\)</span>-SNE <span class="citation">(Linderman et al. <a href="#ref-linderman2019fitsne" role="doc-biblioref">2019</a>)</span> from the <em><a href="https://bioconductor.org/packages/3.23/snifter">snifter</a></em> package.</li>
+<li>Density-preserving <span class="math inline">\(t\)</span>-SNE and UMAP <span class="citation">(Narayan, Berger, and Cho <a href="#ref-narayan2021densvis" role="doc-biblioref">2021</a>)</span> from the <em><a href="https://bioconductor.org/packages/3.23/densvis">densvis</a></em> package.</li>
+</ul>
+<p>All of these packages will happily accept a matrix of PC scores and are plug-and-play replacements for <code>runTsne.se()</code> and <code>runUmap.se()</code>.</p>
+</div>
+<div id="session-information-3" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="visualization.html#session-information-3" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb147"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb147-1"><a href="visualization.html#cb147-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] scater_1.39.1               ggplot2_4.0.1              
+##  [3] scuttle_1.21.0              scrapper_1.5.10            
+##  [5] scRNAseq_2.25.0             SingleCellExperiment_1.33.0
+##  [7] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+##  [9] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [11] IRanges_2.45.0              S4Vectors_0.49.0           
+## [13] BiocGenerics_0.57.0         generics_0.1.4             
+## [15] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## [17] BiocStyle_2.39.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3       jsonlite_2.0.0           magrittr_2.0.4          
+##   [4] ggbeeswarm_0.7.3         GenomicFeatures_1.63.1   gypsum_1.7.0            
+##   [7] farver_2.1.2             rmarkdown_2.30           BiocIO_1.21.0           
+##  [10] vctrs_0.6.5              memoise_2.0.1            Rsamtools_2.27.0        
+##  [13] RCurl_1.98-1.17          htmltools_0.5.9          S4Arrays_1.11.1         
+##  [16] AnnotationHub_4.1.0      curl_7.0.0               BiocNeighbors_2.5.0     
+##  [19] Rhdf5lib_1.33.0          SparseArray_1.11.10      rhdf5_2.55.12           
+##  [22] sass_0.4.10              alabaster.base_1.11.1    bslib_0.9.0             
+##  [25] alabaster.sce_1.11.0     httr2_1.2.2              cachem_1.1.0            
+##  [28] GenomicAlignments_1.47.0 lifecycle_1.0.5          pkgconfig_2.0.3         
+##  [31] rsvd_1.0.5               Matrix_1.7-4             R6_2.6.1                
+##  [34] fastmap_1.2.0            digest_0.6.39            AnnotationDbi_1.73.0    
+##  [37] irlba_2.3.5.1            ExperimentHub_3.1.0      RSQLite_2.4.5           
+##  [40] beachmat_2.27.1          labeling_0.4.3           filelock_1.0.3          
+##  [43] httr_1.4.7               abind_1.4-8              compiler_4.6.0          
+##  [46] bit64_4.6.0-1            withr_3.0.2              S7_0.2.1                
+##  [49] BiocParallel_1.45.0      viridis_0.6.5            DBI_1.2.3               
+##  [52] HDF5Array_1.39.0         alabaster.ranges_1.11.0  alabaster.schemas_1.11.0
+##  [55] rappdirs_0.3.3           DelayedArray_0.37.0      rjson_0.2.23            
+##  [58] tools_4.6.0              vipor_0.4.7              otel_0.2.0              
+##  [61] beeswarm_0.4.0           glue_1.8.0               h5mread_1.3.1           
+##  [64] restfulr_0.0.16          rhdf5filters_1.23.3      grid_4.6.0              
+##  [67] gtable_0.3.6             ensembldb_2.35.0         BiocSingular_1.27.1     
+##  [70] ScaledMatrix_1.19.0      XVector_0.51.0           ggrepel_0.9.6           
+##  [73] BiocVersion_3.23.1       pillar_1.11.1            dplyr_1.1.4             
+##  [76] BiocFileCache_3.1.0      lattice_0.22-7           rtracklayer_1.71.3      
+##  [79] bit_4.6.0                tidyselect_1.2.1         Biostrings_2.79.4       
+##  [82] knitr_1.51               gridExtra_2.3            bookdown_0.46           
+##  [85] ProtGenerics_1.43.0      xfun_0.55                UCSC.utils_1.7.1        
+##  [88] lazyeval_0.2.2           yaml_2.3.12              evaluate_1.0.5          
+##  [91] codetools_0.2-20         cigarillo_1.1.0          tibble_3.3.0            
+##  [94] alabaster.matrix_1.11.0  BiocManager_1.30.27      cli_3.6.5               
+##  [97] jquerylib_0.1.4          dichromat_2.0-0.1        Rcpp_1.1.1              
+## [100] GenomeInfoDb_1.47.2      dbplyr_2.5.1             png_0.1-8               
+## [103] XML_3.99-0.20            parallel_4.6.0           blob_1.2.4              
+## [106] AnnotationFilter_1.35.0  bitops_1.0-9             viridisLite_0.4.2       
+## [109] alabaster.se_1.11.0      scales_1.4.0             crayon_1.5.3            
+## [112] rlang_1.1.7              cowplot_1.2.0            KEGGREST_1.51.1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-kobak2021initialization">
+<p>Kobak, D., and G. C. Linderman. 2021. <em>Nat. Biotechnol.</em> 39 (2): 156–57.</p>
+</div>
+<div id="ref-linderman2019fitsne">
+<p>Linderman, G. C., M. Rachh, J. G. Hoskins, S. Steinerberger, and Y. Kluger. 2019. “Fast interpolation-based t-SNE for improved visualization of single-cell RNA-seq data.” <em>Nat. Methods</em> 16 (3): 243–45.</p>
+</div>
+<div id="ref-mcInnes2018umap">
+<p>McInnes, L., and J. Healy. 2018. “UMAP: Uniform Manifold Approximation and Projection for dimension reduction.” <em>arXiv</em>, February, 1802.03426.</p>
+</div>
+<div id="ref-narayan2021densvis">
+<p>Narayan, A., B. Berger, and H. Cho. 2021. “Assessing single-cell transcriptomic variability through density-preserving data visualization.” <em>Nat. Biotechnol.</em>, 19.</p>
+</div>
+<div id="ref-van2008visualizing">
+<p>Van der Maaten, L., and G. Hinton. 2008. “Visualizing data using t-SNE.” <em>J. Mach. Learn. Res.</em> 9: 2579–2605.</p>
+</div>
+<div id="ref-zeisel2015brain">
+<p>Zeisel, A., A. B. Munoz-Manchado, S. Codeluppi, P. Lonnerberg, G. La Manno, A. Jureus, S. Marques, et al. 2015. “Brain structure. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq.” <em>Science</em> 347 (6226): 1138–42.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="12">
+<li id="fn12"><p>
+A cynical person might say that this is the only aim of single-cell technologies, judging by a brief perusal of some recent manuscripts.
+But we would <em>never</em> be so pessimistic.<a href="visualization.html#fnref12" class="footnote-back">↩︎</a></p></li>
+<li id="fn13"><p>
+For the purposes of this chapter, the PC space is still “high-dimensional”.
+We started with extremely high-dimensional data in our expression matrix (tens of thousands of genes),
+got down to more regular high-dimensional data after PCA (tens of PCs),
+and are now trying to get to a low-dimensional embedding (2, or maybe even 3 dimensions)
+that our feeble human minds can comprehend.<a href="visualization.html#fnref13" class="footnote-back">↩︎</a></p></li>
+<li id="fn14"><p>
+Personally, we like <span class="math inline">\(t\)</span>-SNE plots because they look a bit like histology slides, which can trick those who don’t know us into thinking that we’re a real biologist.
+This, in turn, helps us sneak into conferences where we can disseminate our <em>MALAT1</em> propaganda on an unsuspecting audience.<a href="visualization.html#fnref14" class="footnote-back">↩︎</a></p></li>
+<li id="fn15"><p>¿Por qué no los dos?<a href="visualization.html#fnref15" class="footnote-back">↩︎</a></p></li>
+<li id="fn16"><p>
+We’ve seen people do this with a ruler, to “prove” that one cell type is more closely related to another.<a href="visualization.html#fnref16" class="footnote-back">↩︎</a></p></li>
+<li id="fn17"><p>
+A triangular pyramid where all edges are the same length.<a href="visualization.html#fnref17" class="footnote-back">↩︎</a></p></li>
+<li id="fn18"><p>
+Clustering is rather arbitrary anyway, so there is nothing inherently wrong with this strategy.
+In fact, it can be treated as a rather circuitous implementation of graph-based clustering (Section <a href="clustering.html#clustering-graph">6.2</a>).<a href="visualization.html#fnref18" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="principal-components-analysis.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="clustering.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/visualization.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/visualization.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/visualization.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

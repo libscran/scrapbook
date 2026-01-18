@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 4 Principal components analysis | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 4 Principal components analysis | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 4 Principal components analysis | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="feature-selection.html"/>
+<link rel="next" href="visualization.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="principal-components-analysis" class="section level1 hasAnchor" number="4">
+<h1><span class="header-section-number">Chapter 4</span> Principal components analysis<a href="principal-components-analysis.html#principal-components-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-2" class="section level2 hasAnchor" number="4.1">
+<h2><span class="header-section-number">4.1</span> Motivation<a href="principal-components-analysis.html#motivation-2" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Principal components analysis (PCA) is commonly used to clean up and compact the log-normalized expression matrix.
+Consider each gene as a dimension of our dataset where the cells are the observations,
+i.e., each cell’s expression profile defines its location in the high-dimensional expression space.
+PCA discovers axes in this high-dimensional space that capture the largest amount of variation <span class="citation">(Pearson <a href="#ref-pearson1901lines" role="doc-biblioref">1901</a>)</span>.
+Each principal component (PC) corresponds to an axis in this space, where the earliest PCs capture the dominant factors of heterogeneity in our data.
+The idea is to use the first few PCs to approximate our original dataset<a href="#fn9" class="footnote-ref" id="fnref9"><sup>9</sup></a>.
+Similarly, the Euclidean distances between cells in the PC space approximate the same distances in the original dataset.
+This effectively compresses multiple genes into a single dimension, e.g., an “eigengene” <span class="citation">(Langfelder and Horvath <a href="#ref-langfelder2007eigengene" role="doc-biblioref">2007</a>)</span>,
+and allows us to use a much smaller matrix in downstream steps like clustering.</p>
+</div>
+<div id="getting-the-top-pcs" class="section level2 hasAnchor" number="4.2">
+<h2><span class="header-section-number">4.2</span> Getting the top PCs<a href="principal-components-analysis.html#getting-the-top-pcs" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Our assumption is that biological processes affect multiple genes in a coordinated manner.
+This means that the earlier PCs are likely to represent biological structure as more variation can be captured by considering the correlated behavior of many genes.
+In contrast, random technical or biological noise is expected to affect each gene independently.
+There is unlikely to be an axis that can capture random variation across many genes, meaning that noise should mostly be concentrated in the later PCs.
+By retaining the earlier PCs, we can focus on the biological signal while removing random noise.
+To demonstrate, we’ll pull out our favorite mouse brain dataset from <span class="citation">Zeisel et al. (<a href="#ref-zeisel2015brain" role="doc-biblioref">2015</a>)</span>:</p>
+<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb126-1"><a href="principal-components-analysis.html#cb126-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb126-2"><a href="principal-components-analysis.html#cb126-2" aria-hidden="true"></a>sce.zeisel &lt;-<span class="st"> </span><span class="kw">ZeiselBrainData</span>()</span>
+<span id="cb126-3"><a href="principal-components-analysis.html#cb126-3" aria-hidden="true"></a>is.mito.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.zeisel)<span class="op">$</span>featureType<span class="op">==</span><span class="st">&quot;mito&quot;</span></span>
+<span id="cb126-4"><a href="principal-components-analysis.html#cb126-4" aria-hidden="true"></a></span>
+<span id="cb126-5"><a href="principal-components-analysis.html#cb126-5" aria-hidden="true"></a><span class="co"># Performing some QC to set up the dataset prior to normalization. </span></span>
+<span id="cb126-6"><a href="principal-components-analysis.html#cb126-6" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb126-7"><a href="principal-components-analysis.html#cb126-7" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(sce.zeisel, <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.zeisel), <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>)</span>
+<span id="cb126-8"><a href="principal-components-analysis.html#cb126-8" aria-hidden="true"></a>sce.qc.zeisel &lt;-<span class="st"> </span>sce.qc.zeisel[,sce.qc.zeisel<span class="op">$</span>keep]</span>
+<span id="cb126-9"><a href="principal-components-analysis.html#cb126-9" aria-hidden="true"></a></span>
+<span id="cb126-10"><a href="principal-components-analysis.html#cb126-10" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb126-11"><a href="principal-components-analysis.html#cb126-11" aria-hidden="true"></a>sce.norm.zeisel &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(sce.qc.zeisel, <span class="dt">size.factors=</span>sce.qc.zeisel<span class="op">$</span>sum)</span>
+<span id="cb126-12"><a href="principal-components-analysis.html#cb126-12" aria-hidden="true"></a></span>
+<span id="cb126-13"><a href="principal-components-analysis.html#cb126-13" aria-hidden="true"></a><span class="co"># Computing the variances.</span></span>
+<span id="cb126-14"><a href="principal-components-analysis.html#cb126-14" aria-hidden="true"></a>sce.var.zeisel &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.zeisel, <span class="dt">more.var.args=</span><span class="kw">list</span>(<span class="dt">use.min.width=</span><span class="ot">TRUE</span>))</span></code></pre></div>
+<p>We run the PCA on our HVG-filtered log-normalized expression matrix, compacting the dataset into the top 25 PCs.
+This yields a matrix of “PC scores”, i.e., the coordinates for each cell in the new low-dimensional space, which can be used in clustering, visualization, etc.
+As discussed in Chapter <a href="feature-selection.html#feature-selection">3</a>, we restrict this step to the top HVGs to reduce the impact of random noise.
+While PCA is robust to noise, too much of it may cause the earlier PCs to ignore meaningful structure <span class="citation">(Johnstone and Lu <a href="#ref-johnstone2009consistency" role="doc-biblioref">2009</a>)</span>.</p>
+<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb127-1"><a href="principal-components-analysis.html#cb127-1" aria-hidden="true"></a>hvgs.zeisel &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var.zeisel)<span class="op">$</span>hvg</span>
+<span id="cb127-2"><a href="principal-components-analysis.html#cb127-2" aria-hidden="true"></a><span class="kw">summary</span>(hvgs.zeisel)</span></code></pre></div>
+<pre><code>##    Mode   FALSE    TRUE 
+## logical   16006    4000</code></pre>
+<div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb129-1"><a href="principal-components-analysis.html#cb129-1" aria-hidden="true"></a>sce.pca.zeisel &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var.zeisel, <span class="dt">features=</span>hvgs.zeisel, <span class="dt">number=</span><span class="dv">25</span>)</span>
+<span id="cb129-2"><a href="principal-components-analysis.html#cb129-2" aria-hidden="true"></a><span class="kw">dim</span>(<span class="kw">reducedDim</span>(sce.pca.zeisel, <span class="st">&quot;PCA&quot;</span>))</span></code></pre></div>
+<pre><code>## [1] 2866   25</code></pre>
+</div>
+<div id="how-many-pcs" class="section level2 hasAnchor" number="4.3">
+<h2><span class="header-section-number">4.3</span> How many PCs?<a href="principal-components-analysis.html#how-many-pcs" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The million dollar question is, how many of the top PCs should we retain for downstream analyses?
+Using more PCs will retain more biological signal at the cost of including more noise that might mask that signal.
+As with the number of HVGs, it is hard to determine whether an “optimal” choice exists here.
+Sure, technical variation is almost always uninteresting,
+but there is no straightforward way to automatically determine which aspects of biological variation are relevant to a particular scientific question.
+For example, heterogeneity within a population might be interesting when studying continuous processes like metabolic flux or differentiation potential,
+but could be considered noise in applications that only aim to distinguish between distinct cell types.</p>
+<p>Most practitioners will simply set <span class="math inline">\(d\)</span> to a “reasonable” but arbitrary value, typically ranging from 10 to 50.
+This is often satisfactory as the later PCs explain so little variance that their inclusion or omission has no major effect.
+For example, in the Zeisel dataset, few PCs explain more than 1% of the variance in the entire dataset (Figure <a href="principal-components-analysis.html#fig:zeisel-scree">4.1</a>).
+Choosing between, say, 20 and 40 PCs would not even amount to 5 percentage points’ worth of difference in variance.
+In fact, the main consequence of using more PCs is simply that downstream calculations take longer as they need to compute over more dimensions,
+but most PC-related calculations are fast enough that this is not a practical concern.</p>
+<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb131-1"><a href="principal-components-analysis.html#cb131-1" aria-hidden="true"></a>sce.more.zeisel &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var.zeisel, <span class="dt">features=</span>hvgs.zeisel, <span class="dt">number=</span><span class="dv">50</span>)</span>
+<span id="cb131-2"><a href="principal-components-analysis.html#cb131-2" aria-hidden="true"></a>pca.meta &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.more.zeisel)<span class="op">$</span>PCA</span>
+<span id="cb131-3"><a href="principal-components-analysis.html#cb131-3" aria-hidden="true"></a>percent.var &lt;-<span class="st"> </span>pca.meta<span class="op">$</span>variance.explained <span class="op">/</span><span class="st"> </span>pca.meta<span class="op">$</span>total.variance <span class="op">*</span><span class="st"> </span><span class="dv">100</span></span>
+<span id="cb131-4"><a href="principal-components-analysis.html#cb131-4" aria-hidden="true"></a><span class="kw">plot</span>(percent.var, <span class="dt">log=</span><span class="st">&quot;y&quot;</span>, <span class="dt">xlab=</span><span class="st">&quot;PC&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Variance explained (%)&quot;</span>, <span class="dt">type=</span><span class="st">&quot;b&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:zeisel-scree"></span>
+<img src="principal-components-analysis_files/figure-html/zeisel-scree-1.png" alt="Percentage of variance explained by successive PCs in the Zeisel dataset, shown on a log-scale." width="672" />
+<p class="caption">
+Figure 4.1: Percentage of variance explained by successive PCs in the Zeisel dataset, shown on a log-scale.
+</p>
+</div>
+<p>If we really must try to guess the “best” number of PCs<a href="#fn10" class="footnote-ref" id="fnref10"><sup>10</sup></a>, here are a few approaches:</p>
+<ul>
+<li>We can choose the elbow point in the scree plot (Figure <a href="principal-components-analysis.html#fig:zeisel-scree">4.1</a>), e.g., using the <code>findElbowPoint()</code> function from the <em><a href="https://bioconductor.org/packages/3.23/PCAtools">PCAtools</a></em> package.
+The assumption is that there should be a sharp drop in the percentage of variance explained when we move past the last PC corresponding to biological structure.
+However, the ideal cut-off can be difficult to gauge when there are sources of weaker biological variation.</li>
+<li>We can keep the number of PCs that cumulatively explain variance equal to the sum of the biological components among the HVGs.
+This relies on the decomposition of each gene’s variance into biological and technical components (see Chapter <a href="feature-selection.html#feature-selection">3</a>).
+In practice, the distinction between biological and technical variation is usually not so clear as they will not be isolated to the earlier and later PCs, respectively.</li>
+<li>We can use random matrix theory to select an appropriate number of PCs.
+This might involve the Marchenko-Pastur limit <span class="citation">(Shekhar et al. <a href="#ref-shekhar2016comprehensive" role="doc-biblioref">2016</a>)</span>, Horn’s parallel analysis <span class="citation">(Horn <a href="#ref-horn1965rationale" role="doc-biblioref">1965</a>)</span>,
+or the Gavish-Donoho threshold for optimal reconstruction <span class="citation">(Gavish and Donoho <a href="#ref-gavish2014optimal" role="doc-biblioref">2014</a>)</span> (see relevant functions in <em><a href="https://bioconductor.org/packages/3.23/PCAtools">PCAtools</a></em>).
+Each of these methods has its own limitations, e.g., requirement for i.i.d. noise.</li>
+</ul>
+<p>But if we’re really concerned about the number of PCs, it’s probably just better to repeat the analysis with different number of PCs.
+This allows us explore other perspectives of the data at different trade-offs between biological signal and technical noise.</p>
+</div>
+<div id="pca-block" class="section level2 hasAnchor" number="4.4">
+<h2><span class="header-section-number">4.4</span> Blocking on uninteresting factors<a href="principal-components-analysis.html#pca-block" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Larger datasets typically consist of multiple blocks of cells with uninteresting differences between them, e.g.. batch effects, variability between donors.
+We don’t want to waste our top PCs on capturing these differences - instead, we want our PCA to focus on the biological structure within each block.
+To demonstrate, let’s look at a dataset consisting of two plates of wild-type and oncogene-induced 416B cells <span class="citation">(A. T. L. Lun et al. <a href="#ref-lun2017assessing" role="doc-biblioref">2017</a>)</span>.
+Differences in expression due to the plate of origin are obviously technical and should be ignored.
+To make life more exciting, we will also consider the oncogene induction status to be an uninteresting experimental factor<a href="#fn11" class="footnote-ref" id="fnref11"><sup>11</sup></a> that should not be allowed to dominate the PCA.</p>
+<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb132-1"><a href="principal-components-analysis.html#cb132-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb132-2"><a href="principal-components-analysis.html#cb132-2" aria-hidden="true"></a>sce<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">LunSpikeInData</span>(<span class="st">&quot;416b&quot;</span>)</span>
+<span id="cb132-3"><a href="principal-components-analysis.html#cb132-3" aria-hidden="true"></a></span>
+<span id="cb132-4"><a href="principal-components-analysis.html#cb132-4" aria-hidden="true"></a><span class="co"># Combining the plate of origin and oncogene induction status into a single</span></span>
+<span id="cb132-5"><a href="principal-components-analysis.html#cb132-5" aria-hidden="true"></a><span class="co"># blocking factor of &#39;uninteresting&#39; variation.</span></span>
+<span id="cb132-6"><a href="principal-components-analysis.html#cb132-6" aria-hidden="true"></a>plate<span class="fl">.416</span>b &lt;-<span class="st"> </span>sce<span class="fl">.416</span>b<span class="op">$</span>block</span>
+<span id="cb132-7"><a href="principal-components-analysis.html#cb132-7" aria-hidden="true"></a>pheno<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">ifelse</span>(sce<span class="fl">.416</span>b<span class="op">$</span>phenotype <span class="op">==</span><span class="st"> &quot;wild type phenotype&quot;</span>, <span class="st">&quot;WT&quot;</span>, <span class="st">&quot;induced&quot;</span>)</span>
+<span id="cb132-8"><a href="principal-components-analysis.html#cb132-8" aria-hidden="true"></a>sce<span class="fl">.416</span>b<span class="op">$</span>block &lt;-<span class="st"> </span><span class="kw">factor</span>(<span class="kw">paste0</span>(pheno<span class="fl">.416</span>b, <span class="st">&quot;-&quot;</span>, plate<span class="fl">.416</span>b))</span>
+<span id="cb132-9"><a href="principal-components-analysis.html#cb132-9" aria-hidden="true"></a></span>
+<span id="cb132-10"><a href="principal-components-analysis.html#cb132-10" aria-hidden="true"></a><span class="co"># Computing the QC metrics.</span></span>
+<span id="cb132-11"><a href="principal-components-analysis.html#cb132-11" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb132-12"><a href="principal-components-analysis.html#cb132-12" aria-hidden="true"></a>is.mito<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">any</span>(<span class="kw">seqnames</span>(<span class="kw">rowRanges</span>(sce<span class="fl">.416</span>b)) <span class="op">==</span><span class="st"> &quot;MT&quot;</span>))</span>
+<span id="cb132-13"><a href="principal-components-analysis.html#cb132-13" aria-hidden="true"></a>sce.qc<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb132-14"><a href="principal-components-analysis.html#cb132-14" aria-hidden="true"></a>    sce<span class="fl">.416</span>b,</span>
+<span id="cb132-15"><a href="principal-components-analysis.html#cb132-15" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito<span class="fl">.416</span>b),</span>
+<span id="cb132-16"><a href="principal-components-analysis.html#cb132-16" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb132-17"><a href="principal-components-analysis.html#cb132-17" aria-hidden="true"></a>    <span class="dt">block=</span>sce<span class="fl">.416</span>b<span class="op">$</span>block</span>
+<span id="cb132-18"><a href="principal-components-analysis.html#cb132-18" aria-hidden="true"></a>)</span>
+<span id="cb132-19"><a href="principal-components-analysis.html#cb132-19" aria-hidden="true"></a>sce.qc<span class="fl">.416</span>b &lt;-<span class="st"> </span>sce.qc<span class="fl">.416</span>b[,sce.qc<span class="fl">.416</span>b<span class="op">$</span>keep]</span>
+<span id="cb132-20"><a href="principal-components-analysis.html#cb132-20" aria-hidden="true"></a></span>
+<span id="cb132-21"><a href="principal-components-analysis.html#cb132-21" aria-hidden="true"></a><span class="co"># Computing log-normalized expression values.</span></span>
+<span id="cb132-22"><a href="principal-components-analysis.html#cb132-22" aria-hidden="true"></a>sce.norm<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(</span>
+<span id="cb132-23"><a href="principal-components-analysis.html#cb132-23" aria-hidden="true"></a>    sce.qc<span class="fl">.416</span>b,</span>
+<span id="cb132-24"><a href="principal-components-analysis.html#cb132-24" aria-hidden="true"></a>    <span class="dt">size.factors=</span>sce.qc<span class="fl">.416</span>b<span class="op">$</span>sum,</span>
+<span id="cb132-25"><a href="principal-components-analysis.html#cb132-25" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc<span class="fl">.416</span>b<span class="op">$</span>block</span>
+<span id="cb132-26"><a href="principal-components-analysis.html#cb132-26" aria-hidden="true"></a>)</span>
+<span id="cb132-27"><a href="principal-components-analysis.html#cb132-27" aria-hidden="true"></a></span>
+<span id="cb132-28"><a href="principal-components-analysis.html#cb132-28" aria-hidden="true"></a><span class="co"># Choosing the top VGs after blocking on the uninteresting factors.</span></span>
+<span id="cb132-29"><a href="principal-components-analysis.html#cb132-29" aria-hidden="true"></a>sce.var<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(</span>
+<span id="cb132-30"><a href="principal-components-analysis.html#cb132-30" aria-hidden="true"></a>    sce.norm<span class="fl">.416</span>b,</span>
+<span id="cb132-31"><a href="principal-components-analysis.html#cb132-31" aria-hidden="true"></a>    <span class="dt">more.choose.args=</span><span class="kw">list</span>(<span class="dt">top=</span><span class="dv">1000</span>), <span class="co"># just picking a cool-looking number of top genes here.</span></span>
+<span id="cb132-32"><a href="principal-components-analysis.html#cb132-32" aria-hidden="true"></a>    <span class="dt">block=</span>sce.norm<span class="fl">.416</span>b<span class="op">$</span>block</span>
+<span id="cb132-33"><a href="principal-components-analysis.html#cb132-33" aria-hidden="true"></a>)</span></code></pre></div>
+<p>We set <code>block=</code> to instruct <code>runPca.se()</code> to focus on the variation within each block.
+This is equivalent to centering each block at the origin and then finding the axes of largest variation among the residuals.
+The expression values for each cell are then projected onto these axes to obtain that cell’s PC scores.
+Blocking removes the shift between the induced and wild-type subpopulations on the first two PCs (Figure <a href="principal-components-analysis.html#fig:pca-416b">4.2</a>),
+allowing our subsequent analyses to focus on heterogeneity within each subpopulation.</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb133-1"><a href="principal-components-analysis.html#cb133-1" aria-hidden="true"></a>is.hvg<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">rowData</span>(sce.var<span class="fl">.416</span>b)<span class="op">$</span>hvg</span>
+<span id="cb133-2"><a href="principal-components-analysis.html#cb133-2" aria-hidden="true"></a>sce.pca<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(sce.var<span class="fl">.416</span>b, <span class="dt">features=</span>is.hvg<span class="fl">.416</span>b, <span class="dt">number=</span><span class="dv">20</span>)</span>
+<span id="cb133-3"><a href="principal-components-analysis.html#cb133-3" aria-hidden="true"></a>sce.block<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(</span>
+<span id="cb133-4"><a href="principal-components-analysis.html#cb133-4" aria-hidden="true"></a>    sce.var<span class="fl">.416</span>b,</span>
+<span id="cb133-5"><a href="principal-components-analysis.html#cb133-5" aria-hidden="true"></a>    <span class="dt">features=</span>is.hvg<span class="fl">.416</span>b,</span>
+<span id="cb133-6"><a href="principal-components-analysis.html#cb133-6" aria-hidden="true"></a>    <span class="dt">number=</span><span class="dv">20</span>,</span>
+<span id="cb133-7"><a href="principal-components-analysis.html#cb133-7" aria-hidden="true"></a>    <span class="dt">block=</span>sce.var<span class="fl">.416</span>b<span class="op">$</span>block</span>
+<span id="cb133-8"><a href="principal-components-analysis.html#cb133-8" aria-hidden="true"></a>)</span>
+<span id="cb133-9"><a href="principal-components-analysis.html#cb133-9" aria-hidden="true"></a></span>
+<span id="cb133-10"><a href="principal-components-analysis.html#cb133-10" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb133-11"><a href="principal-components-analysis.html#cb133-11" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb133-12"><a href="principal-components-analysis.html#cb133-12" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.pca<span class="fl">.416</span>b, <span class="dt">dimred=</span><span class="st">&quot;PCA&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;block&quot;</span>) <span class="op">+</span></span>
+<span id="cb133-13"><a href="principal-components-analysis.html#cb133-13" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Without blocking&quot;</span>),</span>
+<span id="cb133-14"><a href="principal-components-analysis.html#cb133-14" aria-hidden="true"></a>    <span class="kw">plotReducedDim</span>(sce.block<span class="fl">.416</span>b, <span class="dt">dimred=</span><span class="st">&quot;PCA&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;block&quot;</span>) <span class="op">+</span></span>
+<span id="cb133-15"><a href="principal-components-analysis.html#cb133-15" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;Blocked&quot;</span>),</span>
+<span id="cb133-16"><a href="principal-components-analysis.html#cb133-16" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">2</span></span>
+<span id="cb133-17"><a href="principal-components-analysis.html#cb133-17" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:pca-416b"></span>
+<img src="principal-components-analysis_files/figure-html/pca-416b-1.png" alt="First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors." width="960" />
+<p class="caption">
+Figure 4.2: First two PCs for the 416B dataset, before and after blocking on uninteresting experimental factors. Each point represents a cell, colored by its combination of experimental factors.
+</p>
+</div>
+<p>If we’re lucky, all of the uninteresting differences between blocks are orthogonal to the major biological variation,
+such that taking the first few PCs will focus on the latter and remove the former.
+In practice, blocking during PCA is usually not sufficient to remove differences between blocks,
+as they tend to have some biological component that will be preserved within the first few PCs.
+Removal requires some additional effort (see Chapter <a href="batch-correction.html#batch-correction">8</a>) prior to downstream steps like clustering.
+Nonetheless, blocking is still helpful as it eliminates at least some of these differences and preserves more biological signal in the top PCs.</p>
+<p>To be more precise, the default behavior of <code>block=</code> is to use the residuals to compute the rotation matrix but not the PC scores.
+This reduces the influence of block-to-block differences on the low-dimensional embedding but does not explicitly remove it.
+In contrast, setting <code>components.from.residuals=TRUE</code> yields PC scores that are also derived from the residuals.
+This removes the differences between blocks but is only correct in very limiting circumstances,
+e.g., assuming all blocks have the same subpopulation composition and the difference between blocks is consistent for all cell subpopulations.
+Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
+In our 416B example, the two subpopulations are now forced together (Figure <a href="principal-components-analysis.html#fig:pca-residuals-416b">4.3</a>) for better or worse.</p>
+<div class="sourceCode" id="cb134"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb134-1"><a href="principal-components-analysis.html#cb134-1" aria-hidden="true"></a>sce.resid<span class="fl">.416</span>b &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(</span>
+<span id="cb134-2"><a href="principal-components-analysis.html#cb134-2" aria-hidden="true"></a>    sce.var<span class="fl">.416</span>b,</span>
+<span id="cb134-3"><a href="principal-components-analysis.html#cb134-3" aria-hidden="true"></a>    <span class="dt">features=</span>is.hvg<span class="fl">.416</span>b,</span>
+<span id="cb134-4"><a href="principal-components-analysis.html#cb134-4" aria-hidden="true"></a>    <span class="dt">number=</span><span class="dv">20</span>,</span>
+<span id="cb134-5"><a href="principal-components-analysis.html#cb134-5" aria-hidden="true"></a>    <span class="dt">block=</span>sce.var<span class="fl">.416</span>b<span class="op">$</span>block,</span>
+<span id="cb134-6"><a href="principal-components-analysis.html#cb134-6" aria-hidden="true"></a>    <span class="dt">more.pca.args=</span><span class="kw">list</span>(<span class="dt">components.from.residuals=</span><span class="ot">TRUE</span>)</span>
+<span id="cb134-7"><a href="principal-components-analysis.html#cb134-7" aria-hidden="true"></a>)</span>
+<span id="cb134-8"><a href="principal-components-analysis.html#cb134-8" aria-hidden="true"></a></span>
+<span id="cb134-9"><a href="principal-components-analysis.html#cb134-9" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb134-10"><a href="principal-components-analysis.html#cb134-10" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.resid<span class="fl">.416</span>b, <span class="dt">dimred=</span><span class="st">&quot;PCA&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;block&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:pca-residuals-416b"></span>
+<img src="principal-components-analysis_files/figure-html/pca-residuals-416b-1.png" alt="First two PCs for the 416B dataset with blocking, where PC scores are computed from residuals. Each point represents a cell, colored by its combination of experimental factors." width="672" />
+<p class="caption">
+Figure 4.3: First two PCs for the 416B dataset with blocking, where PC scores are computed from residuals. Each point represents a cell, colored by its combination of experimental factors.
+</p>
+</div>
+<p>As with HVGs, we should only use <code>block=</code> for experimental factors that are not interesting.
+If we were interested in the effects of oncogene induction, we should not block on it to ensure that the PCA can capture the associated changes in expression.
+Sometimes, though, it is not obvious whether something is “interesting” or not,
+as we may wish to ignore some biological differences to obtain a consistent set of clusters across treatment conditions, tissues, etc.
+Check out Chapter <a href="batch-correction.html#batch-correction">8</a> for a more detailed discussion.</p>
+</div>
+<div id="visualizing-the-pcs" class="section level2 hasAnchor" number="4.5">
+<h2><span class="header-section-number">4.5</span> Visualizing the PCs<a href="principal-components-analysis.html#visualizing-the-pcs" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We might as well touch on another common use of PCA, which is visualization of high-dimensional data.
+This is used in a variety of fields and applications (including bulk RNA-seq) but is not so effective for scRNA-seq data.
+If we’re lucky, our population structure is simple enough that the first two PCs capture most of the relevant biology (Figures <a href="principal-components-analysis.html#fig:pca-416b">4.2</a> and <a href="principal-components-analysis.html#fig:pca-residuals-416b">4.3</a>).
+However, in most cases, relevant biological heterogeneity is spread throughout 10-50 PCs that are much harder to visualize.
+For example, examination of the top 4 PCs is still insufficient to resolve all subpopulations identified by <span class="citation">Zeisel et al. (<a href="#ref-zeisel2015brain" role="doc-biblioref">2015</a>)</span> (Figure <a href="principal-components-analysis.html#fig:zeisel-pca-multi">4.4</a>).</p>
+<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb135-1"><a href="principal-components-analysis.html#cb135-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb135-2"><a href="principal-components-analysis.html#cb135-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(</span>
+<span id="cb135-3"><a href="principal-components-analysis.html#cb135-3" aria-hidden="true"></a>    sce.pca.zeisel,</span>
+<span id="cb135-4"><a href="principal-components-analysis.html#cb135-4" aria-hidden="true"></a>    <span class="dt">dimred=</span><span class="st">&quot;PCA&quot;</span>,</span>
+<span id="cb135-5"><a href="principal-components-analysis.html#cb135-5" aria-hidden="true"></a>    <span class="dt">ncomponents=</span><span class="dv">4</span>,</span>
+<span id="cb135-6"><a href="principal-components-analysis.html#cb135-6" aria-hidden="true"></a>    <span class="dt">colour_by=</span><span class="st">&quot;level1class&quot;</span></span>
+<span id="cb135-7"><a href="principal-components-analysis.html#cb135-7" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:zeisel-pca-multi"></span>
+<img src="principal-components-analysis_files/figure-html/zeisel-pca-multi-1.png" alt="PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors." width="960" />
+<p class="caption">
+Figure 4.4: PCA plot of the first 4 PCs in the Zeisel brain data. Each point is a cell, coloured according to the annotation provided by the original authors.
+</p>
+</div>
+<p>The problem here is that PCA is a linear technique, i.e., only variation along a line in high-dimensional space is captured by each PC.
+As such, it cannot efficiently represent high-dimensional differences in the first 2 PCs.
+If the first PC is devoted to resolving the biggest difference between subpopulations, and the second PC is devoted to resolving the next biggest difference,
+then the remaining differences will not be visible in the plot.
+That said, PCA is still useful as the top PCs are often used as input to more sophisticated algorithms for dimensionality reduction (Chapter <a href="visualization.html#visualization">5</a>).</p>
+</div>
+<div id="session-information-2" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="principal-components-analysis.html#session-information-2" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb136-1"><a href="principal-components-analysis.html#cb136-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] scater_1.39.1               ggplot2_4.0.1              
+##  [3] scuttle_1.21.0              ensembldb_2.35.0           
+##  [5] AnnotationFilter_1.35.0     GenomicFeatures_1.63.1     
+##  [7] AnnotationDbi_1.73.0        scrapper_1.5.10            
+##  [9] scRNAseq_2.25.0             SingleCellExperiment_1.33.0
+## [11] SummarizedExperiment_1.41.0 Biobase_2.71.0             
+## [13] GenomicRanges_1.63.1        Seqinfo_1.1.0              
+## [15] IRanges_2.45.0              S4Vectors_0.49.0           
+## [17] BiocGenerics_0.57.0         generics_0.1.4             
+## [19] MatrixGenerics_1.23.0       matrixStats_1.5.0          
+## [21] BiocStyle_2.39.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3       jsonlite_2.0.0           magrittr_2.0.4          
+##   [4] ggbeeswarm_0.7.3         gypsum_1.7.0             farver_2.1.2            
+##   [7] rmarkdown_2.30           BiocIO_1.21.0            vctrs_0.6.5             
+##  [10] memoise_2.0.1            Rsamtools_2.27.0         RCurl_1.98-1.17         
+##  [13] htmltools_0.5.9          S4Arrays_1.11.1          AnnotationHub_4.1.0     
+##  [16] curl_7.0.0               BiocNeighbors_2.5.0      Rhdf5lib_1.33.0         
+##  [19] SparseArray_1.11.10      rhdf5_2.55.12            sass_0.4.10             
+##  [22] alabaster.base_1.11.1    bslib_0.9.0              alabaster.sce_1.11.0    
+##  [25] httr2_1.2.2              cachem_1.1.0             GenomicAlignments_1.47.0
+##  [28] lifecycle_1.0.5          pkgconfig_2.0.3          rsvd_1.0.5              
+##  [31] Matrix_1.7-4             R6_2.6.1                 fastmap_1.2.0           
+##  [34] digest_0.6.39            irlba_2.3.5.1            ExperimentHub_3.1.0     
+##  [37] RSQLite_2.4.5            beachmat_2.27.1          labeling_0.4.3          
+##  [40] filelock_1.0.3           httr_1.4.7               abind_1.4-8             
+##  [43] compiler_4.6.0           bit64_4.6.0-1            withr_3.0.2             
+##  [46] S7_0.2.1                 BiocParallel_1.45.0      viridis_0.6.5           
+##  [49] DBI_1.2.3                HDF5Array_1.39.0         alabaster.ranges_1.11.0 
+##  [52] alabaster.schemas_1.11.0 rappdirs_0.3.3           DelayedArray_0.37.0     
+##  [55] rjson_0.2.23             tools_4.6.0              vipor_0.4.7             
+##  [58] otel_0.2.0               beeswarm_0.4.0           glue_1.8.0              
+##  [61] h5mread_1.3.1            restfulr_0.0.16          rhdf5filters_1.23.3     
+##  [64] grid_4.6.0               gtable_0.3.6             BiocSingular_1.27.1     
+##  [67] ScaledMatrix_1.19.0      XVector_0.51.0           ggrepel_0.9.6           
+##  [70] BiocVersion_3.23.1       pillar_1.11.1            dplyr_1.1.4             
+##  [73] BiocFileCache_3.1.0      lattice_0.22-7           rtracklayer_1.71.3      
+##  [76] bit_4.6.0                tidyselect_1.2.1         Biostrings_2.79.4       
+##  [79] knitr_1.51               gridExtra_2.3            bookdown_0.46           
+##  [82] ProtGenerics_1.43.0      xfun_0.55                UCSC.utils_1.7.1        
+##  [85] lazyeval_0.2.2           yaml_2.3.12              evaluate_1.0.5          
+##  [88] codetools_0.2-20         cigarillo_1.1.0          tibble_3.3.0            
+##  [91] alabaster.matrix_1.11.0  BiocManager_1.30.27      cli_3.6.5               
+##  [94] jquerylib_0.1.4          dichromat_2.0-0.1        Rcpp_1.1.1              
+##  [97] GenomeInfoDb_1.47.2      dbplyr_2.5.1             png_0.1-8               
+## [100] XML_3.99-0.20            parallel_4.6.0           blob_1.2.4              
+## [103] bitops_1.0-9             viridisLite_0.4.2        alabaster.se_1.11.0     
+## [106] scales_1.4.0             purrr_1.2.1              crayon_1.5.3            
+## [109] rlang_1.1.7              cowplot_1.2.0            KEGGREST_1.51.1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-gavish2014optimal">
+<p>Gavish, M., and D. L. Donoho. 2014. “The optimal hard threshold for singular values is <span class="math inline">\(4/\sqrt {3}\)</span>.” <em>IEEE Trans. Inf. Theory</em> 60 (8): 5040–53.</p>
+</div>
+<div id="ref-horn1965rationale">
+<p>Horn, J. L. 1965. “A Rationale and Test for the Number of Factors in Factor Analysis.” <em>Psychometrika</em> 30 (2): 179–85.</p>
+</div>
+<div id="ref-johnstone2009consistency">
+<p>Johnstone, I. M., and A. Y. Lu. 2009. “On consistency and sparsity for principal components analysis in high dimensions.” <em>J. Am. Stat. Assoc.</em> 104 (486): 682–93.</p>
+</div>
+<div id="ref-langfelder2007eigengene">
+<p>Langfelder, P., and S. Horvath. 2007. “Eigengene networks for studying the relationships between co-expression modules.” <em>BMC Syst. Biol.</em> 1 (November): 54.</p>
+</div>
+<div id="ref-lun2017assessing">
+<p>Lun, A. T. L., F. J. Calero-Nieto, L. Haim-Vilmovsky, B. Gottgens, and J. C. Marioni. 2017. “Assessing the reliability of spike-in normalization for analyses of single-cell RNA sequencing data.” <em>Genome Res.</em> 27 (11): 1795–1806.</p>
+</div>
+<div id="ref-pearson1901lines">
+<p>Pearson, K. 1901. “On lines and planes of closest fit to systems of points in space.” <em>Lond. Edinb. Dubl. Phil. Mag.</em> 2 (11): 559–72.</p>
+</div>
+<div id="ref-shekhar2016comprehensive">
+<p>Shekhar, K., S. W. Lapan, I. E. Whitney, N. M. Tran, E. Z. Macosko, M. Kowalczyk, X. Adiconis, et al. 2016. “Comprehensive classification of retinal bipolar neurons by single-cell transcriptomics.” <em>Cell</em> 166 (5): 1308–23.</p>
+</div>
+<div id="ref-zeisel2015brain">
+<p>Zeisel, A., A. B. Munoz-Manchado, S. Codeluppi, P. Lonnerberg, G. La Manno, A. Jureus, S. Marques, et al. 2015. “Brain structure. Cell types in the mouse cortex and hippocampus revealed by single-cell RNA-seq.” <em>Science</em> 347 (6226): 1138–42.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="9">
+<li id="fn9"><p>
+And in fact, PCA does provide the optimal low-rank approximation, based on its relation to the SVD and the Eckart-Young-Mirsky theorem.
+This is arguably one of the rare cases of mathematical rigor in this entire book.<a href="principal-components-analysis.html#fnref9" class="footnote-back">↩︎</a></p></li>
+<li id="fn10"><p>Probably because a reviewer asked us to.<a href="principal-components-analysis.html#fnref10" class="footnote-back">↩︎</a></p></li>
+<li id="fn11"><p>
+Which is not entirely unreasonable.
+Say that we want to identify matching cell states across the wild-type and induced populations.
+In such cases, we would want to ignore the induction effect so that the matching states will cluster together.<a href="principal-components-analysis.html#fnref11" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="feature-selection.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="visualization.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/principal-components-analysis.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/principal-components-analysis.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/principal-components-analysis.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

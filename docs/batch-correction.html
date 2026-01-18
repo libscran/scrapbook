@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 8 Batch correction | Single-cell RNA-seq analysis with scrapper</title>
+  <meta name="description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 8 Batch correction | Single-cell RNA-seq analysis with scrapper" />
+  <meta property="og:type" content="book" />
+  <meta property="og:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+  <meta property="og:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="github-repo" content="libscran/scrapbook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 8 Batch correction | Single-cell RNA-seq analysis with scrapper" />
+  
+  <meta name="twitter:description" content="Or: how I learned to stop worrying and love the t-SNEs." />
+  <meta name="twitter:image" content="https://github.com/Bioconductor/BiocStickers/raw/devel/Bioconductor/Bioconductor-serial.gif" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<link rel="prev" href="marker-detection.html"/>
+<link rel="next" href="protein-multiomics.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Single-cell analyses with scrapper</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="1" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>1</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="quality-control.html"><a href="quality-control.html#qc-motivation"><i class="fa fa-check"></i><b>1.1</b> Motivation</a></li>
+<li class="chapter" data-level="1.2" data-path="quality-control.html"><a href="quality-control.html#common-choices-of-qc-metrics"><i class="fa fa-check"></i><b>1.2</b> Common choices of QC metrics</a></li>
+<li class="chapter" data-level="1.3" data-path="quality-control.html"><a href="quality-control.html#identifying-low-quality-cells"><i class="fa fa-check"></i><b>1.3</b> Identifying low-quality cells</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="quality-control.html"><a href="quality-control.html#qc-outlier"><i class="fa fa-check"></i><b>1.3.1</b> With adaptive thresholds</a></li>
+<li class="chapter" data-level="1.3.2" data-path="quality-control.html"><a href="quality-control.html#qc-fixed"><i class="fa fa-check"></i><b>1.3.2</b> With fixed thresholds</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="quality-control.html"><a href="quality-control.html#qc-plots"><i class="fa fa-check"></i><b>1.4</b> Creating diagnostic plots</a></li>
+<li class="chapter" data-level="1.5" data-path="quality-control.html"><a href="quality-control.html#qc-block"><i class="fa fa-check"></i><b>1.5</b> Blocking on experimental factors</a></li>
+<li class="chapter" data-level="1.6" data-path="quality-control.html"><a href="quality-control.html#qc-skip"><i class="fa fa-check"></i><b>1.6</b> Skipping quality control</a></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-info"><i class="fa fa-check"></i>Session Info</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="normalization.html"><a href="normalization.html"><i class="fa fa-check"></i><b>2</b> Normalization</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="normalization.html"><a href="normalization.html#motivation"><i class="fa fa-check"></i><b>2.1</b> Motivation</a></li>
+<li class="chapter" data-level="2.2" data-path="normalization.html"><a href="normalization.html#library-size-factors"><i class="fa fa-check"></i><b>2.2</b> Library size factors</a></li>
+<li class="chapter" data-level="2.3" data-path="normalization.html"><a href="normalization.html#normalized-expression-values"><i class="fa fa-check"></i><b>2.3</b> Normalized expression values</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="normalization.html"><a href="normalization.html#norm-transformation"><i class="fa fa-check"></i><b>2.3.1</b> Scaling and log-transforming</a></li>
+<li class="chapter" data-level="2.3.2" data-path="normalization.html"><a href="normalization.html#norm-centering"><i class="fa fa-check"></i><b>2.3.2</b> Why center the size factors?</a></li>
+<li class="chapter" data-level="2.3.3" data-path="normalization.html"><a href="normalization.html#comments-on-other-transformations"><i class="fa fa-check"></i><b>2.3.3</b> Comments on other transformations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="normalization.html"><a href="normalization.html#blocking-on-experimental-batches"><i class="fa fa-check"></i><b>2.4</b> Blocking on experimental batches</a></li>
+<li class="chapter" data-level="2.5" data-path="normalization.html"><a href="normalization.html#normalization-by-spike-ins"><i class="fa fa-check"></i><b>2.5</b> Normalization by spike-ins</a></li>
+<li class="chapter" data-level="" data-path="normalization.html"><a href="normalization.html#session-information"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="feature-selection.html"><a href="feature-selection.html"><i class="fa fa-check"></i><b>3</b> Feature selection</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="feature-selection.html"><a href="feature-selection.html#motivation-1"><i class="fa fa-check"></i><b>3.1</b> Motivation</a></li>
+<li class="chapter" data-level="3.2" data-path="feature-selection.html"><a href="feature-selection.html#selecting-highly-variable-genes"><i class="fa fa-check"></i><b>3.2</b> Selecting highly variable genes</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="feature-selection.html"><a href="feature-selection.html#modelling-the-mean-variance-trend"><i class="fa fa-check"></i><b>3.2.1</b> Modelling the mean-variance trend</a></li>
+<li class="chapter" data-level="3.2.2" data-path="feature-selection.html"><a href="feature-selection.html#choosing-the-number-of-hvgs"><i class="fa fa-check"></i><b>3.2.2</b> Choosing the number of HVGs</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="feature-selection.html"><a href="feature-selection.html#variance-block"><i class="fa fa-check"></i><b>3.3</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="3.4" data-path="feature-selection.html"><a href="feature-selection.html#refining-the-trend-fit"><i class="fa fa-check"></i><b>3.4</b> Refining the trend fit</a></li>
+<li class="chapter" data-level="3.5" data-path="feature-selection.html"><a href="feature-selection.html#selecting-a-priori-genes-of-interest"><i class="fa fa-check"></i><b>3.5</b> Selecting <em>a priori</em> genes of interest</a></li>
+<li class="chapter" data-level="3.6" data-path="feature-selection.html"><a href="feature-selection.html#quantifying-technical-noise"><i class="fa fa-check"></i><b>3.6</b> Quantifying technical noise</a></li>
+<li class="chapter" data-level="" data-path="feature-selection.html"><a href="feature-selection.html#session-information-1"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html"><i class="fa fa-check"></i><b>4</b> Principal components analysis</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#motivation-2"><i class="fa fa-check"></i><b>4.1</b> Motivation</a></li>
+<li class="chapter" data-level="4.2" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#getting-the-top-pcs"><i class="fa fa-check"></i><b>4.2</b> Getting the top PCs</a></li>
+<li class="chapter" data-level="4.3" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#how-many-pcs"><i class="fa fa-check"></i><b>4.3</b> How many PCs?</a></li>
+<li class="chapter" data-level="4.4" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#pca-block"><i class="fa fa-check"></i><b>4.4</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="4.5" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#visualizing-the-pcs"><i class="fa fa-check"></i><b>4.5</b> Visualizing the PCs</a></li>
+<li class="chapter" data-level="" data-path="principal-components-analysis.html"><a href="principal-components-analysis.html#session-information-2"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="visualization.html"><a href="visualization.html"><i class="fa fa-check"></i><b>5</b> Visualization</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="visualization.html"><a href="visualization.html#motivation-3"><i class="fa fa-check"></i><b>5.1</b> Motivation</a></li>
+<li class="chapter" data-level="5.2" data-path="visualization.html"><a href="visualization.html#t-stochastic-neighbor-embedding"><i class="fa fa-check"></i><b>5.2</b> <span class="math inline">\(t\)</span>-stochastic neighbor embedding</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="visualization.html"><a href="visualization.html#uniform-manifold-approximation-and-projection"><i class="fa fa-check"></i><b>5.2.1</b> Uniform manifold approximation and projection</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="visualization.html"><a href="visualization.html#more-comments-on-interpretation"><i class="fa fa-check"></i><b>5.3</b> More comments on interpretation</a></li>
+<li class="chapter" data-level="5.4" data-path="visualization.html"><a href="visualization.html#other-visualization-methods"><i class="fa fa-check"></i><b>5.4</b> Other visualization methods</a></li>
+<li class="chapter" data-level="" data-path="visualization.html"><a href="visualization.html#session-information-3"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="clustering.html"><a href="clustering.html"><i class="fa fa-check"></i><b>6</b> Clustering</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="clustering.html"><a href="clustering.html#motivation-4"><i class="fa fa-check"></i><b>6.1</b> Motivation</a></li>
+<li class="chapter" data-level="6.2" data-path="clustering.html"><a href="clustering.html#clustering-graph"><i class="fa fa-check"></i><b>6.2</b> Graph-based clustering</a></li>
+<li class="chapter" data-level="6.3" data-path="clustering.html"><a href="clustering.html#clustering-kmeans"><i class="fa fa-check"></i><b>6.3</b> <span class="math inline">\(k\)</span>-means clustering</a></li>
+<li class="chapter" data-level="6.4" data-path="clustering.html"><a href="clustering.html#choosing-the-clustering-parameters"><i class="fa fa-check"></i><b>6.4</b> Choosing the clustering parameters</a></li>
+<li class="chapter" data-level="6.5" data-path="clustering.html"><a href="clustering.html#clustering-diagnostics"><i class="fa fa-check"></i><b>6.5</b> Clustering diagnostics</a></li>
+<li class="chapter" data-level="6.6" data-path="clustering.html"><a href="clustering.html#subclustering"><i class="fa fa-check"></i><b>6.6</b> Subclustering</a></li>
+<li class="chapter" data-level="6.7" data-path="clustering.html"><a href="clustering.html#session-information-4"><i class="fa fa-check"></i><b>6.7</b> Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="marker-detection.html"><a href="marker-detection.html"><i class="fa fa-check"></i><b>7</b> Marker gene detection</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="marker-detection.html"><a href="marker-detection.html#motivation-5"><i class="fa fa-check"></i><b>7.1</b> Motivation</a></li>
+<li class="chapter" data-level="7.2" data-path="marker-detection.html"><a href="marker-detection.html#scoring-marker-genes"><i class="fa fa-check"></i><b>7.2</b> Scoring marker genes</a>
+<ul>
+<li class="chapter" data-level="7.2.1" data-path="marker-detection.html"><a href="marker-detection.html#comparing-pairs-of-clusters"><i class="fa fa-check"></i><b>7.2.1</b> Comparing pairs of clusters</a></li>
+<li class="chapter" data-level="7.2.2" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-sizes"><i class="fa fa-check"></i><b>7.2.2</b> Choice of effect size</a></li>
+<li class="chapter" data-level="7.2.3" data-path="marker-detection.html"><a href="marker-detection.html#marker-effect-summaries"><i class="fa fa-check"></i><b>7.2.3</b> Summarizing pairwise effects</a></li>
+</ul></li>
+<li class="chapter" data-level="7.3" data-path="marker-detection.html"><a href="marker-detection.html#visualizing-marker-genes"><i class="fa fa-check"></i><b>7.3</b> Visualizing marker genes</a></li>
+<li class="chapter" data-level="7.4" data-path="marker-detection.html"><a href="marker-detection.html#using-a-log-fold-change-threshold"><i class="fa fa-check"></i><b>7.4</b> Using a log-fold change threshold</a></li>
+<li class="chapter" data-level="7.5" data-path="marker-detection.html"><a href="marker-detection.html#marker-block"><i class="fa fa-check"></i><b>7.5</b> Blocking on uninteresting factors</a></li>
+<li class="chapter" data-level="7.6" data-path="marker-detection.html"><a href="marker-detection.html#more-uses-for-the-marker-scores"><i class="fa fa-check"></i><b>7.6</b> More uses for the marker scores</a></li>
+<li class="chapter" data-level="7.7" data-path="marker-detection.html"><a href="marker-detection.html#marker-p-value-invalidity"><i class="fa fa-check"></i><b>7.7</b> Invalidity of <span class="math inline">\(p\)</span>-values</a></li>
+<li class="chapter" data-level="7.8" data-path="marker-detection.html"><a href="marker-detection.html#gene-set-enrichment"><i class="fa fa-check"></i><b>7.8</b> Gene set enrichment</a></li>
+<li class="chapter" data-level="" data-path="marker-detection.html"><a href="marker-detection.html#session-information-5"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="batch-correction.html"><a href="batch-correction.html"><i class="fa fa-check"></i><b>8</b> Batch correction</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="batch-correction.html"><a href="batch-correction.html#motivation-6"><i class="fa fa-check"></i><b>8.1</b> Motivation</a></li>
+<li class="chapter" data-level="8.2" data-path="batch-correction.html"><a href="batch-correction.html#using-mutual-nearest-neighbors"><i class="fa fa-check"></i><b>8.2</b> Using mutual nearest neighbors</a></li>
+<li class="chapter" data-level="8.3" data-path="batch-correction.html"><a href="batch-correction.html#what-is-a-batch-effect-anyway"><i class="fa fa-check"></i><b>8.3</b> What is a batch effect, anyway?</a></li>
+<li class="chapter" data-level="8.4" data-path="batch-correction.html"><a href="batch-correction.html#using-the-corrected-values"><i class="fa fa-check"></i><b>8.4</b> Using the corrected values</a></li>
+<li class="chapter" data-level="8.5" data-path="batch-correction.html"><a href="batch-correction.html#multi-condition-analyses"><i class="fa fa-check"></i><b>8.5</b> Multi-condition analyses</a>
+<ul>
+<li class="chapter" data-level="8.5.1" data-path="batch-correction.html"><a href="batch-correction.html#differential-expression"><i class="fa fa-check"></i><b>8.5.1</b> Differential expression</a></li>
+<li class="chapter" data-level="8.5.2" data-path="batch-correction.html"><a href="batch-correction.html#differential-abundance"><i class="fa fa-check"></i><b>8.5.2</b> Differential abundance</a></li>
+</ul></li>
+<li class="chapter" data-level="8.6" data-path="batch-correction.html"><a href="batch-correction.html#regrets"><i class="fa fa-check"></i><b>8.6</b> Some thoughts about replicates</a></li>
+<li class="chapter" data-level="" data-path="batch-correction.html"><a href="batch-correction.html#session-information-6"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="protein-multiomics.html"><a href="protein-multiomics.html"><i class="fa fa-check"></i><b>9</b> Protein multiomics</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="protein-multiomics.html"><a href="protein-multiomics.html#motivation-7"><i class="fa fa-check"></i><b>9.1</b> Motivation</a></li>
+<li class="chapter" data-level="9.2" data-path="protein-multiomics.html"><a href="protein-multiomics.html#quality-control-1"><i class="fa fa-check"></i><b>9.2</b> Quality control</a></li>
+<li class="chapter" data-level="9.3" data-path="protein-multiomics.html"><a href="protein-multiomics.html#normalization-1"><i class="fa fa-check"></i><b>9.3</b> Normalization</a></li>
+<li class="chapter" data-level="9.4" data-path="protein-multiomics.html"><a href="protein-multiomics.html#feature-selection-and-pca"><i class="fa fa-check"></i><b>9.4</b> Feature selection and PCA</a></li>
+<li class="chapter" data-level="9.5" data-path="protein-multiomics.html"><a href="protein-multiomics.html#cite-rest"><i class="fa fa-check"></i><b>9.5</b> The rest of the analysis</a></li>
+<li class="chapter" data-level="9.6" data-path="protein-multiomics.html"><a href="protein-multiomics.html#combining-modalities"><i class="fa fa-check"></i><b>9.6</b> Combining modalities</a></li>
+<li class="chapter" data-level="" data-path="protein-multiomics.html"><a href="protein-multiomics.html#session-information-7"><i class="fa fa-check"></i>Session information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="closing-remarks.html"><a href="closing-remarks.html"><i class="fa fa-check"></i>Closing remarks</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bioconductor.org" target="blank">Published by Bioconductor</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Single-cell RNA-seq analysis with scrapper</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="batch-correction" class="section level1 hasAnchor" number="8">
+<h1><span class="header-section-number">Chapter 8</span> Batch correction<a href="batch-correction.html#batch-correction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="motivation-6" class="section level2 hasAnchor" number="8.1">
+<h2><span class="header-section-number">8.1</span> Motivation<a href="batch-correction.html#motivation-6" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In large scRNA-seq projects, data generation is split across multiple batches due to logistical constraints.
+However, the processing of different batches is often subject to uncontrollable differences,
+e.g., small changes in incubation times, differences in reagent concentration/quality.
+This may introduce systematic differences in the observed expression in cells from different batches, a.k.a., batch effects.
+Batch effects are problematic as they can be major drivers of heterogeneity in the data,
+masking relevant biological differences and complicating interpretation of the results.</p>
+<p>Batch correction aims to remove batch effects to simplify downstream procedures like clustering.
+The aim is to merge cells from different batches that represent the same biological subpopulation,
+ensuring that they are assigned to the same cluster for easier interpretation.
+Otherwise, cells may cluster by their batch of origin, which would be quite uninteresting.
+Note that this step is quite different from the blocking discussed in most of the previous chapters,
+as setting <code>block=</code> just instructs those functions to ignore the batch effect instead of actively removing it.</p>
+<p>Historically, we used linear regression for batch correction of RNA-seq data <span class="citation">(Ritchie et al. <a href="#ref-ritchie2015limma" role="doc-biblioref">2015</a>; Leek et al. <a href="#ref-leek2012sva" role="doc-biblioref">2012</a>)</span>.
+(We can achieve the same effect with our PCA if we compute the components from the residuals, see Section <a href="principal-components-analysis.html#pca-block">4.4</a>.)
+However, this assumes that the composition of cell subpopulations is either known, and can be used as a covariate in the model;
+or the composition is the same across batches, with a consistent batch effect in each subpopulation.
+Such assumptions are usually inappropriate for single-cell studies.
+Instead, we use bespoke methods for single-cell data <span class="citation">(Haghverdi et al. <a href="#ref-haghverdi2018batch" role="doc-biblioref">2018</a>; Butler et al. <a href="#ref-butler2018integrating" role="doc-biblioref">2018</a>; Lin et al. <a href="#ref-lin2019scmerge" role="doc-biblioref">2019</a>)</span> that do not require these strong assumptions<a href="#fn28" class="footnote-ref" id="fnref28"><sup>28</sup></a>.</p>
+</div>
+<div id="using-mutual-nearest-neighbors" class="section level2 hasAnchor" number="8.2">
+<h2><span class="header-section-number">8.2</span> Using mutual nearest neighbors<a href="batch-correction.html#using-mutual-nearest-neighbors" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Mutual nearest neighbors (MNN) correction was one of the first batch correction methods dedicated to scRNA-seq data <span class="citation">(Haghverdi et al. <a href="#ref-haghverdi2018batch" role="doc-biblioref">2018</a>)</span>.
+For each cell in batch <span class="math inline">\(B_1\)</span>, we search for the <span class="math inline">\(k\)</span> nearest neighbors in batch <span class="math inline">\(B_2\)</span> (for some small <span class="math inline">\(k\)</span>, e.g., 10 - 20).
+Similarly, for each cell in batch <span class="math inline">\(B_2\)</span>, we search for the <span class="math inline">\(k\)</span> nearest neighbors in batch <span class="math inline">\(B_1\)</span>.
+We form an MNN pair between cells <span class="math inline">\(x_1\)</span> in batch <span class="math inline">\(B_1\)</span> and <span class="math inline">\(x_2\)</span> in batch <span class="math inline">\(B_2\)</span> if <span class="math inline">\(x_1\)</span> is <span class="math inline">\(x_2\)</span>’s nearest neighbor and vice versa.
+The assumption is that MNN pairs will (mostly) only form between <span class="math inline">\(x_1\)</span> and <span class="math inline">\(x_2\)</span> from the same biological subpopulation.
+A subpopulation unique to batch <span class="math inline">\(B_2\)</span> will (hopefully) not be able to form MNN pairs to <span class="math inline">\(B_1\)</span>,
+as each cell in <span class="math inline">\(B_1\)</span> will be preoccupied with forming MNN pairs with cells from its matching subpopulation in <span class="math inline">\(B_2\)</span>.
+The difference between the cells in each MNN pair defines the direction and magnitude of the batch effect for its surrounding neighborhood,
+allowing us to correct, e.g., <span class="math inline">\(B_2\)</span> to <span class="math inline">\(B_1\)</span> by subtracting that difference from each cell in <span class="math inline">\(B_2\)</span>.
+To demonstrate, let’s use several PBMC datasets from 10X Genomics <span class="citation">(Zheng et al. <a href="#ref-zheng2017massively" role="doc-biblioref">2017</a>)</span>:</p>
+<div class="sourceCode" id="cb252"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb252-1"><a href="batch-correction.html#cb252-1" aria-hidden="true"></a><span class="kw">library</span>(TENxPBMCData)</span>
+<span id="cb252-2"><a href="batch-correction.html#cb252-2" aria-hidden="true"></a>sce.pbmc3k &lt;-<span class="st"> </span><span class="kw">TENxPBMCData</span>(<span class="st">&#39;pbmc3k&#39;</span>)</span>
+<span id="cb252-3"><a href="batch-correction.html#cb252-3" aria-hidden="true"></a>sce.pbmc4k &lt;-<span class="st"> </span><span class="kw">TENxPBMCData</span>(<span class="st">&#39;pbmc4k&#39;</span>)</span>
+<span id="cb252-4"><a href="batch-correction.html#cb252-4" aria-hidden="true"></a>sce.pbmc8k &lt;-<span class="st"> </span><span class="kw">TENxPBMCData</span>(<span class="st">&#39;pbmc8k&#39;</span>)</span>
+<span id="cb252-5"><a href="batch-correction.html#cb252-5" aria-hidden="true"></a></span>
+<span id="cb252-6"><a href="batch-correction.html#cb252-6" aria-hidden="true"></a><span class="co"># Finding a common set of genes across all batches to allow us to combine</span></span>
+<span id="cb252-7"><a href="batch-correction.html#cb252-7" aria-hidden="true"></a><span class="co"># everything into a single object. This is only necessary if the different</span></span>
+<span id="cb252-8"><a href="batch-correction.html#cb252-8" aria-hidden="true"></a><span class="co"># batches were processed with different genome annotations.</span></span>
+<span id="cb252-9"><a href="batch-correction.html#cb252-9" aria-hidden="true"></a>inter.pbmc &lt;-<span class="st"> </span><span class="kw">Reduce</span>(</span>
+<span id="cb252-10"><a href="batch-correction.html#cb252-10" aria-hidden="true"></a>    intersect,</span>
+<span id="cb252-11"><a href="batch-correction.html#cb252-11" aria-hidden="true"></a>    <span class="kw">list</span>(</span>
+<span id="cb252-12"><a href="batch-correction.html#cb252-12" aria-hidden="true"></a>        <span class="kw">rownames</span>(sce.pbmc3k),</span>
+<span id="cb252-13"><a href="batch-correction.html#cb252-13" aria-hidden="true"></a>        <span class="kw">rownames</span>(sce.pbmc4k),</span>
+<span id="cb252-14"><a href="batch-correction.html#cb252-14" aria-hidden="true"></a>        <span class="kw">rownames</span>(sce.pbmc8k)</span>
+<span id="cb252-15"><a href="batch-correction.html#cb252-15" aria-hidden="true"></a>    )</span>
+<span id="cb252-16"><a href="batch-correction.html#cb252-16" aria-hidden="true"></a>)</span>
+<span id="cb252-17"><a href="batch-correction.html#cb252-17" aria-hidden="true"></a>sce.pbmc &lt;-<span class="st"> </span><span class="kw">combineCols</span>(</span>
+<span id="cb252-18"><a href="batch-correction.html#cb252-18" aria-hidden="true"></a>    sce.pbmc3k[inter.pbmc,],</span>
+<span id="cb252-19"><a href="batch-correction.html#cb252-19" aria-hidden="true"></a>    sce.pbmc4k[inter.pbmc,],</span>
+<span id="cb252-20"><a href="batch-correction.html#cb252-20" aria-hidden="true"></a>    sce.pbmc8k[inter.pbmc,]</span>
+<span id="cb252-21"><a href="batch-correction.html#cb252-21" aria-hidden="true"></a>)</span>
+<span id="cb252-22"><a href="batch-correction.html#cb252-22" aria-hidden="true"></a>sce.pbmc<span class="op">$</span>batch &lt;-<span class="st"> </span><span class="kw">rep</span>(</span>
+<span id="cb252-23"><a href="batch-correction.html#cb252-23" aria-hidden="true"></a>    <span class="kw">c</span>(<span class="st">&quot;3k&quot;</span>, <span class="st">&quot;4k&quot;</span>, <span class="st">&quot;8k&quot;</span>),</span>
+<span id="cb252-24"><a href="batch-correction.html#cb252-24" aria-hidden="true"></a>    <span class="kw">c</span>(<span class="kw">ncol</span>(sce.pbmc3k), <span class="kw">ncol</span>(sce.pbmc4k), <span class="kw">ncol</span>(sce.pbmc8k))</span>
+<span id="cb252-25"><a href="batch-correction.html#cb252-25" aria-hidden="true"></a>)</span>
+<span id="cb252-26"><a href="batch-correction.html#cb252-26" aria-hidden="true"></a></span>
+<span id="cb252-27"><a href="batch-correction.html#cb252-27" aria-hidden="true"></a><span class="co"># For each dataset, TENxPBMCData loads the count data into the R session as a</span></span>
+<span id="cb252-28"><a href="batch-correction.html#cb252-28" aria-hidden="true"></a><span class="co"># file-backed matrix, i.e., the &quot;matrix&quot; object is just a pointer to file</span></span>
+<span id="cb252-29"><a href="batch-correction.html#cb252-29" aria-hidden="true"></a><span class="co"># containing the actual counts. For greater efficiency, we load the data into</span></span>
+<span id="cb252-30"><a href="batch-correction.html#cb252-30" aria-hidden="true"></a><span class="co"># memory as a sparse matrix so that we don&#39;t have to repeatedly read from disk.</span></span>
+<span id="cb252-31"><a href="batch-correction.html#cb252-31" aria-hidden="true"></a><span class="kw">counts</span>(sce.pbmc) &lt;-<span class="st"> </span><span class="kw">as</span>(<span class="kw">counts</span>(sce.pbmc), <span class="st">&quot;dgCMatrix&quot;</span>)</span>
+<span id="cb252-32"><a href="batch-correction.html#cb252-32" aria-hidden="true"></a></span>
+<span id="cb252-33"><a href="batch-correction.html#cb252-33" aria-hidden="true"></a><span class="co"># Quality control, blocking on the batch of origin for each cell.</span></span>
+<span id="cb252-34"><a href="batch-correction.html#cb252-34" aria-hidden="true"></a>is.mito.pbmc &lt;-<span class="st"> </span><span class="kw">grep</span>(<span class="st">&quot;MT&quot;</span>, <span class="kw">rowData</span>(sce.pbmc)<span class="op">$</span>Symbol)</span>
+<span id="cb252-35"><a href="batch-correction.html#cb252-35" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb252-36"><a href="batch-correction.html#cb252-36" aria-hidden="true"></a>sce.qc.pbmc &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb252-37"><a href="batch-correction.html#cb252-37" aria-hidden="true"></a>    sce.pbmc,</span>
+<span id="cb252-38"><a href="batch-correction.html#cb252-38" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="kw">list</span>(<span class="dt">MT=</span>is.mito.pbmc),</span>
+<span id="cb252-39"><a href="batch-correction.html#cb252-39" aria-hidden="true"></a>    <span class="dt">block=</span>sce.pbmc<span class="op">$</span>batch</span>
+<span id="cb252-40"><a href="batch-correction.html#cb252-40" aria-hidden="true"></a>)</span>
+<span id="cb252-41"><a href="batch-correction.html#cb252-41" aria-hidden="true"></a>sce.qc.pbmc &lt;-<span class="st"> </span>sce.pbmc[,sce.qc.pbmc<span class="op">$</span>keep]</span>
+<span id="cb252-42"><a href="batch-correction.html#cb252-42" aria-hidden="true"></a></span>
+<span id="cb252-43"><a href="batch-correction.html#cb252-43" aria-hidden="true"></a><span class="co"># Normalization, blocking on the batch of origin for each cell.</span></span>
+<span id="cb252-44"><a href="batch-correction.html#cb252-44" aria-hidden="true"></a>sce.norm.pbmc &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(</span>
+<span id="cb252-45"><a href="batch-correction.html#cb252-45" aria-hidden="true"></a>    sce.qc.pbmc,</span>
+<span id="cb252-46"><a href="batch-correction.html#cb252-46" aria-hidden="true"></a>    <span class="dt">size.factors=</span>sce.qc.pbmc<span class="op">$</span>sum,</span>
+<span id="cb252-47"><a href="batch-correction.html#cb252-47" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc.pbmc<span class="op">$</span>batch</span>
+<span id="cb252-48"><a href="batch-correction.html#cb252-48" aria-hidden="true"></a>)</span>
+<span id="cb252-49"><a href="batch-correction.html#cb252-49" aria-hidden="true"></a></span>
+<span id="cb252-50"><a href="batch-correction.html#cb252-50" aria-hidden="true"></a><span class="co"># We now choose the top HVGs, with blocking.</span></span>
+<span id="cb252-51"><a href="batch-correction.html#cb252-51" aria-hidden="true"></a>sce.var.pbmc &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(</span>
+<span id="cb252-52"><a href="batch-correction.html#cb252-52" aria-hidden="true"></a>    sce.norm.pbmc, </span>
+<span id="cb252-53"><a href="batch-correction.html#cb252-53" aria-hidden="true"></a>    <span class="dt">block=</span>sce.norm.pbmc<span class="op">$</span>batch</span>
+<span id="cb252-54"><a href="batch-correction.html#cb252-54" aria-hidden="true"></a>)</span>
+<span id="cb252-55"><a href="batch-correction.html#cb252-55" aria-hidden="true"></a></span>
+<span id="cb252-56"><a href="batch-correction.html#cb252-56" aria-hidden="true"></a><span class="co"># Running the PCA on the HVG submatrix, with blocking.</span></span>
+<span id="cb252-57"><a href="batch-correction.html#cb252-57" aria-hidden="true"></a>sce.pca.pbmc &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(</span>
+<span id="cb252-58"><a href="batch-correction.html#cb252-58" aria-hidden="true"></a>    sce.var.pbmc,</span>
+<span id="cb252-59"><a href="batch-correction.html#cb252-59" aria-hidden="true"></a>    <span class="dt">features=</span><span class="kw">rowData</span>(sce.var.pbmc)<span class="op">$</span>hvg,</span>
+<span id="cb252-60"><a href="batch-correction.html#cb252-60" aria-hidden="true"></a>    <span class="dt">number=</span><span class="dv">25</span>,</span>
+<span id="cb252-61"><a href="batch-correction.html#cb252-61" aria-hidden="true"></a>    <span class="dt">block=</span>sce.var.pbmc<span class="op">$</span>batch</span>
+<span id="cb252-62"><a href="batch-correction.html#cb252-62" aria-hidden="true"></a>)</span></code></pre></div>
+<p>If we examine the distribution of cells without any batch correction, we observe some batch-specific substructure (Figure <a href="batch-correction.html#fig:batch-pbmc-uncorrected">8.1</a>).
+Such batch effects could have any number of causes -
+biological differences in the underlying cell population between donors,
+differences in the technology used for cell capture and/or sequencing,
+or changes in the computational piplines for alignment and quantification.
+Regardless of their origins, we consider these differences to be uninteresting as all batches are assaying the same PBMC population and should be replicates of each other.</p>
+<div class="sourceCode" id="cb253"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb253-1"><a href="batch-correction.html#cb253-1" aria-hidden="true"></a>sce.unc.tsne.pbmc &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.pca.pbmc)</span>
+<span id="cb253-2"><a href="batch-correction.html#cb253-2" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb253-3"><a href="batch-correction.html#cb253-3" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.unc.tsne.pbmc, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;batch&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;uncorrected&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:batch-pbmc-uncorrected"></span>
+<img src="batch-correction_files/figure-html/batch-pbmc-uncorrected-1.png" alt="$t$-SNE plot of the cells from the PBMC dataset, without any batch correction. Each cell is colored according to its batch of origin." width="672" />
+<p class="caption">
+Figure 8.1: <span class="math inline">\(t\)</span>-SNE plot of the cells from the PBMC dataset, without any batch correction. Each cell is colored according to its batch of origin.
+</p>
+</div>
+<p>To remove the batch effects, we use <code>correctMnn()</code> to apply MNN correction to the PC scores for all cells.
+(As mentioned in the other chapters, we use PCs to leverage the compaction and denoising effects of the PCA on the HVGs.)
+This yields a set of corrected scores that can be used in place of the original PCs in downstream analyses.
+We observe greater intermingling between batches in Figure <a href="batch-correction.html#fig:batch-pbmc-corrected">8.2</a>, indicating that we have successfully mitigated the batch effect.</p>
+<div class="sourceCode" id="cb254"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb254-1"><a href="batch-correction.html#cb254-1" aria-hidden="true"></a>sce.mnn.pbmc &lt;-<span class="st"> </span><span class="kw">correctMnn.se</span>(sce.pca.pbmc, sce.pca.pbmc<span class="op">$</span>batch)</span>
+<span id="cb254-2"><a href="batch-correction.html#cb254-2" aria-hidden="true"></a>sce.mnn.tsne.pbmc &lt;-<span class="st"> </span><span class="kw">runTsne.se</span>(sce.mnn.pbmc, <span class="dt">reddim.type=</span><span class="st">&quot;MNN&quot;</span>)</span>
+<span id="cb254-3"><a href="batch-correction.html#cb254-3" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.mnn.tsne.pbmc, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;batch&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;After correction&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:batch-pbmc-corrected"></span>
+<img src="batch-correction_files/figure-html/batch-pbmc-corrected-1.png" alt="$t$-SNE plot of the cells from the PBMC dataset after MNN correction. Each cell is colored according to its batch of origin." width="672" />
+<p class="caption">
+Figure 8.2: <span class="math inline">\(t\)</span>-SNE plot of the cells from the PBMC dataset after MNN correction. Each cell is colored according to its batch of origin.
+</p>
+</div>
+<p>Clustering on the corrected PCs ensures that cells from the same underlying population are assigned to the same cluster.
+(We call this a “common clustering” as the definition of each cluster is the same in each batch.)
+This avoids the formation of multiple clusters that represent the same cell type/state but are only separated due to batch effects.
+Such redundant clusters are annoying to interpret as we have to (i) inspect more clusters to discover the same biology and (ii) match them up to each other for further analyses.
+In addition, the correction increases the number of cells in any subpopulations that are shared across batches.
+This provides some opportunities for improved resolution of rare subpopulations during the clustering step<a href="#fn29" class="footnote-ref" id="fnref29"><sup>29</sup></a>.</p>
+<div class="sourceCode" id="cb255"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb255-1"><a href="batch-correction.html#cb255-1" aria-hidden="true"></a>sce.mnn.graph.pbmc &lt;-<span class="st"> </span><span class="kw">clusterGraph.se</span>(sce.mnn.pbmc, <span class="dt">reddim.type=</span><span class="st">&quot;MNN&quot;</span>)</span></code></pre></div>
+<p>Once we obtain a common clustering, a useful diagnostic measure is the distribution of cells across batches within each cluster.
+If a cluster has contributions from multiple batches, it probably represents a cell type/state that is shared across those batches.
+We expect our PBMC clusters to be more-or-less evenly distributed across batches as each batch is a replicate of the others.</p>
+<div class="sourceCode" id="cb256"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb256-1"><a href="batch-correction.html#cb256-1" aria-hidden="true"></a><span class="co"># This is a normalized matrix of cell counts for each group (row) and block</span></span>
+<span id="cb256-2"><a href="batch-correction.html#cb256-2" aria-hidden="true"></a><span class="co"># (column). We divide each column by the number of cells in each batch to</span></span>
+<span id="cb256-3"><a href="batch-correction.html#cb256-3" aria-hidden="true"></a><span class="co"># account for differences between batches. Then we divide by the row sums to</span></span>
+<span id="cb256-4"><a href="batch-correction.html#cb256-4" aria-hidden="true"></a><span class="co"># get the distribution of cells across batches in each cluster.</span></span>
+<span id="cb256-5"><a href="batch-correction.html#cb256-5" aria-hidden="true"></a>cluster.batch.mnn.pbmc &lt;-<span class="st"> </span><span class="kw">countGroupsByBlock</span>(</span>
+<span id="cb256-6"><a href="batch-correction.html#cb256-6" aria-hidden="true"></a>    sce.mnn.graph.pbmc<span class="op">$</span>clusters,</span>
+<span id="cb256-7"><a href="batch-correction.html#cb256-7" aria-hidden="true"></a>    sce.mnn.graph.pbmc<span class="op">$</span>batch,</span>
+<span id="cb256-8"><a href="batch-correction.html#cb256-8" aria-hidden="true"></a>    <span class="dt">normalize.groups=</span><span class="ot">TRUE</span>,</span>
+<span id="cb256-9"><a href="batch-correction.html#cb256-9" aria-hidden="true"></a>    <span class="dt">normalize.block=</span><span class="ot">TRUE</span></span>
+<span id="cb256-10"><a href="batch-correction.html#cb256-10" aria-hidden="true"></a>)</span>
+<span id="cb256-11"><a href="batch-correction.html#cb256-11" aria-hidden="true"></a><span class="kw">print</span>(cluster.batch.mnn.pbmc, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">zero.print=</span><span class="st">&quot;.&quot;</span>)</span></code></pre></div>
+<pre><code>##       block
+## groups   3k   4k   8k
+##     1  0.51 0.23 0.26
+##     2  0.29 0.37 0.34
+##     3  0.34 0.34 0.33
+##     4  0.42 0.32 0.26
+##     5  0.32 0.37 0.31
+##     6  0.33 0.33 0.33
+##     7  0.56 0.23 0.21
+##     8  0.31 0.34 0.35
+##     9  0.22 0.20 0.58
+##     10 0.31 0.34 0.35
+##     11 0.22 0.39 0.39
+##     12 0.20 0.39 0.41
+##     13 0.21 0.33 0.46
+##     14 0.25 0.40 0.35
+##     15 0.17 0.43 0.39</code></pre>
+<p>If a cluster has no contribution from a batch, this either represents a unique subpopulation or it indicates that batch correction was not completely successful.
+Indeed, clustering on the uncorrected PCs yields some batch-specific clusters in the PBMC data.
+These are unlikely to represent unique types/states given that the batches should be replicates.</p>
+<div class="sourceCode" id="cb258"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb258-1"><a href="batch-correction.html#cb258-1" aria-hidden="true"></a>sce.unc.graph.pbmc &lt;-<span class="st"> </span><span class="kw">clusterGraph.se</span>(sce.pca.pbmc)</span>
+<span id="cb258-2"><a href="batch-correction.html#cb258-2" aria-hidden="true"></a>cluster.batch.unc.pbmc &lt;-<span class="st"> </span><span class="kw">countGroupsByBlock</span>(</span>
+<span id="cb258-3"><a href="batch-correction.html#cb258-3" aria-hidden="true"></a>    sce.unc.graph.pbmc<span class="op">$</span>clusters,</span>
+<span id="cb258-4"><a href="batch-correction.html#cb258-4" aria-hidden="true"></a>    sce.unc.graph.pbmc<span class="op">$</span>batch,</span>
+<span id="cb258-5"><a href="batch-correction.html#cb258-5" aria-hidden="true"></a>    <span class="dt">normalize.groups=</span><span class="ot">TRUE</span>,</span>
+<span id="cb258-6"><a href="batch-correction.html#cb258-6" aria-hidden="true"></a>    <span class="dt">normalize.block=</span><span class="ot">TRUE</span></span>
+<span id="cb258-7"><a href="batch-correction.html#cb258-7" aria-hidden="true"></a>)</span>
+<span id="cb258-8"><a href="batch-correction.html#cb258-8" aria-hidden="true"></a><span class="kw">print</span>(cluster.batch.unc.pbmc, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">zero.print=</span><span class="st">&quot;.&quot;</span>)</span></code></pre></div>
+<pre><code>##       block
+## groups     3k     4k     8k
+##     1  0.4123 0.2784 0.3093
+##     2  0.3086 0.3473 0.3441
+##     3  1.0000      .      .
+##     4  0.4290 0.3133 0.2577
+##     5  0.2479 0.4019 0.3502
+##     6  0.3124 0.3459 0.3416
+##     7  0.9986 0.0014      .
+##     8  0.2180 0.3949 0.3871
+##     9  0.0274 0.5128 0.4597
+##     10 0.1153 0.4206 0.4641
+##     11 0.1815 0.4346 0.3840
+##     12 0.1739 0.4320 0.3941
+##     13 0.1427 0.2422 0.6150
+##     14 0.0219 0.3974 0.5806
+##     15      . 0.5020 0.4980</code></pre>
+<p>Compared to linear regression, MNN correction does not assume that the population composition is the same or known beforehand.
+It effectively learns the shared population structure via identification of MNN pairs and uses this information to estimate a local batch effect for subpopulation-specific correction.
+However, MNN correction is not without its own assumptions:</p>
+<ul>
+<li>It requires some shared subpopulations between batches to encourage formation of the correct MNN pairs.
+Otherwise, if one batch contains B cells only and another batch contains T cells only, MNN pairs would form between the two cell types and the correction would merge them together.
+More generally, MNN correction becomes more robust with more shared subpopulations between batches.
+This implicitly reduces the risk of forming incorrect MNN pairs between unique subpopulations in each batch.
+Imagine we have one batch containing B cells and CD4<sup>+</sup> T cells and another batch containing B cells and CD8<sup>+</sup> T cells.
+MNN pairs would form correctly across batches for B cells, but they would also form between the CD4<sup>+</sup> and CD8<sup>+</sup> T cells as they are the closest available matches to each other.
+If our first batch also contained CD8<sup>+</sup> T cells, they would match across batches and the CD4<sup>+</sup> T cells would (correctly) not participate in any MNN pairs.</li>
+<li>Any shared subpopulations should have more than <span class="math inline">\(k\)</span> cells in each batch to ensure that MNN pairs do not incorrectly form across different subpopulations.
+For example, let’s say we have one batch that contains only T cells and another batch that contains B cells and fewer than 10 T cells.
+If we used <span class="math inline">\(k = 10\)</span>, some MNN pairs would form between the T cells in the first batch and B cells in the second batch, which would be wrong.
+(That said, failure is not guaranteed for small populations - the example above would have worked out fine if B cells also existed in the first batch.
+It’s just that the risk of incorrect MNN pairs is much higher when the subpopulation size drops below <span class="math inline">\(k\)</span>.)</li>
+<li>For more subtle population structure, MNN correction assumes that the batch effect is orthogonal to the axes of biological variation.
+This is generally reasonable for batch effects caused by technical differences that are unrelated to biology - less so for biological differences.
+Say we’re studying some kind of continuous biological variation, e.g., differentiation, and we have two batches that are replicates of each other.
+We introduce a batch effect that is not orthogonal to the biological variation, e.g., because the second batch has higher baseline expression of the differentiation marker.
+MNN correction would be slightly incorrect as it preserves that the non-orthogonal component of the batch effect (Figure <a href="batch-correction.html#fig:batch-activity-example">8.3</a>).</li>
+</ul>
+<div class="figure"><span style="display:block;" id="fig:batch-activity-example"></span>
+<img src="batch-correction_files/figure-html/batch-activity-example-1.png" alt="Diagram of MNN correction when the batch effect is confounded with biological variation." width="960" />
+<p class="caption">
+Figure 8.3: Diagram of MNN correction when the batch effect is confounded with biological variation.
+</p>
+</div>
+<p>Violations of some of these assumptions might be tolerable, sometimes.
+For example, we wouldn’t lose too much sleep if monocytes and macrophages were merged together across batches…
+but then again, maybe we would, if we were really interested in studying differentiation in that particular lineage.
+In any case, it is best to treat batch-corrected data - and conclusions derived from it - with a grain of salt.
+The various merging decisions made by the algorithm may or may not be sensible depending on our scientific question.</p>
+</div>
+<div id="what-is-a-batch-effect-anyway" class="section level2 hasAnchor" number="8.3">
+<h2><span class="header-section-number">8.3</span> What is a batch effect, anyway?<a href="batch-correction.html#what-is-a-batch-effect-anyway" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In this chapter’s introduction, we defined batch effects in terms of technical differences that are obviously uninteresting.
+However, certain biological differences are also uninteresting and can be treated as batch effects.
+One example is the biological variability between replicate samples (e.g., donors, animals, cultures) from which the cells are extracted.
+We are generally uninterested in systematic differences between samples, which might cause cells of the same type to form separate clusters based on their sample of origin.
+In these replicated experiments, we might consider removing this sample-to-sample variability by treating each sample as a batch in <code>correctMnn.se()</code>.
+Similarly, we could apply batch correction to any uninteresting categorical factor in our dataset, e.g., sex, genotype, cell cycle phase.
+Admittedly, we’re misusing the word “batch” here<a href="#fn30" class="footnote-ref" id="fnref30"><sup>30</sup></a>,
+but we’re already halfway into this chapter so let’s just bear with it until the end.</p>
+<p>Now, what happens if different samples contain cells from different experimental conditions?
+Say we have two samples where one contains control cells and the other contains drug-treated cells.
+If we applied MNN correction to the samples, any treatment-induced differential expression would be treated as a batch effect and removed.
+This behavior is both expected and desirable - by merging cells from both conditions, we only need to characterize population heterogeneity once for all cells.
+For example, we can use the corrected coordinates to define a common set of clusters across both treated and control samples.
+This, in turn, allows us test for differences in expression or abundance of the same cell type/state between conditions (Section <a href="batch-correction.html#multi-condition-analyses">8.5</a>).</p>
+<p>It may seem distressing to some folks that a (very interesting!) biological difference between conditions is deliberately removed by batch correction.
+However, this concern is largely misplaced as the corrected values are only ever used for defining common clusters and annotations.
+Any differences between conditions will still be preserved in the results of Section <a href="batch-correction.html#multi-condition-analyses">8.5</a>.
+The alternative strategy would be to cluster each condition separately and to attempt to identify matching clusters across conditions,
+which is much less convenient (though not an inherently bad idea, see Section <a href="batch-correction.html#regrets">8.6</a>).</p>
+</div>
+<div id="using-the-corrected-values" class="section level2 hasAnchor" number="8.4">
+<h2><span class="header-section-number">8.4</span> Using the corrected values<a href="batch-correction.html#using-the-corrected-values" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>As previously mentioned, the batch-corrected values are typically used to quantify population heterogeneity in a common manner across batches.
+Cluster 1 in batch <span class="math inline">\(B_1\)</span> is the same as cluster 1 in batch <span class="math inline">\(B_2\)</span> when clustering is performed on the corrected data.
+We do not have to cluster each batch separately and then identify mappings between separate clusterings,
+which is time-consuming and might not even be possible when the clusters are not well-separated.
+The same reasoning applies to other cell-based analyses like trajectory reconstruction.</p>
+<p>For per-gene analyses, the corrected values are more difficult to interpret.
+The correction is not obliged to preserve relative differences in per-gene expression when aligning multiple batches.
+In fact, the opposite is true - the correction must distort the expression profiles to merge batches together,
+as any differences in expression between batches for the same subpopulation would be a batch effect.
+Let’s demonstrate using two pancreas datasets <span class="citation">(Grun et al. <a href="#ref-grun2016denovo" role="doc-biblioref">2016</a>; Muraro et al. <a href="#ref-muraro2016singlecell" role="doc-biblioref">2016</a>)</span> that we’ll consider as separate batches.</p>
+<div class="sourceCode" id="cb260"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb260-1"><a href="batch-correction.html#cb260-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb260-2"><a href="batch-correction.html#cb260-2" aria-hidden="true"></a>sce.grun &lt;-<span class="st"> </span><span class="kw">GrunPancreasData</span>()</span>
+<span id="cb260-3"><a href="batch-correction.html#cb260-3" aria-hidden="true"></a>sce.muraro &lt;-<span class="st"> </span><span class="kw">MuraroPancreasData</span>()</span>
+<span id="cb260-4"><a href="batch-correction.html#cb260-4" aria-hidden="true"></a></span>
+<span id="cb260-5"><a href="batch-correction.html#cb260-5" aria-hidden="true"></a><span class="co"># Taking the intersection of features for both endogenous genes...</span></span>
+<span id="cb260-6"><a href="batch-correction.html#cb260-6" aria-hidden="true"></a>inter.pancreas &lt;-<span class="st"> </span><span class="kw">intersect</span>(<span class="kw">rownames</span>(sce.grun), <span class="kw">rownames</span>(sce.muraro))</span>
+<span id="cb260-7"><a href="batch-correction.html#cb260-7" aria-hidden="true"></a>sce.grun &lt;-<span class="st"> </span>sce.grun[inter.pancreas,]</span>
+<span id="cb260-8"><a href="batch-correction.html#cb260-8" aria-hidden="true"></a>sce.muraro &lt;-<span class="st"> </span>sce.muraro[inter.pancreas,]</span>
+<span id="cb260-9"><a href="batch-correction.html#cb260-9" aria-hidden="true"></a></span>
+<span id="cb260-10"><a href="batch-correction.html#cb260-10" aria-hidden="true"></a><span class="co"># And spike-ins, for completeness...</span></span>
+<span id="cb260-11"><a href="batch-correction.html#cb260-11" aria-hidden="true"></a>inter.ercc.pancreas &lt;-<span class="st"> </span><span class="kw">intersect</span>(<span class="kw">rownames</span>(<span class="kw">altExp</span>(sce.grun, <span class="st">&quot;ERCC&quot;</span>)), <span class="kw">rownames</span>(<span class="kw">altExp</span>(sce.muraro, <span class="st">&quot;ERCC&quot;</span>)))</span>
+<span id="cb260-12"><a href="batch-correction.html#cb260-12" aria-hidden="true"></a><span class="kw">altExp</span>(sce.grun, <span class="st">&quot;ERCC&quot;</span>) &lt;-<span class="st"> </span><span class="kw">altExp</span>(sce.grun, <span class="st">&quot;ERCC&quot;</span>)[inter.ercc.pancreas,]</span>
+<span id="cb260-13"><a href="batch-correction.html#cb260-13" aria-hidden="true"></a><span class="kw">altExp</span>(sce.muraro, <span class="st">&quot;ERCC&quot;</span>) &lt;-<span class="st"> </span><span class="kw">altExp</span>(sce.muraro, <span class="st">&quot;ERCC&quot;</span>)[inter.ercc.pancreas,]</span>
+<span id="cb260-14"><a href="batch-correction.html#cb260-14" aria-hidden="true"></a></span>
+<span id="cb260-15"><a href="batch-correction.html#cb260-15" aria-hidden="true"></a><span class="co"># Before combining both datasets into a single SCE object. </span></span>
+<span id="cb260-16"><a href="batch-correction.html#cb260-16" aria-hidden="true"></a>sce.pancreas &lt;-<span class="st"> </span><span class="kw">combineCols</span>(sce.grun, sce.muraro)</span>
+<span id="cb260-17"><a href="batch-correction.html#cb260-17" aria-hidden="true"></a>sce.pancreas<span class="op">$</span>batch &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;grun&quot;</span>, <span class="st">&quot;muraro&quot;</span>), <span class="kw">c</span>(<span class="kw">ncol</span>(sce.grun), <span class="kw">ncol</span>(sce.muraro)))</span>
+<span id="cb260-18"><a href="batch-correction.html#cb260-18" aria-hidden="true"></a></span>
+<span id="cb260-19"><a href="batch-correction.html#cb260-19" aria-hidden="true"></a><span class="co"># Quality control, blocking on the batch of origin for each cell. We don&#39;t</span></span>
+<span id="cb260-20"><a href="batch-correction.html#cb260-20" aria-hidden="true"></a><span class="co"># have mitochondrial genes here so we&#39;ll use the spike-ins instead.</span></span>
+<span id="cb260-21"><a href="batch-correction.html#cb260-21" aria-hidden="true"></a><span class="kw">library</span>(scrapper)</span>
+<span id="cb260-22"><a href="batch-correction.html#cb260-22" aria-hidden="true"></a>sce.qc.pancreas &lt;-<span class="st"> </span><span class="kw">quickRnaQc.se</span>(</span>
+<span id="cb260-23"><a href="batch-correction.html#cb260-23" aria-hidden="true"></a>    sce.pancreas,</span>
+<span id="cb260-24"><a href="batch-correction.html#cb260-24" aria-hidden="true"></a>    <span class="dt">subsets=</span><span class="ot">NULL</span>,</span>
+<span id="cb260-25"><a href="batch-correction.html#cb260-25" aria-hidden="true"></a>    <span class="dt">altexp.proportions=</span><span class="st">&quot;ERCC&quot;</span>,</span>
+<span id="cb260-26"><a href="batch-correction.html#cb260-26" aria-hidden="true"></a>    <span class="dt">block=</span>sce.pancreas<span class="op">$</span>batch</span>
+<span id="cb260-27"><a href="batch-correction.html#cb260-27" aria-hidden="true"></a>)</span>
+<span id="cb260-28"><a href="batch-correction.html#cb260-28" aria-hidden="true"></a>sce.qc.pancreas &lt;-<span class="st"> </span>sce.qc.pancreas[,sce.qc.pancreas<span class="op">$</span>keep]</span>
+<span id="cb260-29"><a href="batch-correction.html#cb260-29" aria-hidden="true"></a></span>
+<span id="cb260-30"><a href="batch-correction.html#cb260-30" aria-hidden="true"></a><span class="co"># Normalization, blocking on the batch of origin for each cell.</span></span>
+<span id="cb260-31"><a href="batch-correction.html#cb260-31" aria-hidden="true"></a>sce.norm.pancreas &lt;-<span class="st"> </span><span class="kw">normalizeRnaCounts.se</span>(</span>
+<span id="cb260-32"><a href="batch-correction.html#cb260-32" aria-hidden="true"></a>    sce.qc.pancreas,</span>
+<span id="cb260-33"><a href="batch-correction.html#cb260-33" aria-hidden="true"></a>    <span class="dt">size.factors=</span>sce.qc.pancreas<span class="op">$</span>sum,</span>
+<span id="cb260-34"><a href="batch-correction.html#cb260-34" aria-hidden="true"></a>    <span class="dt">block=</span>sce.qc.pancreas<span class="op">$</span>batch</span>
+<span id="cb260-35"><a href="batch-correction.html#cb260-35" aria-hidden="true"></a>)</span>
+<span id="cb260-36"><a href="batch-correction.html#cb260-36" aria-hidden="true"></a></span>
+<span id="cb260-37"><a href="batch-correction.html#cb260-37" aria-hidden="true"></a><span class="co"># We now choose the top HVGs, with blocking.</span></span>
+<span id="cb260-38"><a href="batch-correction.html#cb260-38" aria-hidden="true"></a>sce.var.pancreas &lt;-<span class="st"> </span><span class="kw">chooseRnaHvgs.se</span>(sce.norm.pancreas, <span class="dt">block=</span>sce.norm.pancreas<span class="op">$</span>batch)</span>
+<span id="cb260-39"><a href="batch-correction.html#cb260-39" aria-hidden="true"></a></span>
+<span id="cb260-40"><a href="batch-correction.html#cb260-40" aria-hidden="true"></a><span class="co"># Running the PCA on the HVG submatrix, with blocking.</span></span>
+<span id="cb260-41"><a href="batch-correction.html#cb260-41" aria-hidden="true"></a>sce.pca.pancreas &lt;-<span class="st"> </span><span class="kw">runPca.se</span>(</span>
+<span id="cb260-42"><a href="batch-correction.html#cb260-42" aria-hidden="true"></a>    sce.var.pancreas,</span>
+<span id="cb260-43"><a href="batch-correction.html#cb260-43" aria-hidden="true"></a>    <span class="dt">features=</span><span class="kw">rowData</span>(sce.var.pancreas)<span class="op">$</span>hvg,</span>
+<span id="cb260-44"><a href="batch-correction.html#cb260-44" aria-hidden="true"></a>    <span class="dt">block=</span>sce.var.pancreas<span class="op">$</span>batch</span>
+<span id="cb260-45"><a href="batch-correction.html#cb260-45" aria-hidden="true"></a>)</span></code></pre></div>
+<p>We use <code>correctMnn()</code> to obtain MNN-corrected PCs for clustering and visualization.
+Both batches contribute to each cluster and are intermingled in Figure <a href="batch-correction.html#fig:batch-pancreas-corrected">8.4</a>,
+which is expected given that both datasets are measuring the same pancreatic cell types.</p>
+<div class="sourceCode" id="cb261"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb261-1"><a href="batch-correction.html#cb261-1" aria-hidden="true"></a>sce.mnn.pancreas &lt;-<span class="st"> </span><span class="kw">correctMnn.se</span>(sce.pca.pancreas, sce.qc.pancreas<span class="op">$</span>batch)</span>
+<span id="cb261-2"><a href="batch-correction.html#cb261-2" aria-hidden="true"></a>sce.nn.mnn.pancreas &lt;-<span class="st"> </span><span class="kw">runAllNeighborSteps.se</span>(sce.mnn.pancreas, <span class="dt">reddim.type=</span><span class="st">&quot;MNN&quot;</span>)</span>
+<span id="cb261-3"><a href="batch-correction.html#cb261-3" aria-hidden="true"></a></span>
+<span id="cb261-4"><a href="batch-correction.html#cb261-4" aria-hidden="true"></a>cluster.batch.mnn.pancreas &lt;-<span class="st"> </span><span class="kw">countGroupsByBlock</span>(</span>
+<span id="cb261-5"><a href="batch-correction.html#cb261-5" aria-hidden="true"></a>    sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb261-6"><a href="batch-correction.html#cb261-6" aria-hidden="true"></a>    sce.nn.mnn.pancreas<span class="op">$</span>batch,</span>
+<span id="cb261-7"><a href="batch-correction.html#cb261-7" aria-hidden="true"></a>    <span class="dt">normalize.groups=</span><span class="ot">TRUE</span>,</span>
+<span id="cb261-8"><a href="batch-correction.html#cb261-8" aria-hidden="true"></a>    <span class="dt">normalize.block=</span><span class="ot">TRUE</span></span>
+<span id="cb261-9"><a href="batch-correction.html#cb261-9" aria-hidden="true"></a>)</span>
+<span id="cb261-10"><a href="batch-correction.html#cb261-10" aria-hidden="true"></a><span class="kw">print</span>(cluster.batch.mnn.pancreas, <span class="dt">digits=</span><span class="dv">2</span>, <span class="dt">zero.print=</span><span class="st">&quot;.&quot;</span>)</span></code></pre></div>
+<pre><code>##       block
+## groups grun muraro
+##     1  0.66   0.34
+##     2  0.71   0.29
+##     3  0.86   0.14
+##     4  0.33   0.67
+##     5  0.51   0.49
+##     6  0.35   0.65
+##     7  0.24   0.76
+##     8  0.36   0.64
+##     9  0.71   0.29
+##     10 0.30   0.70
+##     11 0.38   0.62
+##     12 0.13   0.87</code></pre>
+<div class="sourceCode" id="cb263"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb263-1"><a href="batch-correction.html#cb263-1" aria-hidden="true"></a><span class="kw">library</span>(scater)</span>
+<span id="cb263-2"><a href="batch-correction.html#cb263-2" aria-hidden="true"></a><span class="kw">plotReducedDim</span>(sce.nn.mnn.pancreas, <span class="st">&quot;TSNE&quot;</span>, <span class="dt">colour_by=</span><span class="st">&quot;batch&quot;</span>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:batch-pancreas-corrected"></span>
+<img src="batch-correction_files/figure-html/batch-pancreas-corrected-1.png" alt="$t$-SNE plot of the Grun and Muraro pancreas datasets after MNN correction. Each point is a cell, colored according to its assigned batch." width="672" />
+<p class="caption">
+Figure 8.4: <span class="math inline">\(t\)</span>-SNE plot of the Grun and Muraro pancreas datasets after MNN correction. Each point is a cell, colored according to its assigned batch.
+</p>
+</div>
+<p>We recover “corrected expression values” for any given gene by multiplying the corrected PCs with the corresponding row of the rotation matrix.
+This is effectively a low-rank approximation of our original log-expression matrix, but using the corrected coordinates for each cell.
+Of particular interest is the <em>INS-IGF2</em> gene, where MNN correction forces the expression profiles to be consistent between batches (Figure <a href="batch-correction.html#fig:batch-corrected-insigf2">8.5</a>).
+(As of time of writing, this involved eliminating the variability in <em>INS-IGF2</em> across clusters in the Grun dataset to match the lack of expression in the Muraro dataset,
+though the opposite outcome is equally possible, i.e., introducing non-zero expression in the Muraro dataset to match that of the Grun dataset.)
+From the perspective of the correction algorithm, this effect is intended as these differences between batches are part of the batch effect and must be removed.
+However, if we relied the corrected expression values, we would draw misleading conclusions about the behavior of <em>INS-IGF2</em> across batches.
+For example, if one batch consisted of drug-treated patients and another batch was a control,
+we would not detect any treatment-induced differential expression from the corrected expression values.</p>
+<div class="sourceCode" id="cb264"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb264-1"><a href="batch-correction.html#cb264-1" aria-hidden="true"></a>current.insigf2 &lt;-<span class="st"> &quot;INS-IGF2__chr11&quot;</span></span>
+<span id="cb264-2"><a href="batch-correction.html#cb264-2" aria-hidden="true"></a>rotation.insigf2 &lt;-<span class="st"> </span><span class="kw">metadata</span>(sce.nn.mnn.pancreas)<span class="op">$</span>PCA<span class="op">$</span>rotation[current.insigf2,]</span>
+<span id="cb264-3"><a href="batch-correction.html#cb264-3" aria-hidden="true"></a>lowrank.unc.insigf2 &lt;-<span class="st"> </span><span class="kw">reducedDim</span>(sce.nn.mnn.pancreas, <span class="st">&quot;PCA&quot;</span>) <span class="op">%*%</span><span class="st"> </span>rotation.insigf2</span>
+<span id="cb264-4"><a href="batch-correction.html#cb264-4" aria-hidden="true"></a>lowrank.mnn.insigf2 &lt;-<span class="st"> </span><span class="kw">reducedDim</span>(sce.nn.mnn.pancreas, <span class="st">&quot;MNN&quot;</span>) <span class="op">%*%</span><span class="st"> </span>rotation.insigf2</span>
+<span id="cb264-5"><a href="batch-correction.html#cb264-5" aria-hidden="true"></a></span>
+<span id="cb264-6"><a href="batch-correction.html#cb264-6" aria-hidden="true"></a>gridExtra<span class="op">::</span><span class="kw">grid.arrange</span>(</span>
+<span id="cb264-7"><a href="batch-correction.html#cb264-7" aria-hidden="true"></a>    <span class="kw">plotExpression</span>(</span>
+<span id="cb264-8"><a href="batch-correction.html#cb264-8" aria-hidden="true"></a>        sce.nn.mnn.pancreas,</span>
+<span id="cb264-9"><a href="batch-correction.html#cb264-9" aria-hidden="true"></a>        <span class="dt">x=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb264-10"><a href="batch-correction.html#cb264-10" aria-hidden="true"></a>        <span class="dt">features=</span>current.insigf2,</span>
+<span id="cb264-11"><a href="batch-correction.html#cb264-11" aria-hidden="true"></a>        <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb264-12"><a href="batch-correction.html#cb264-12" aria-hidden="true"></a>        <span class="dt">other_fields=</span><span class="st">&quot;batch&quot;</span></span>
+<span id="cb264-13"><a href="batch-correction.html#cb264-13" aria-hidden="true"></a>    ) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb264-14"><a href="batch-correction.html#cb264-14" aria-hidden="true"></a><span class="st">        </span><span class="kw">facet_grid</span>(<span class="op">~</span>batch) <span class="op">+</span></span>
+<span id="cb264-15"><a href="batch-correction.html#cb264-15" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;original expression&quot;</span>),</span>
+<span id="cb264-16"><a href="batch-correction.html#cb264-16" aria-hidden="true"></a>    <span class="kw">plotXY</span>(</span>
+<span id="cb264-17"><a href="batch-correction.html#cb264-17" aria-hidden="true"></a>        sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb264-18"><a href="batch-correction.html#cb264-18" aria-hidden="true"></a>        lowrank.unc.insigf2,</span>
+<span id="cb264-19"><a href="batch-correction.html#cb264-19" aria-hidden="true"></a>        <span class="dt">colour_by=</span>sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb264-20"><a href="batch-correction.html#cb264-20" aria-hidden="true"></a>        <span class="dt">other_fields=</span><span class="kw">list</span>(<span class="dt">batch=</span>sce.nn.mnn.pancreas<span class="op">$</span>batch)</span>
+<span id="cb264-21"><a href="batch-correction.html#cb264-21" aria-hidden="true"></a>    ) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb264-22"><a href="batch-correction.html#cb264-22" aria-hidden="true"></a><span class="st">        </span><span class="kw">facet_grid</span>(<span class="op">~</span>batch) <span class="op">+</span></span>
+<span id="cb264-23"><a href="batch-correction.html#cb264-23" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;reconstruction without correction&quot;</span>),</span>
+<span id="cb264-24"><a href="batch-correction.html#cb264-24" aria-hidden="true"></a>    <span class="kw">plotXY</span>(</span>
+<span id="cb264-25"><a href="batch-correction.html#cb264-25" aria-hidden="true"></a>        sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb264-26"><a href="batch-correction.html#cb264-26" aria-hidden="true"></a>        lowrank.mnn.insigf2,</span>
+<span id="cb264-27"><a href="batch-correction.html#cb264-27" aria-hidden="true"></a>        <span class="dt">colour_by=</span>sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb264-28"><a href="batch-correction.html#cb264-28" aria-hidden="true"></a>        <span class="dt">other_fields=</span><span class="kw">list</span>(<span class="dt">batch=</span>sce.nn.mnn.pancreas<span class="op">$</span>batch)</span>
+<span id="cb264-29"><a href="batch-correction.html#cb264-29" aria-hidden="true"></a>    ) <span class="op">+</span></span>
+<span id="cb264-30"><a href="batch-correction.html#cb264-30" aria-hidden="true"></a><span class="st">        </span><span class="kw">facet_grid</span>(<span class="op">~</span>batch) <span class="op">+</span></span>
+<span id="cb264-31"><a href="batch-correction.html#cb264-31" aria-hidden="true"></a><span class="st">        </span><span class="kw">ggtitle</span>(<span class="st">&quot;reconstruction with correction&quot;</span>),</span>
+<span id="cb264-32"><a href="batch-correction.html#cb264-32" aria-hidden="true"></a>    <span class="dt">ncol=</span><span class="dv">1</span></span>
+<span id="cb264-33"><a href="batch-correction.html#cb264-33" aria-hidden="true"></a>)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:batch-corrected-insigf2"></span>
+<img src="batch-correction_files/figure-html/batch-corrected-insigf2-1.png" alt="Expression of _INS-IGF2_ across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom)." width="768" />
+<p class="caption">
+Figure 8.5: Expression of <em>INS-IGF2</em> across clusters in the combined Grun/Muraro pancreas dataset. Expression is quantified in terms of the log-normalized expression values (top panel), the reconstructed expression values with the uncorrected PCs (middle), and the reconstructed expression values with the MNN-corrected PCs (bottom).
+</p>
+</div>
+<p>For gene-based analyses, we recommend using the original log-expression values as these are easier to interpret.
+Differences between batches should be handled by some other mechanism, e.g., blocking during marker detection (Figure <a href="batch-correction.html#fig:batch-markers-pancreas">8.6</a>, Section <a href="marker-detection.html#marker-block">7.5</a>).
+In the past decade, we have - perhaps once or twice - used the corrected values for visualization,
+specifically to synchronize expression across all batches to the same color gradient in a <span class="math inline">\(t\)</span>-SNE plot.
+This was done purely for aesthetics and was probably not worth the extra hassle,
+given that we had to check that the plot with the corrected values gave the same conclusions as the original expression values.</p>
+<div class="sourceCode" id="cb265"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb265-1"><a href="batch-correction.html#cb265-1" aria-hidden="true"></a>markers.pancreas &lt;-<span class="st"> </span><span class="kw">scoreMarkers.se</span>(</span>
+<span id="cb265-2"><a href="batch-correction.html#cb265-2" aria-hidden="true"></a>    sce.nn.mnn.pancreas,</span>
+<span id="cb265-3"><a href="batch-correction.html#cb265-3" aria-hidden="true"></a>    sce.nn.mnn.pancreas<span class="op">$</span>clusters,</span>
+<span id="cb265-4"><a href="batch-correction.html#cb265-4" aria-hidden="true"></a>    <span class="dt">block=</span>sce.nn.mnn.pancreas<span class="op">$</span>block</span>
+<span id="cb265-5"><a href="batch-correction.html#cb265-5" aria-hidden="true"></a>)</span>
+<span id="cb265-6"><a href="batch-correction.html#cb265-6" aria-hidden="true"></a></span>
+<span id="cb265-7"><a href="batch-correction.html#cb265-7" aria-hidden="true"></a><span class="co"># Looking at the top markers for cluster 1.</span></span>
+<span id="cb265-8"><a href="batch-correction.html#cb265-8" aria-hidden="true"></a>chosen.markers.pancreas &lt;-<span class="st"> </span>markers.pancreas[[<span class="st">&quot;1&quot;</span>]]</span>
+<span id="cb265-9"><a href="batch-correction.html#cb265-9" aria-hidden="true"></a><span class="kw">previewMarkers</span>(chosen.markers.pancreas)</span></code></pre></div>
+<pre><code>## DataFrame with 10 rows and 3 columns
+##                      mean  detected       lfc
+##                 &lt;numeric&gt; &lt;numeric&gt; &lt;numeric&gt;
+## REG1A__chr2       8.39445  1.000000   6.28158
+## SPINK1__chr5      6.69446  0.998291   5.60744
+## CTRB2__chr16      6.01565  0.996581   5.26939
+## PRSS1__chr7       6.04823  0.996581   5.35635
+## GSTA1__chr6       3.88348  0.979487   3.62438
+## CD24__chrY        5.10648  0.996581   3.12548
+## SERPINA3__chr14   5.19148  0.996581   4.25590
+## PRSS3P2__chr7     5.14508  0.989744   4.75444
+## CPA1__chr7        4.82004  0.982906   4.37088
+## GSTA2__chr6       3.24975  0.953846   3.11099</code></pre>
+<div class="sourceCode" id="cb267"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb267-1"><a href="batch-correction.html#cb267-1" aria-hidden="true"></a><span class="kw">plotExpression</span>(</span>
+<span id="cb267-2"><a href="batch-correction.html#cb267-2" aria-hidden="true"></a>    sce.nn.mnn.pancreas,</span>
+<span id="cb267-3"><a href="batch-correction.html#cb267-3" aria-hidden="true"></a>    <span class="dt">x=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb267-4"><a href="batch-correction.html#cb267-4" aria-hidden="true"></a>    <span class="dt">features=</span><span class="kw">rownames</span>(chosen.markers.pancreas)[<span class="dv">1</span>],</span>
+<span id="cb267-5"><a href="batch-correction.html#cb267-5" aria-hidden="true"></a>    <span class="dt">colour_by=</span><span class="st">&quot;clusters&quot;</span>,</span>
+<span id="cb267-6"><a href="batch-correction.html#cb267-6" aria-hidden="true"></a>    <span class="dt">other_fields=</span><span class="st">&quot;batch&quot;</span></span>
+<span id="cb267-7"><a href="batch-correction.html#cb267-7" aria-hidden="true"></a>) <span class="op">+</span><span class="st"> </span><span class="kw">facet_grid</span>(<span class="op">~</span>batch)</span></code></pre></div>
+<div class="figure"><span style="display:block;" id="fig:batch-markers-pancreas"></span>
+<img src="batch-correction_files/figure-html/batch-markers-pancreas-1.png" alt="Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch." width="672" />
+<p class="caption">
+Figure 8.6: Distribution of log-expression values across clusters for the top marker in cluster 1 of the merged Grun/Muraro pancreas dataset. Each point is a cell and each facet is a batch.
+</p>
+</div>
+</div>
+<div id="multi-condition-analyses" class="section level2 hasAnchor" number="8.5">
+<h2><span class="header-section-number">8.5</span> Multi-condition analyses<a href="batch-correction.html#multi-condition-analyses" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="differential-expression" class="section level3 hasAnchor" number="8.5.1">
+<h3><span class="header-section-number">8.5.1</span> Differential expression<a href="batch-correction.html#differential-expression" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The most interesting scRNA-seq datasets consist of multiple samples across different conditions, e.g., treated and untreated.
+Once we have a common definition of clusters across all our samples, we can test for differences between conditions for each cluster.
+In effect, we treat the scRNA-seq data as a kind of <em>in silico</em> “super-FACS” -
+FACS<a href="#fn31" class="footnote-ref" id="fnref31"><sup>31</sup></a> is used to experimentally isolate cell types of interest before bulk RNA-seq or quantifying abundance,
+and now we do the same with scRNA-seq but our putative cell types are defined by clustering instead.
+To illustrate, we’ll pull out some pancreas data generated from normal donors and patients with type II diabetes <span class="citation">(Segerstolpe et al. <a href="#ref-segerstolpe2016singlecell" role="doc-biblioref">2016</a>)</span>:</p>
+<div class="sourceCode" id="cb268"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb268-1"><a href="batch-correction.html#cb268-1" aria-hidden="true"></a><span class="kw">library</span>(scRNAseq)</span>
+<span id="cb268-2"><a href="batch-correction.html#cb268-2" aria-hidden="true"></a>sce.seger &lt;-<span class="st"> </span><span class="kw">SegerstolpePancreasData</span>()</span>
+<span id="cb268-3"><a href="batch-correction.html#cb268-3" aria-hidden="true"></a><span class="kw">table</span>(sce.seger<span class="op">$</span>individual, sce.seger<span class="op">$</span>disease)</span></code></pre></div>
+<pre><code>##       
+##        normal type II diabetes mellitus
+##   H1       96                         0
+##   H2      352                         0
+##   H3      383                         0
+##   H4      383                         0
+##   H5      383                         0
+##   H6      383                         0
+##   T2D1      0                       383
+##   T2D2      0                       383
+##   T2D3      0                       384
+##   T2D4      0                       384</code></pre>
+<p>Happily enough, the authors provided cell type labels so we’ll use those directly instead of going through the hassle of defining clusters ourselves.
+We compute “pseudo-bulk” expression profiles <span class="citation">(Tung et al. <a href="#ref-tung2017batch" role="doc-biblioref">2017</a>)</span> by summing counts together for all cells with the same combination of cell type and sample.
+As their name suggests, these pseudo-bulk profiles are intended to mimic bulk RNA-seq data so that they can be analyzed with existing DE workflows, e.g., <em><a href="https://bioconductor.org/packages/3.23/edgeR">edgeR</a></em>, <code>voom()</code>.
+We use the sum of counts for several reasons:</p>
+<ul>
+<li>Larger counts are more amenable to analysis workflows designed for bulk RNA-seq data.
+Normalization is more straightforward and certain statistical approximations are more accurate
+e.g., the saddlepoint approximation for quasi-likelihood methods or normality for linear models.</li>
+<li>Collapsing cells into samples reflects the fact that our biological replication occurs at the sample level <span class="citation">(A. T. L. Lun and Marioni <a href="#ref-lun2017overcoming" role="doc-biblioref">2017</a>)</span>.
+Each sample is represented no more than once for each condition, avoiding problems from unmodelled correlations between samples.
+Supplying the per-cell counts directly to a bulk RNA-seq workflow would imply that each cell is an independent biological replicate,
+which is not true from an experimental perspective.
+(A mixed effects model can handle this variance structure but involves <a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html">extra complexity</a>,
+typically for little benefit - see <span class="citation">Crowell et al. (<a href="#ref-crowell2019discovery" role="doc-biblioref">2020</a>)</span>.)</li>
+<li>Variance between cells within each sample is masked, provided it does not affect variance across (replicate) samples.
+This avoids penalizing DE genes that are not uniformly up- or down-regulated for all cells in all samples of one condition.
+Masking is generally desirable as DE genes - unlike marker genes - do not need to have low within-sample variance to be interesting,
+e.g., if the treatment effect is consistent across replicates but heterogeneous within each sample.</li>
+</ul>
+<div class="sourceCode" id="cb270"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb270-1"><a href="batch-correction.html#cb270-1" aria-hidden="true"></a>pseudo.bulk.seger &lt;-<span class="st"> </span><span class="kw">aggregateAcrossCells.se</span>(sce.seger, <span class="kw">colData</span>(sce.seger)[,<span class="kw">c</span>(<span class="st">&quot;individual&quot;</span>,<span class="st">&quot;cell type&quot;</span>)])</span>
+<span id="cb270-2"><a href="batch-correction.html#cb270-2" aria-hidden="true"></a>pseudo.bulk.seger</span></code></pre></div>
+<pre><code>## class: SummarizedExperiment 
+## dim: 26179 119 
+## metadata(1): aggregated
+## assays(2): sums detected
+## rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5 eGFP
+## rowData names(2): refseq symbol
+## colnames: NULL
+## colData names(12): factor.individual factor.cell type ... submitted
+##   single cell quality cell type</code></pre>
+<div class="sourceCode" id="cb272"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb272-1"><a href="batch-correction.html#cb272-1" aria-hidden="true"></a><span class="kw">colData</span>(pseudo.bulk.seger)[,<span class="kw">c</span>(<span class="st">&quot;factor.individual&quot;</span>, <span class="st">&quot;factor.cell type&quot;</span>, <span class="st">&quot;counts&quot;</span>)]</span></code></pre></div>
+<pre><code>## DataFrame with 119 rows and 3 columns
+##     factor.individual   factor.cell type    counts
+##           &lt;character&gt;        &lt;character&gt; &lt;integer&gt;
+## 1                  H1                 NA        23
+## 2                  H1        acinar cell         4
+## 3                  H1         alpha cell        28
+## 4                  H1          beta cell        12
+## 5                  H1 co-expression cell         3
+## ...               ...                ...       ...
+## 115              T2D4       epsilon cell         1
+## 116              T2D4         gamma cell        34
+## 117              T2D4          mast cell         1
+## 118              T2D4  MHC class II cell         1
+## 119              T2D4           PSC cell         4</code></pre>
+<div class="sourceCode" id="cb274"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb274-1"><a href="batch-correction.html#cb274-1" aria-hidden="true"></a><span class="kw">assay</span>(pseudo.bulk.seger)[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>] <span class="co"># sum of counts for each individual/cell-type combination</span></span></code></pre></div>
+<pre><code>##         [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+## SGIP1      0    1    0    0    0    0    0    0  205     0
+## AZIN2      0    0  125    0    0    0    0    0   19     0
+## CLIC4      1  503  856  401  332    4  130  368    2     0
+## AGBL4      0    0  399    0    0    0    0    0    0     0
+## NECAP2     0  284 1835  491   28    3  354    0    0    91
+## SLC45A1    0    0  383   36    0    0    0    0    1     0
+## TGFBR3     0  341    1  232  262  541    0    0    1     0
+## DBT        0  113  274   12  164  333   56    0   76     0
+## RFWD2      0  162  340   91    9    6    0    0   32     0
+## C1orf21    0   27 2125    0  149  123  207    0  100     0</code></pre>
+<p>Once we have the pseudo-bulk count matrix, we test for differences between conditions (in this case, disease status) within each cell type.
+Any DE analysis method that works with bulk RNA-seq data can be used - here, we’ll be using <code>voom()</code> from the <em><a href="https://bioconductor.org/packages/3.23/limma">limma</a></em> package <span class="citation">(Law et al. <a href="#ref-law2014voom" role="doc-biblioref">2014</a>)</span>.
+We won’t go into too much detail here as there is plentiful documentation elsewhere, e.g., see <code>limma::limmaUsersGuide()</code>.
+Our only extra advice is to:</p>
+<ul>
+<li>Consider removing unreliable pseudo-bulk profiles with very few cells.
+The exact threshold depends on the dataset, the rarity of the cell type, the variance of the assay technology (e.g., UMIs versus reads),
+and whether the DE analysis supports downweighting of low-quality profiles.
+A good rule of thumb seems to be 10 cells <span class="citation">(Crowell et al. <a href="#ref-crowell2019discovery" role="doc-biblioref">2020</a>)</span>.</li>
+<li>Perform a separate analysis for each cell type instead of cramming all cell types into the same design matrix.
+This protects against differences in the mean-variance relationship across cell types.
+It also ensures that any odd behavior for one cell type’s does not affect inferences for the other cell types.</li>
+<li>Get used to higher variances and fewer DE genes compared to actual bulk RNA-seq data.
+The number of cells contributing to each pseudo-bulk profile is often orders of magnitude less than that used in bulk RNA-seq,
+so the latter will be a more precise assay of the population transcriptome.</li>
+</ul>
+<p>We test for disease-associated DE genes in beta cells using <code>voom()</code> with additional weighting for sample quality.
+Perhaps unsurprisingly, the top DE gene is <em>INS</em>.</p>
+<div class="sourceCode" id="cb276"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb276-1"><a href="batch-correction.html#cb276-1" aria-hidden="true"></a>pseudo.beta.seger &lt;-<span class="st"> </span>pseudo.bulk.seger[,<span class="kw">which</span>(pseudo.bulk.seger<span class="op">$</span><span class="st">`</span><span class="dt">factor.cell type</span><span class="st">`</span> <span class="op">==</span><span class="st"> &quot;beta cell&quot;</span>)]</span>
+<span id="cb276-2"><a href="batch-correction.html#cb276-2" aria-hidden="true"></a></span>
+<span id="cb276-3"><a href="batch-correction.html#cb276-3" aria-hidden="true"></a><span class="co"># We can have a look at the number of cells contributing to each profile, in</span></span>
+<span id="cb276-4"><a href="batch-correction.html#cb276-4" aria-hidden="true"></a><span class="co"># case we want to remove low-abundance profiles.</span></span>
+<span id="cb276-5"><a href="batch-correction.html#cb276-5" aria-hidden="true"></a>pseudo.beta.seger<span class="op">$</span>counts</span></code></pre></div>
+<pre><code>##  [1] 12 48 32 34 10 35 10 14 11 64</code></pre>
+<div class="sourceCode" id="cb278"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb278-1"><a href="batch-correction.html#cb278-1" aria-hidden="true"></a><span class="kw">library</span>(edgeR)</span>
+<span id="cb278-2"><a href="batch-correction.html#cb278-2" aria-hidden="true"></a>y.beta.seger &lt;-<span class="st"> </span><span class="kw">DGEList</span>(<span class="kw">assay</span>(pseudo.beta.seger, <span class="st">&quot;sums&quot;</span>), <span class="dt">samples=</span><span class="kw">as.data.frame</span>(<span class="kw">colData</span>(pseudo.beta.seger)))</span>
+<span id="cb278-3"><a href="batch-correction.html#cb278-3" aria-hidden="true"></a></span>
+<span id="cb278-4"><a href="batch-correction.html#cb278-4" aria-hidden="true"></a>keep.beta.seger &lt;-<span class="st"> </span><span class="kw">filterByExpr</span>(y.beta.seger, <span class="dt">group=</span>y.beta.seger<span class="op">$</span>samples<span class="op">$</span>disease)</span>
+<span id="cb278-5"><a href="batch-correction.html#cb278-5" aria-hidden="true"></a>y.beta.seger &lt;-<span class="st"> </span>y.beta.seger[keep.beta.seger,]</span>
+<span id="cb278-6"><a href="batch-correction.html#cb278-6" aria-hidden="true"></a>y.beta.seger &lt;-<span class="st"> </span><span class="kw">normLibSizes</span>(y.beta.seger)</span>
+<span id="cb278-7"><a href="batch-correction.html#cb278-7" aria-hidden="true"></a></span>
+<span id="cb278-8"><a href="batch-correction.html#cb278-8" aria-hidden="true"></a>design.beta.seger &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span>disease, y.beta.seger<span class="op">$</span>samples)</span>
+<span id="cb278-9"><a href="batch-correction.html#cb278-9" aria-hidden="true"></a>v.beta.seger &lt;-<span class="st"> </span><span class="kw">voomWithQualityWeights</span>(y.beta.seger, design.beta.seger)</span>
+<span id="cb278-10"><a href="batch-correction.html#cb278-10" aria-hidden="true"></a>fit.beta.seger &lt;-<span class="st"> </span><span class="kw">lmFit</span>(v.beta.seger)</span>
+<span id="cb278-11"><a href="batch-correction.html#cb278-11" aria-hidden="true"></a>fit.beta.seger &lt;-<span class="st"> </span><span class="kw">eBayes</span>(fit.beta.seger, <span class="dt">robust=</span><span class="ot">TRUE</span>)</span>
+<span id="cb278-12"><a href="batch-correction.html#cb278-12" aria-hidden="true"></a></span>
+<span id="cb278-13"><a href="batch-correction.html#cb278-13" aria-hidden="true"></a>res.beta.seger &lt;-<span class="st"> </span><span class="kw">topTable</span>(fit.beta.seger, <span class="dt">sort.by=</span><span class="st">&quot;p&quot;</span>, <span class="dt">n=</span><span class="ot">Inf</span>, <span class="dt">coef=</span><span class="dv">2</span>)</span>
+<span id="cb278-14"><a href="batch-correction.html#cb278-14" aria-hidden="true"></a><span class="kw">head</span>(res.beta.seger)</span></code></pre></div>
+<pre><code>##            ID     logFC   AveExpr         t      P.Value  adj.P.Val        B
+## 7287      INS -2.761129 16.655021 -7.500553 4.296911e-06 0.05020081 4.616178
+## 7689    FXYD2 -3.519464  5.676002 -6.864834 1.072013e-05 0.05020081 2.602945
+## 7688    FXYD2 -2.589501  7.284994 -6.795743 1.195542e-05 0.05020081 3.388534
+## 8349  ARL6IP4 -1.726072  7.811593 -5.660748 7.428443e-05 0.11330881 1.868303
+## 11413     HPN -1.797720  6.132052 -5.654938 7.501799e-05 0.11330881 1.664214
+## 11187 TRAPPC5 -2.121947  7.037605 -5.645027 7.628700e-05 0.11330881 1.768896</code></pre>
+</div>
+<div id="differential-abundance" class="section level3 hasAnchor" number="8.5.2">
+<h3><span class="header-section-number">8.5.2</span> Differential abundance<a href="batch-correction.html#differential-abundance" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Another interesting analysis involves testing for differences in cell type abundance between conditions, i.e., differential abundance (DA).
+We all know how immunologists love to create FACS plots showing some change in the percentages between treatments (e.g., Figure 1A of <span class="citation">Richard et al. (<a href="#ref-richard2018tcell" role="doc-biblioref">2018</a>)</span>) -
+now we can do the same kind of thing with scRNA-seq data.
+For our pancreas dataset, we create a count matrix of the number of cells assigned to each cell type in each sample.
+(If we didn’t already have annotated cell types, we could instead consider using a tool like <em><a href="https://bioconductor.org/packages/3.23/miloR">miloR</a></em>,
+which performs a DA analysis without requiring explicit assignment of each cells to clusters.)</p>
+<div class="sourceCode" id="cb280"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb280-1"><a href="batch-correction.html#cb280-1" aria-hidden="true"></a>ab.count.seger &lt;-<span class="st"> </span><span class="kw">countGroupsByBlock</span>(<span class="kw">colData</span>(sce.seger)[,<span class="st">&quot;cell type&quot;</span>], <span class="kw">colData</span>(sce.seger)<span class="op">$</span>individual)</span>
+<span id="cb280-2"><a href="batch-correction.html#cb280-2" aria-hidden="true"></a>ab.count.seger &lt;-<span class="st"> </span><span class="kw">unclass</span>(ab.count.seger) <span class="co"># get rid of the weird table class.</span></span>
+<span id="cb280-3"><a href="batch-correction.html#cb280-3" aria-hidden="true"></a>ab.count.seger</span></code></pre></div>
+<pre><code>##                              block
+## groups                        H1  H2 H3  H4 H5 H6 T2D1 T2D2 T2D3 T2D4
+##   acinar cell                  4  20 80   3  2  3    8   28   24   13
+##   alpha cell                  28 117 26 136 44 92  141  119   87   96
+##   beta cell                   12  48 32  34 10 35   10   14   11   64
+##   co-expression cell           3   3  5   6  3  6    1    5    1    6
+##   delta cell                   7  21  2   7 10 12    9    6    5   35
+##   ductal cell                  4  19 67   8 23 14    3   76  125   47
+##   endothelial cell             1   1  0   1  2  8    1    1    1    0
+##   epsilon cell                 0   1  1   0  0  3    1    0    0    1
+##   gamma cell                   7  19 15   2  1 31   70    8   10   34
+##   mast cell                    0   4  0   0  0  0    0    2    0    1
+##   MHC class II cell            1   0  0   0  0  0    0    2    1    1
+##   PSC cell                     1   1  2   6  3 10    2   12   13    4
+##   unclassified cell            0   0  0   0  0  1    1    0    0    0
+##   unclassified endocrine cell  5  15  4   0  0  5    3    3    6    0</code></pre>
+<p>We then apply standard DA pipelines to see which cell types are affected by disease.
+In particular, testing for DA is bread-and-butter stuff in the microbiome field,
+so we’d recommend checking out some of their <a href="https://microbiome.github.io/OMA/docs/devel/pages/differential_abundance.html">best practices</a>.
+Right now, though, this book is hard enough to compile without adding extra dependencies,
+so we’ll just re-use <em><a href="https://bioconductor.org/packages/3.23/edgeR">edgeR</a></em>’s statistical machinery to test for differences in the cell abundance matrix <span class="citation">(Robinson, McCarthy, and Smyth <a href="#ref-robinson2010edgeR" role="doc-biblioref">2010</a>)</span><a href="#fn32" class="footnote-ref" id="fnref32"><sup>32</sup></a>.</p>
+<div class="sourceCode" id="cb282"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb282-1"><a href="batch-correction.html#cb282-1" aria-hidden="true"></a>y.ab.seger &lt;-<span class="st"> </span><span class="kw">DGEList</span>(ab.count.seger)</span>
+<span id="cb282-2"><a href="batch-correction.html#cb282-2" aria-hidden="true"></a>y.ab.seger<span class="op">$</span>samples<span class="op">$</span>disease &lt;-<span class="st"> </span>sce.seger<span class="op">$</span>disease[<span class="kw">match</span>(<span class="kw">colnames</span>(y.ab.seger), sce.seger<span class="op">$</span>individual)]</span>
+<span id="cb282-3"><a href="batch-correction.html#cb282-3" aria-hidden="true"></a></span>
+<span id="cb282-4"><a href="batch-correction.html#cb282-4" aria-hidden="true"></a>keep.ab.seger &lt;-<span class="st"> </span><span class="kw">filterByExpr</span>(y.ab.seger, <span class="dt">group=</span>y.ab.seger<span class="op">$</span>samples<span class="op">$</span>disease)</span>
+<span id="cb282-5"><a href="batch-correction.html#cb282-5" aria-hidden="true"></a>y.ab.seger &lt;-<span class="st"> </span>y.ab.seger[keep.ab.seger,]</span>
+<span id="cb282-6"><a href="batch-correction.html#cb282-6" aria-hidden="true"></a></span>
+<span id="cb282-7"><a href="batch-correction.html#cb282-7" aria-hidden="true"></a><span class="co"># If we don&#39;t normalize, our results will be affected by composition bias. But</span></span>
+<span id="cb282-8"><a href="batch-correction.html#cb282-8" aria-hidden="true"></a><span class="co"># if we use TMM normalization, that would assume that most cell types do not</span></span>
+<span id="cb282-9"><a href="batch-correction.html#cb282-9" aria-hidden="true"></a><span class="co"># have any change in their abundance. Hard to tell which one&#39;s worse here.</span></span>
+<span id="cb282-10"><a href="batch-correction.html#cb282-10" aria-hidden="true"></a></span>
+<span id="cb282-11"><a href="batch-correction.html#cb282-11" aria-hidden="true"></a>design.ab.seger &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span>disease, y.ab.seger<span class="op">$</span>samples)</span>
+<span id="cb282-12"><a href="batch-correction.html#cb282-12" aria-hidden="true"></a>fit.ab.seger &lt;-<span class="st"> </span><span class="kw">glmQLFit</span>(y.ab.seger, design.ab.seger)</span>
+<span id="cb282-13"><a href="batch-correction.html#cb282-13" aria-hidden="true"></a>res.ab.seger &lt;-<span class="st"> </span><span class="kw">glmQLFTest</span>(fit.ab.seger, <span class="dt">coef=</span><span class="dv">2</span>)</span>
+<span id="cb282-14"><a href="batch-correction.html#cb282-14" aria-hidden="true"></a><span class="kw">topTags</span>(res.ab.seger)</span></code></pre></div>
+<pre><code>## Coefficient:  diseasetype II diabetes mellitus 
+##                   logFC   logCPM          F    PValue       FDR
+## ductal cell  0.82000345 17.40873 1.38453794 0.2451320 0.6327002
+## beta cell   -0.82063001 16.98834 1.08166503 0.3035359 0.6327002
+## gamma cell   0.78555501 16.53608 1.02526643 0.3163501 0.6327002
+## acinar cell -0.45764795 16.45058 0.33776409 0.5638419 0.8457628
+## delta cell  -0.29945991 15.88049 0.13536851 0.7145470 0.8574564
+## alpha cell  -0.02224822 18.64197 0.00231903 0.9617915 0.9617915</code></pre>
+<p>It’s worth noting that DA and DE are two sides of the same coin as they are both based from the per-cell expression profiles.
+Consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
+We focus on a cell type <span class="math inline">\(X\)</span> that is present in both conditions but contains some DE genes between conditions.
+This leads to two possible outcomes:</p>
+<ol style="list-style-type: decimal">
+<li>The DE between conditions is strong enough to split <span class="math inline">\(X\)</span> into two separate clusters (say, <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span>) in expression space.
+This manifests as DA where <span class="math inline">\(X_1\)</span> is enriched in one condition and <span class="math inline">\(X_2\)</span> is enriched in the other condition.</li>
+<li>The DE between conditions is not sufficient to split <span class="math inline">\(X\)</span> into two separate clusters,
+e.g., because our batch correction algorithm identifies them as corresponding cell types and merges them together.
+Thus, the differences between conditions manifest as DE within the single cluster corresponding to <span class="math inline">\(X\)</span>.</li>
+</ol>
+<p>It is difficult to predict whether a difference between conditions will manifest as DE or DA.
+For example, we might see DE for coarser clusters but DA for finer clusters.
+We’d recommend performing both DE and DA analyses to ensure that we can catch either possibility.</p>
+</div>
+</div>
+<div id="regrets" class="section level2 hasAnchor" number="8.6">
+<h2><span class="header-section-number">8.6</span> Some thoughts about replicates<a href="batch-correction.html#regrets" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Don’t put too much faith in the results of DE/DA analyses derived from a common clustering.
+These analyses do not capture the uncertainty in the clustering and its biological interpretation, which reduces confidence in the reproducibility of the results.
+Say we discover significant DE/DA for a cell type in our dataset.
+If an independent party were to repeat our experiment and analysis, would they be able to reach the same conclusion?
+More specifically, would they be able to partition an equivalent cluster and assign the same cell type identity?
+Weakly separated cell subtypes might not manifest as separate clusters in a new dataset,
+or the ranking of markers might change in a manner that causes the analyst to assign a different biological identity.
+We wouldn’t know; we can’t evaluate the reproducibility of our cell type annotations because we only did the clustering and interpretation once.</p>
+<p>That said, there is a way to model this uncertainty - rarely used and tedious, but it can be done.
+Consider a dataset that has multiple replicate samples for each of multiple conditions.
+The strategy is as follows:</p>
+<ol style="list-style-type: decimal">
+<li>Analyze each sample independently, from quality control to identification of cell types/states from the clusters.
+If we were being very careful, we would blind and randomize samples across multiple analysts so that variances in human bias are also modelled during manual annotation of clusters<a href="#fn33" class="footnote-ref" id="fnref33"><sup>33</sup></a>.
+Alternatively, we could use automated cell type annotation tools like <em><a href="https://bioconductor.org/packages/3.23/SingleR">SingleR</a></em>;
+these do not require any clustering and can be applied to each sample independently, but assume that our cell types of interest exist in the reference annotation.</li>
+<li>Identify matching cell types and states across samples.
+For manual annotation, one might consider using a controlled vocabulary of cell types/states to simpify this step, especially if multiple analysts are involved.
+A hierarchical cell type ontology is also useful, e.g., if we can’t match two closely related subtypes, we can at least agree that they both match to the parent type.
+This step yields a common set of cell type/state identities across all samples, replacing the common clustering derived from the corrected PCs.
+As we are forced to be explicit about how cell types are matched across samples, we don’t have to rely on the assumptions (and potential errors) of the correction algorithm.</li>
+<li>Create a pseudo-bulk or cell abundance count matrix based on the annotated cell types/states from all samples.
+Any variability in the per-sample analysis will manifest as greater variance across replicates in these count matrices.
+For example, if a cell subtype is weakly defined, we may not be able to identify it consistently across replicates, increasing the variance in the cell type abundances.
+Similarly, if a subtype is poorly separated from its relatives, its cluster may occasionally include cells from neighboring subtypes, increasing the variance of the pseudo-bulk profiles.
+The increased variance is important as it properly reflects our uncertainty about the existence of the cell subtype itself.</li>
+</ol>
+<p>In practice, this kind of analysis is pretty exhausting, especially for larger studies.
+We recall only a handful of instances over the years because it’s just too inconvenient.
+Besides, the incentives for reproducibility don’t exist in the current scientific environment.
+Why should we do more work to introduce more variance and reduce the number of significant hits<a href="#fn34" class="footnote-ref" id="fnref34"><sup>34</sup></a>?
+We typically settle on a compromise between convenience and rigor,
+where we still use a common clustering from corrected PCs but invest the extra time and resources into independent validation experiments
+(see also suggestions in Section <a href="marker-detection.html#marker-p-value-invalidity">7.7</a>).
+As long as our conclusions can be validated, we can say that our preceding analyses were “exploratory” and give ourselves a pass for any statistical impropriety.</p>
+</div>
+<div id="session-information-6" class="section level2 unnumbered hasAnchor">
+<h2>Session information<a href="batch-correction.html#session-information-6" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb284"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb284-1"><a href="batch-correction.html#cb284-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2025-12-24 r89227)
+## Platform: x86_64-pc-linux-gnu
+## Running under: Ubuntu 22.04.5 LTS
+## 
+## Matrix products: default
+## BLAS:   /home/luna/Software/R/trunk/lib/libRblas.so 
+## LAPACK: /home/luna/Software/R/trunk/lib/libRlapack.so;  LAPACK version 3.12.1
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Australia/Sydney
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] edgeR_4.9.2                 limma_3.67.0               
+##  [3] scRNAseq_2.25.0             scater_1.39.1              
+##  [5] ggplot2_4.0.1               scuttle_1.21.0             
+##  [7] scrapper_1.5.10             TENxPBMCData_1.29.0        
+##  [9] HDF5Array_1.39.0            h5mread_1.3.1              
+## [11] rhdf5_2.55.12               DelayedArray_0.37.0        
+## [13] SparseArray_1.11.10         S4Arrays_1.11.1            
+## [15] abind_1.4-8                 Matrix_1.7-4               
+## [17] SingleCellExperiment_1.33.0 SummarizedExperiment_1.41.0
+## [19] Biobase_2.71.0              GenomicRanges_1.63.1       
+## [21] Seqinfo_1.1.0               IRanges_2.45.0             
+## [23] S4Vectors_0.49.0            BiocGenerics_0.57.0        
+## [25] generics_0.1.4              MatrixGenerics_1.23.0      
+## [27] matrixStats_1.5.0           BiocStyle_2.39.0           
+## 
+## loaded via a namespace (and not attached):
+##   [1] RColorBrewer_1.1-3       jsonlite_2.0.0           magrittr_2.0.4          
+##   [4] ggbeeswarm_0.7.3         GenomicFeatures_1.63.1   gypsum_1.7.0            
+##   [7] farver_2.1.2             rmarkdown_2.30           BiocIO_1.21.0           
+##  [10] vctrs_0.6.5              memoise_2.0.1            Rsamtools_2.27.0        
+##  [13] RCurl_1.98-1.17          htmltools_0.5.9          AnnotationHub_4.1.0     
+##  [16] curl_7.0.0               BiocNeighbors_2.5.0      Rhdf5lib_1.33.0         
+##  [19] sass_0.4.10              alabaster.base_1.11.1    bslib_0.9.0             
+##  [22] alabaster.sce_1.11.0     httr2_1.2.2              cachem_1.1.0            
+##  [25] GenomicAlignments_1.47.0 lifecycle_1.0.5          pkgconfig_2.0.3         
+##  [28] rsvd_1.0.5               R6_2.6.1                 fastmap_1.2.0           
+##  [31] digest_0.6.39            AnnotationDbi_1.73.0     irlba_2.3.5.1           
+##  [34] ExperimentHub_3.1.0      RSQLite_2.4.5            beachmat_2.27.1         
+##  [37] filelock_1.0.3           labeling_0.4.3           httr_1.4.7              
+##  [40] compiler_4.6.0           bit64_4.6.0-1            withr_3.0.2             
+##  [43] S7_0.2.1                 BiocParallel_1.45.0      viridis_0.6.5           
+##  [46] DBI_1.2.3                alabaster.ranges_1.11.0  alabaster.schemas_1.11.0
+##  [49] rappdirs_0.3.3           rjson_0.2.23             tools_4.6.0             
+##  [52] vipor_0.4.7              otel_0.2.0               beeswarm_0.4.0          
+##  [55] glue_1.8.0               restfulr_0.0.16          rhdf5filters_1.23.3     
+##  [58] grid_4.6.0               gtable_0.3.6             ensembldb_2.35.0        
+##  [61] BiocSingular_1.27.1      ScaledMatrix_1.19.0      XVector_0.51.0          
+##  [64] ggrepel_0.9.6            BiocVersion_3.23.1       pillar_1.11.1           
+##  [67] dplyr_1.1.4              BiocFileCache_3.1.0      lattice_0.22-7          
+##  [70] rtracklayer_1.71.3       bit_4.6.0                tidyselect_1.2.1        
+##  [73] locfit_1.5-9.12          Biostrings_2.79.4        knitr_1.51              
+##  [76] gridExtra_2.3            bookdown_0.46            ProtGenerics_1.43.0     
+##  [79] xfun_0.55                statmod_1.5.1            UCSC.utils_1.7.1        
+##  [82] lazyeval_0.2.2           yaml_2.3.12              evaluate_1.0.5          
+##  [85] codetools_0.2-20         cigarillo_1.1.0          tibble_3.3.0            
+##  [88] alabaster.matrix_1.11.0  BiocManager_1.30.27      cli_3.6.5               
+##  [91] jquerylib_0.1.4          dichromat_2.0-0.1        Rcpp_1.1.1              
+##  [94] GenomeInfoDb_1.47.2      dbplyr_2.5.1             png_0.1-8               
+##  [97] XML_3.99-0.20            parallel_4.6.0           blob_1.2.4              
+## [100] AnnotationFilter_1.35.0  bitops_1.0-9             alabaster.se_1.11.0     
+## [103] viridisLite_0.4.2        scales_1.4.0             purrr_1.2.1             
+## [106] crayon_1.5.3             rlang_1.1.7              cowplot_1.2.0           
+## [109] KEGGREST_1.51.1</code></pre>
+
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references hanging-indent">
+<div id="ref-butler2018integrating">
+<p>Butler, A., P. Hoffman, P. Smibert, E. Papalexi, and R. Satija. 2018. “Integrating single-cell transcriptomic data across different conditions, technologies, and species.” <em>Nat. Biotechnol.</em> 36 (5): 411–20.</p>
+</div>
+<div id="ref-crowell2019discovery">
+<p>Crowell, H. L., C. Soneson, P.-L. Germain, D. Calini, L. Collin, C. Raposo, D. Malhotra, and M. D. Robinson. 2020. “muscat detects subpopulation-specific state transitions from multi-sample multi-condition single-cell transcriptomics data.” <em>Nat. Commun.</em> 11: 6077.</p>
+</div>
+<div id="ref-grun2016denovo">
+<p>Grun, D., M. J. Muraro, J. C. Boisset, K. Wiebrands, A. Lyubimova, G. Dharmadhikari, M. van den Born, et al. 2016. “De novo prediction of stem cell identity using single-cell transcriptome data.” <em>Cell Stem Cell</em> 19 (2): 266–77.</p>
+</div>
+<div id="ref-haghverdi2018batch">
+<p>Haghverdi, L., A. T. L. Lun, M. D. Morgan, and J. C. Marioni. 2018. “Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors.” <em>Nat. Biotechnol.</em> 36 (5): 421–27.</p>
+</div>
+<div id="ref-law2014voom">
+<p>Law, C. W., Y. Chen, W. Shi, and G. K. Smyth. 2014. “voom: Precision weights unlock linear model analysis tools for RNA-seq read counts.” <em>Genome Biol.</em> 15 (2): R29.</p>
+</div>
+<div id="ref-leek2012sva">
+<p>Leek, J. T., W. E. Johnson, H. S. Parker, A. E. Jaffe, and J. D. Storey. 2012. “The sva package for removing batch effects and other unwanted variation in high-throughput experiments.” <em>Bioinformatics</em> 28 (6): 882–83.</p>
+</div>
+<div id="ref-lin2019scmerge">
+<p>Lin, Y., S. Ghazanfar, K. Y. X. Wang, J. A. Gagnon-Bartsch, K. K. Lo, X. Su, Z. G. Han, et al. 2019. “scMerge leverages factor analysis, stable expression, and pseudoreplication to merge multiple single-cell RNA-seq datasets.” <em>Proc. Natl. Acad. Sci. U.S.A.</em> 116 (20): 9775–84.</p>
+</div>
+<div id="ref-lun2017overcoming">
+<p>Lun, A. T. L., and J. C. Marioni. 2017. “Overcoming confounding plate effects in differential expression analyses of single-cell RNA-seq data.” <em>Biostatistics</em> 18 (3): 451–64.</p>
+</div>
+<div id="ref-muraro2016singlecell">
+<p>Muraro, M. J., G. Dharmadhikari, D. Grun, N. Groen, T. Dielen, E. Jansen, L. van Gurp, et al. 2016. “A single-cell transcriptome atlas of the human pancreas.” <em>Cell Syst</em> 3 (4): 385–94.</p>
+</div>
+<div id="ref-richard2018tcell">
+<p>Richard, A. C., A. T. L. Lun, W. W. Y. Lau, B. Gottgens, J. C. Marioni, and G. M. Griffiths. 2018. “T cell cytolytic capacity is independent of initial stimulation strength.” <em>Nat. Immunol.</em> 19 (8): 849–58.</p>
+</div>
+<div id="ref-ritchie2015limma">
+<p>Ritchie, M. E., B. Phipson, D. Wu, Y. Hu, C. W. Law, W. Shi, and G. K. Smyth. 2015. “limma powers differential expression analyses for RNA-sequencing and microarray studies.” <em>Nucleic Acids Res.</em> 43 (7): e47.</p>
+</div>
+<div id="ref-robinson2010edgeR">
+<p>Robinson, M. D., D. J. McCarthy, and G. K. Smyth. 2010. “edgeR: a Bioconductor package for differential expression analysis of digital gene expression data.” <em>Bioinformatics</em> 26 (1): 139–40.</p>
+</div>
+<div id="ref-segerstolpe2016singlecell">
+<p>Segerstolpe, A., A. Palasantza, P. Eliasson, E. M. Andersson, A. C. Andreasson, X. Sun, S. Picelli, et al. 2016. “Single-cell transcriptome profiling of human pancreatic islets in health and type 2 diabetes.” <em>Cell Metab.</em> 24 (4): 593–607.</p>
+</div>
+<div id="ref-tung2017batch">
+<p>Tung, P. Y., J. D. Blischak, C. J. Hsiao, D. A. Knowles, J. E. Burnett, J. K. Pritchard, and Y. Gilad. 2017. “Batch effects and the effective design of single-cell gene expression studies.” <em>Sci. Rep.</em> 7 (January): 39921.</p>
+</div>
+<div id="ref-zheng2017massively">
+<p>Zheng, G. X., J. M. Terry, P. Belgrader, P. Ryvkin, Z. W. Bent, R. Wilson, S. B. Ziraldo, et al. 2017. “Massively parallel digital transcriptional profiling of single cells.” <em>Nat. Commun.</em> 8 (January): 14049.</p>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="28">
+<li id="fn28"><p>
+Well, to be more precise, they trade these obviously-wrong assumptions for a different set of less-obviously-wrong assumptions.<a href="batch-correction.html#fnref28" class="footnote-back">↩︎</a></p></li>
+<li id="fn29"><p>
+Though this benefit is probably not that reliable as it assumes that the correction algorithm manages to preserve the rare subpopulations.
+Indeed, both MNN correction and graph clustering are based on <span class="math inline">\(k\)</span>-nearest neighbors with similar choices for <span class="math inline">\(k\)</span>,
+so if a cell type is too rare to form a separate cluster within a single batch, it’s unlikely to form correct MNN pairs either.<a href="batch-correction.html#fnref29" class="footnote-back">↩︎</a></p></li>
+<li id="fn30"><p>
+A better name would be “block”, which is what we use to describe uninteresting factors in the rest of the book.
+But “block correction” sounds weird and crypto-related so we just decided to stick with “batch” in the chapter name.<a href="batch-correction.html#fnref30" class="footnote-back">↩︎</a></p></li>
+<li id="fn31"><p>Fluorescence-activtated cell sorting, duh.<a href="batch-correction.html#fnref31" class="footnote-back">↩︎</a></p></li>
+<li id="fn32"><p>
+With a hammer like <em><a href="https://bioconductor.org/packages/3.23/edgeR">edgeR</a></em>, everything kind of looks like a nail.<a href="batch-correction.html#fnref32" class="footnote-back">↩︎</a></p></li>
+<li id="fn33"><p>
+Though this is so exceptionally laborious, it’s probably not worth doing for anything other than a clinical trial.<a href="batch-correction.html#fnref33" class="footnote-back">↩︎</a></p></li>
+<li id="fn34"><p>
+Indeed, this is antithetical to the raison d’être of single-cell genomics, which is to create publishable results.<a href="batch-correction.html#fnref34" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="marker-detection.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="protein-multiomics.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": false,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/libscran/scrapbook/edit/master/batch-correction.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": "https://github.com/libscran/scrapbook/commits/master/batch-correction.Rmd",
+    "text": null
+  },
+  "view": {
+    "link": "https://github.com/libscran/scrapbook/blob/master/batch-correction.Rmd",
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
