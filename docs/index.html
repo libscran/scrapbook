@@ -22,6 +22,7 @@
 
 
 
+<meta name="date" content="2026-01-18" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -275,7 +276,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="header">
 <h1 class="title">Single-cell RNA-seq analysis with scrapper</h1>
-<p class="author multi-author"><em>Aaron Lun [aut, cre]</em></p>
+<p class="author multi-author"><em>Aaron Lun</em></p>
+<p class="date"><em>2026-01-18</em></p>
 </div>
 <div id="introduction" class="section level1 unnumbered hasAnchor">
 <h1>Introduction<a href="index.html#introduction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
@@ -287,7 +289,7 @@ typically to identify subpopulations or states that would not be apparent from p
 Since its inception, scRNA-seq has emerged as one of the premier techniques for publishing genomics papers.
 Occasionally, it is even used to do some actual science.</p>
 <p>This book describes a computational workflow for analyzing scRNA-seq data using the <a href="https://bioconductor.org">R/Bioconductor</a> ecosystem
-<span class="citation">(Huber et al. <a href="#ref-huber2015orchestrating" role="doc-biblioref">2015</a>; Amezquita et al. <a href="#ref-amezquita2020orchestrating" role="doc-biblioref">2020</a>)</span>.
+<span class="citation">(Huber et al. <a href="#ref-huber2015orchestrating" role="doc-biblioref">2015</a>)</span>.
 Most of the heavy lifting is performed using the <em><a href="https://bioconductor.org/packages/3.23/scrapper">scrapper</a></em> package, while <em><a href="https://bioconductor.org/packages/3.23/scater">scater</a></em> handles the plotting <span class="citation">(McCarthy et al. <a href="#ref-mccarthy2017scater" role="doc-biblioref">2017</a>)</span>.
 We rely heavily on Bioconductor data structures like the <code>SingleCellExperiment</code> class,
 so readers should check out the <a href="https://bioconductor.org/packages/3.23/SingleCellExperiment/vignettes/intro.html">associated documentation</a> if they haven’t already.
@@ -302,6 +304,10 @@ This includes:</p>
 <li>Clustering, to summarize the data into groups of similar cells.</li>
 <li>Marker detection, to assign biological meaning to each cluster based on its upregulated genes.</li>
 </ul>
+<p>Much of this content was scraped together from the <a href="https://bioconductor.org/books/release/OSCA/">“Orchestrating Single-Cell Analysis with Bioconductor”</a> (OSCA)
+series of books <span class="citation">(Amezquita et al. <a href="#ref-amezquita2020orchestrating" role="doc-biblioref">2020</a>)</span> that were primarily based on the older <em><a href="https://bioconductor.org/packages/3.23/scran">scran</a></em> package.
+<em><a href="https://bioconductor.org/packages/3.23/scrapper">scrapper</a></em> is just a rewrite of the most important parts of <em><a href="https://bioconductor.org/packages/3.23/scran">scran</a></em> with improved efficiency and less historical baggage.
+Similarly, this book is a more streamlined rewrite of OSCA books that (hopefully) will be easier to read and run.</p>
 <p>Truth be told, you don’t actually need to read this book if you don’t care about how/why things are done.
 Just copy and paste the following into your R session:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="index.html#cb1-1" aria-hidden="true"></a><span class="co"># Pulling out an example dataset.</span></span>
