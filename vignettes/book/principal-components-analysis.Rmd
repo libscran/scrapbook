@@ -92,7 +92,7 @@ plot(percent.var, log="y", xlab="PC", ylab="Variance explained (%)", type="b")
 stopifnot(sum(percent.var[20:40]) < 5)
 ```
 
-If we really must try to guess the "best" number of PCs^[Probably because a reviewer asked us to. YOU KNOW WHO YOU ARE.], here are a few approaches:
+If we really must try to guess the "best" number of PCs^[Probably because a reviewer asked us to.], here are a few approaches:
 
 - We can choose the elbow point in the scree plot (Figure \@ref(fig:zeisel-scree)), e.g., using the `findElbowPoint()` function from the `r Biocpkg("PCAtools")` package.
   The assumption is that there should be a sharp drop in the percentage of variance explained when we move past the last PC corresponding to biological structure.

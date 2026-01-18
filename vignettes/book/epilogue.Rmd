@@ -6,19 +6,27 @@ Congratulations on making it to the end.
 ![Congratulations!](https://github.com/LTLA/acceptable-anime-gifs/blob/master/registry/1887_Lucky-Star/0002.gif?raw=true)
 
 Here's a few more pieces of opinionated advice, drawn from bitter experience^[
-Or as I often told my manager, "fools learn from experience, wise men learn from history."
-In the end, I guess it didn't really matter as we both got fired.]:
+As I often told my manager, "fools learn from experience, wise men learn from history."
+In the end, I guess the distinction didn't matter as we both got fired.]:
 
-- Don't feel too bad about making subjective decisions in the choice of parameters or analysis.
+- Don't feel too bad about making subjective decisions in the choice of parameters.
   Much of scRNA-seq data analysis is exploratory, which is inherently guided by our own interests.
   We're just generating new hypotheses at this point so we don't need to be too rigorous. 
 - Because exploration is so open-ended, scRNA-seq data analysis can be quite time-consuming.
-  You might want to repeat the analysis with different parameters, perform subclustering, etc. to examine the data from a different perspective.
-  Make sure you get appropriate recognition for your effort^[
+  For example, you might redo the analysis with different parameters, perform subclustering, etc. to examine the data from different perspectives.
+  Make sure you get appropriate recognition for all this effort^[
   For a study with a major single-cell component, a joint first/corresponding authorship seems to be fair market price for the primary analyst.].
 - Always validate conclusions with independent replicates and a different (i.e., non-sequencing-based) assay technique. 
   We had a fun time with all the subjective data exploration to generate new hypotheses, but at some point, we need to pay the piper and test all the stuff we made up.
 
-With some luck and effort, you might be able to use scRNA-seq to do some solid science. 
-Just have fun out there, and if you're ever struggling with a project, just remember: it could be worse^[
-A benefit of working in a corporate environment is that it really broadens your horizons.].
+And hey, if all else fails, there's nothing wrong with a bit of stamp collecting^[
+For our younger readers: back in the day, when you wanted to send a message to someone,
+you would write your message on a piece of paper,
+put that paper in an envelope (a paper-based packaging device),
+and request your country's postal service to physically deliver it to the recipient's address.
+Payment for delivery would be denoted by purchasing an adhesive "stamp" and sticking it on the envelope.
+These stamps would often have interesting decorative features that made them desirable to collectors.
+In a scientific context, the infamous adage "all science is either physics or stamp collecting" is often attributed to Sir Ernest Rutherford,
+dismissing the importance of other research fields to their inability to generate testable hypotheses.
+We feel that this comparison is disrespectful to the fun and noble hobby of stamp collecting.].
+You've already been paid to generate and analyze the data, so you might as well get it published; perhaps it might help someone else down the line.

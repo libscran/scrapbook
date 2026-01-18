@@ -107,7 +107,7 @@ the former can even interfere with the latter by encouraging the formation of cl
 Our recommendation is to simply pick a "reasonable" $H$ - usually somewhere between 1000 and 5000 - and proceed with the rest of the analysis.
 If we can answer our scientific question, then our choice is good enough; if not, we can just try another value.
 There's nothing wrong with trying different parameters during data exploration^[
-If would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
+It would be another story if we were doing some confirmatory analysis with rigorous hypothesis testing.
 In such cases, it would be improper to shop around for the best parameters that gives us the result that we want.
 Fortunately, single-cell analyses have looser standards as we often don't know what we're looking for.].
 In fact, different choices of $H$ can provide new perspectives of the same dataset by changing the balance between signal and noise,
