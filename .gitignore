@@ -5,3 +5,4 @@ vignettes/book/docs
 vignettes/book/libs
 *.html
 *_files/
+deploy
