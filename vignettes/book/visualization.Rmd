@@ -14,8 +14,7 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
 ## Motivation
 
 One of the major aims of scRNA-seq data analysis is to generate a pretty figure that visualizes the distribution of cells^[
-A cynical person might say that this is the only aim of single-cell technologies, judging by a brief perusal of some recent manuscripts.
-But we would _never_ be so pessimistic.].
+A cynical person might say that this is the only aim of single-cell technologies, judging by a brief perusal of some recent manuscripts.]
 This is not straightforward as our data contains too many dimensions, even after PCA (Chapter \@ref(principal-components-analysis)).
 We can't just create FACS-style biaxial plots of each gene/PC against another as there would be too many plots to examine.
 Instead, we use more aggressive dimensionality reduction methods that can represent our population structure in a two-dimensional embedding.

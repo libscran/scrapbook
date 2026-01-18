@@ -384,7 +384,7 @@ However, this requires some care if there is any uncertainty in the identificati
 If the underlying cell types/states span cluster boundaries, conditioning on the putative identity of the parent cluster may be premature,
 e.g., a subcluster actually represents contamination from a cell type in a neighboring parent cluster.
 
-## Session information
+## Session information {-}
 
 ```{r}
 sessionInfo()
