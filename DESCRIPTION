@@ -1,6 +1,6 @@
 Package: scrapbook
 Title: Single-cell RNA-seq analyses with scrapper
-Version: 0.99.0
+Version: 0.99.1
 Date: 2026-01-18
 Authors@R: person('Aaron', 'Lun', role = c('aut', 'cre'), email="infinite.monkeys.with.keyboards@gmail.com", comment=c(ORCID="0000-0002-3564-4813"))
 Description: 
@@ -35,3 +35,4 @@ BugReports: https://github.com/libscran/scrapbook/issues
 biocViews: 
     Workflow, 
     SingleCellWorkflow
+BiocType: book
