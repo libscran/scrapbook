@@ -28,7 +28,7 @@ Payment for delivery would be denoted by purchasing an adhesive "stamp" and stic
 These stamps would often have interesting decorative features that made them desirable to collectors.
 In a scientific context, the infamous adage "all science is either physics or stamp collecting" is often attributed to Sir Ernest Rutherford,
 dismissing the importance of other research fields to their inability to generate testable hypotheses.
-We feel that this comparison is disrespectful to the fun and noble hobby of stamp collecting.].
+The comparison is particularly apt for much of single-cell genomics, though at least stamp collecting is fun and cheap.]
 You've already been paid to generate and analyze the data, so you might as well get it published; perhaps it might help someone else down the line.
 
 # References {-}

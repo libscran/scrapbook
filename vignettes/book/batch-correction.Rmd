@@ -608,8 +608,8 @@ The strategy is as follows:
    Though this is so exceptionally laborious, it's probably not worth doing for anything other than a clinical trial.].
    Alternatively, we could use automated cell type annotation tools like `r Biocpkg("SingleR")`;
    these do not require any clustering and can be applied to each sample independently, but assume that our cell types of interest exist in the reference annotation.
-2. Identify matching cell types and states across samples.
-   For manual annotation, one might consider using a controlled vocabulary of cell types/states to simpify this step, especially if multiple analysts are involved.
+2. Match corresponding cell types or states across samples.
+   For manual annotation, we might consider using a controlled vocabulary of cell types/states to simplify this step, especially if multiple analysts are involved.
    A hierarchical cell type ontology is also useful, e.g., if we can't match two closely related subtypes, we can at least agree that they both match to the parent type.
    This step yields a common set of cell type/state identities across all samples, replacing the common clustering derived from the corrected PCs.
    As we are forced to be explicit about how cell types are matched across samples, we don't have to rely on the assumptions (and potential errors) of the correction algorithm.
