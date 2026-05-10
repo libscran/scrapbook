@@ -373,53 +373,45 @@ sce.qc.zeisel <- sce.qc.zeisel[,sce.qc.zeisel$keep]
 ```
 
 We compute log-normalized expression values for endogenous genes and spike-in transcripts with their respective size factors.
-We still use the library size factors for the endogenous genes as we are not interested in changes in total RNA content.
+We still use the library size factors for the endogenous genes as we are not currently interested in changes in total RNA content.
 Both sets of size factors are centered to preserve the scale of the original counts, ensuring that normalized abundances are comparable between genes and spike-ins.
 (This is a bit more complicated with blocking, as the mean of the spike-in factors within each block must be scaled to the mean of the library size factors in that block;
-for brevity, we won't show that here.)
+this is handled by setting `block=` in `normalizeRnaCountsWithSpikeIns.se()`, but for brevity, we won't show that here.)
 
 ```{r}
-sce.norm.zeisel <- normalizeRnaCounts.se(sce.qc.zeisel, size.factors=sce.qc.zeisel$sum)
-sce.ercc <- altExp(sce.norm.zeisel, "ERCC")
-sce.norm.ercc <- normalizeRnaCounts.se(sce.ercc, size.factors=sce.ercc$sum)
+sce.norm.zeisel <- normalizeRnaCountsWithSpikeIns.se(
+    sce.qc.zeisel,
+    spike.altexps="ERCC",
+    use.spike.ins.for.endogenous=FALSE # spike-in factors only used to normalize spike-in counts.
+)
 ```
 
-We fit separate mean-dependent trends to the endogenous genes and spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
+We fit a mean-dependent trend to the variances of the spike-in transcripts (Figure \@ref(fig:trend-plot-spike-in)).
 At any given mean, the fitted value of the spike-in trend represents an estimate of the techical component of the variance.
 This assumes that an endogenous gene is subject to the same technical noise as a spike-in transcript of the same abundance.
 
-```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes and spike-in transcripts in the Zeisel brain dataset, as a function of the mean. Separate trends are fitted to the genes (blue) and spike-ins (red)."}
-sce.var.zeisel <- chooseRnaHvgs.se(sce.norm.zeisel, more.var.args=list(use.min.width=TRUE))
-sce.var.ercc <- chooseRnaHvgs.se(sce.norm.ercc)
+```{r trend-plot-spike-in, fig.cap="Variance of endogenous genes (black) and spike-in transcripts (blue crosses) in the Zeisel brain dataset, as a function of the mean. A mean-dependent trend is fitted to the spike-in variances (red)."}
+sce.var.zeisel <- chooseRnaHvgsWithSpikeIns.se(sce.norm.zeisel, spike.altexp="ERCC")
 
-var.zeisel <- rowData(sce.var.zeisel)
-plot(var.zeisel$means, var.zeisel$variances,
+var.gene.zeisel <- rowData(sce.var.zeisel)
+plot(var.gene.zeisel$means, var.gene.zeisel$variances,
     xlab="Mean of log-expression", ylab="Variance of log-expression", pch=16, cex=0.5)
-trend.gene.zeisel <- approxfun(var.zeisel$means, var.zeisel$fitted)
-curve(trend.gene.zeisel, add=TRUE, col="dodgerblue", lwd=2)
 
-var.ercc <- rowData(sce.var.ercc)
-points(var.ercc$means, var.ercc$variances, pch=4)
-trend.spike.zeisel <- approxfun(var.ercc$means, var.ercc$fitted, rule=2)
-curve(trend.spike.zeisel, add=TRUE, col="salmon", lwd=2, lty=2)
+var.spike.zeisel <- rowData(altExp(sce.var.zeisel, "ERCC"))
+points(var.spike.zeisel$means, var.spike.zeisel$variances, col="dodgerblue", pch=4)
 
-legend("topright", c("gene", "spike-in"), pch=c(16, 4))
+trend.zeisel <- approxfun(var.spike.zeisel$means, var.spike.zeisel$fitted)
+curve(trend.zeisel, add=TRUE, col="dodgerblue", lwd=2)
 ```
 
-To decompose each gene's variance into the technical and biological components,
-we estimate the fitted value of the spike-in trend at that gene's mean and subtract it from the gene's total variance.
-We could then use the biological component to select HVGs via `chooseHighlyVariableGenes()`.
-
-```{r}
-tech.var.zeisel <- trend.spike.zeisel(var.zeisel$means)
-summary(tech.var.zeisel)
-
-bio.var.zeisel <- var.zeisel$variances - tech.var.zeisel
-summary(bio.var.zeisel)
-```
-
+The residual from the trend represents each gene's biological component of variation, which can be used to select HVGs as previously described.
 In practice, this doesn't provide much benefit over the residuals from the trend fitted to the endogenous genes.
 Oh well.
+
+```{r}
+summary(var.gene.zeisel$residuals)
+summary(var.gene.zeisel$hvg)
+```
 
 ## Session information {-}
 

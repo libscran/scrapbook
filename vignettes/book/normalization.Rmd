@@ -218,8 +218,9 @@ Thus, any systematic difference in the coverage of the spike-in transcripts can 
 To remove these biases, we equalize spike-in coverage across cells by scaling with "spike-in size factors".
 
 Let's demonstrate on a scRNA-seq dataset of T cells after stimulation with T cell receptor ligands of varying affinity [@richard2018tcell].
-Specifically, we compute the total count across all spike-in transcripts in each cell and center them to a mean of 1 across all cells (see Section \@ref(norm-centering)).
-These size factors can then be plugged into `normalizeRnaCounts.se()` to obtain normalized expression values for endogenous genes.
+We compute the total count across all spike-in transcripts in each cell and center them to a mean of 1 across all cells (see Section \@ref(norm-centering)) to obtain spike-in size factors.
+We scale each cell's counts by its corresponding spike-in size factor to generate normalized expression values. 
+For convenience, this entire process is handled by the `normalizeRnaCountsWithSpikeIns.se()` function.
 
 ```{r norm-histlib-spike, fig.cap="Distribution of size factors derived from the library size in the Richard T cell dataset."}
 library(scRNAseq)
@@ -229,15 +230,19 @@ sce.richard <- RichardTCellData()
 sce.qc.richard <- sce.richard[,sce.richard$`single cell quality`=="OK"]
 sce.qc.richard
 
-# Pulling the spike-in counts out of the alternative experiment.
-sce.ercc.richard <- altExp(sce.qc.richard, "ERCC")
-sce.ercc.richard
+# The spike-in counts are stored in an alternative experiment.
+altExp(sce.qc.richard, "ERCC")
 
 library(scrapper)
-ercc.sums.richard <- colSums(counts(sce.ercc.richard))
-spike.factor.richard <- centerSizeFactors(ercc.sums.richard)
+sce.spikenorm.richard <- normalizeRnaCountsWithSpikeIns.se(
+    sce.qc.richard,
+    spike.altexps="ERCC", # compute spike-in factors with the ERCC counts.
+    use.spike.ins.for.endogenous=TRUE # use spike-in factors on the endogenous genes.
+)
+
+spike.factor.richard <- sce.spikenorm.richard$sizeFactor
 summary(spike.factor.richard)
-hist(log10(spike.factor.richard), xlab="Log10[Size factor]", col='grey80')
+hist(log10(spike.factor.richard), xlab=expression('Log'[10]*'(Size factor)'), col='grey80')
 ```
 
 Practically, spike-in normalization should be used if differences in the total RNA content between cells are of interest and must be preserved in downstream analyses.
@@ -245,15 +250,16 @@ For a given cell, an increase in its overall amount of endogenous RNA will not i
 This ensures that the effects of total RNA content on expression across the population will not be removed upon scaling.
 By comparison, library size normalization will consider any change in total RNA content as part of the bias and remove it.
 
-The differences between these two normalization strategies in illustrated in Figure \@ref(fig:norm-spike-t).
-The spike-in size factors and deconvolution size factors are positively correlated within each treatment condition,
+The differences between these two normalization strategies are illustrated in Figure \@ref(fig:norm-spike-t).
+The spike-in and library size factors are positively correlated within each treatment condition,
 indicating that they are capturing similar technical biases in sequencing depth and capture efficiency.
 However, increasing stimulation of the T cell receptor (in terms of increasing affinity or time) results in a decrease in the spike-in factors relative to the library size factors.
 This is consistent with an increase in total RNA content during stimulation, which increases the coverage of endogenous genes at the expense of the spike-in transcripts.
 
 ```{r norm-spike-t, fig.height=8, fig.width=10, fig.cap="Size factors from spike-in normalization, plotted against the library size factors for all cells in the T cell dataset. Each plot represents a different ligand treatment and each point is a cell coloured according by time from stimulation."}
-rna.sums.richard <- colSums(counts(sce.qc.richard))
-lib.factor.richard <- centerSizeFactors(rna.sums.richard)
+# Performing library size normalization for comparison. 
+sce.libnorm.richard <- normalizeRnaCounts.se(sce.qc.richard)
+lib.factor.richard <- sce.libnorm.richard$sizeFactor
 to.plot <- data.frame(
     LibFactor=lib.factor.richard,
     SpikeFactor=spike.factor.richard,
@@ -270,23 +276,19 @@ ggplot(to.plot, aes(x=LibFactor, y=SpikeFactor, color=Time)) +
     geom_abline(intercept=0, slope=1, color="red")
 ```
 
-These differences have real consequences for downstream interpretation.
+The differences between the factors have real consequences for downstream interpretation.
 If the spike-in size factors were applied to the counts, the expression values in unstimulated cells would be scaled up while expression in stimulated cells would be scaled down.
 However, the opposite would occur if the deconvolution size factors were used. 
 This can manifest as shifts in the magnitude and direction of DE between conditions when we switch between normalization strategies,
 as shown below for our most beloved gene _Malat1_ (Figure \@ref(fig:norm-effect-malat)).
 
 ```{r norm-effect-malat, fig.height=8, fig.width=10, fig.cap="Distribution of log-normalized expression values for _Malat1_ after normalization with the deconvolution size factors (left) or spike-in size factors (right). Cells are stratified by the ligand affinity and colored by the time after stimulation."}
-# Setting center=FALSE because we already centered the size factors. 
-sce.lib.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=lib.factor.richard, center=FALSE)
-sce.spike.richard <- normalizeRnaCounts.se(sce.qc.richard, size.factors=spike.factor.richard, center=FALSE)
-
 library(scater)
 gridExtra::grid.arrange(
-    plotExpression(sce.lib.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
+    plotExpression(sce.libnorm.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
         scale_x_discrete(guide = guide_axis(angle = 70)) +
         ggtitle("After library size normalization"),
-    plotExpression(sce.spike.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
+    plotExpression(sce.spikenorm.richard, x="stimulus", colour_by="time", features="ENSMUSG00000092341") + 
         scale_x_discrete(guide = guide_axis(angle = 70)) +
         ggtitle("After spike-in normalization"),
     ncol=2
@@ -295,8 +297,8 @@ gridExtra::grid.arrange(
 
 ```{r, echo=FALSE, results="hide"}
 # Checking that Malat1 does indeed change in its DE status in unstimulated vs the rest.
-markers1 <- scoreMarkers(logcounts(sce.lib.richard)["ENSMUSG00000092341",,drop=FALSE], sce.lib.richard$stimulus, all.pairwise=TRUE)
-markers2 <- scoreMarkers(logcounts(sce.spike.richard)["ENSMUSG00000092341",,drop=FALSE], sce.spike.richard$stimulus, all.pairwise=TRUE)
+markers1 <- scoreMarkers(logcounts(sce.libnorm.richard)["ENSMUSG00000092341",,drop=FALSE], sce.libnorm.richard$stimulus, all.pairwise=TRUE)
+markers2 <- scoreMarkers(logcounts(sce.spikenorm.richard)["ENSMUSG00000092341",,drop=FALSE], sce.spikenorm.richard$stimulus, all.pairwise=TRUE)
 diff <- markers1$cohens.d[,"unstimulated",] - markers2$cohens.d[,"unstimulated",]
 diff <- diff[setdiff(names(diff), "unstimulated")]
 stopifnot(all(diff > 0.2))
