@@ -190,7 +190,7 @@ Nonetheless, blocking is still helpful as it eliminates at least some of these d
 
 To be more precise, the default behavior of `block=` is to use the residuals to compute the rotation matrix but not the PC scores.
 This reduces the influence of block-to-block differences on the low-dimensional embedding but does not explicitly remove it.
-In contrast, setting `components.from.residuals=TRUE` yields PC scores that are also derived from the residuals.
+In contrast, setting `center.scores.by.block=TRUE` will center the PC scores within each block at the origin, which is effectively equivalent to deriving the scores from the residuals.
 This removes the differences between blocks but is only correct in very limiting circumstances,
 e.g., assuming all blocks have the same subpopulation composition and the difference between blocks is consistent for all cell subpopulations.
 Such assumptions may be appropriate in some situations (e.g., technical replicates) but are not generally applicable.
@@ -202,7 +202,7 @@ sce.resid.416b <- runPca.se(
     features=is.hvg.416b,
     number=20,
     block=sce.var.416b$block,
-    more.pca.args=list(components.from.residuals=TRUE)
+    more.pca.args=list(center.scores.by.block=TRUE)
 )
 
 library(scater)
