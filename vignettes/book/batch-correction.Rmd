@@ -181,7 +181,7 @@ To be more explicit, the corrected PCs are useful as they put cells from all bat
 This greatly simplifies downstream steps like clustering and $t$-SNE, which can compute distances between cells as if no batch effect was present.
 We do not have to worry about, e.g., the formation of multiple clusters that represent the same cell type/state but are only separated due to batch effects.
 Such redundant clusters are annoying to interpret as we have to (i) inspect more clusters to discover the same biology and
-(ii) match them up to each other for further analyses like those in Chapter \@ref(multi-conditions-analyses)).
+(ii) match them up to each other for further analyses like those in Chapter \@ref(multi-condition-analysis)).
 In addition, by merging batches together, we increase the number of cells by pooling together shared subpopulations across batches.
 This increases the number of cells available provides some opportunities for improved resolution of rare subpopulations^[
 Though this benefit is probably not that meaningful as it assumes that the correction algorithm manages to preserve the rare subpopulations.
@@ -257,6 +257,10 @@ For example, we wouldn't lose too much sleep if monocytes and macrophages were m
 but then again, maybe we would, if we were really interested in studying differentiation in that particular lineage.
 In any case, it is best to treat batch-corrected data - and conclusions derived from it - with a grain of salt.
 The various merging decisions made by the algorithm may or may not be sensible depending on our scientific question.
+We recommend verifying any important conclusions^[
+As we all know, some conclusions are just there to fill up the manuscript.
+I mean... does the world really need more gene regulatory networks?] by repeating the analysis without correction,
+e.g., by analyzing individual batches separately to check that a putative cell type is not an artifact.
 
 ## What is a batch effect, anyway?
 
@@ -278,11 +282,11 @@ Don't freak out - this behavior is both expected and desirable.
 By merging cells from both conditions, we only need to characterize population heterogeneity once for the entire dataset.
 For example, we can use the corrected coordinates to define a common set of clusters across both treated and control samples,
 and then interpret those clusters to identify their corresponding cell types or states.
-This, in turn, allows us test for differences in expression or abundance of the same cell type/state between conditions (Chapter \@ref(multi-sample-analyses)).
+This, in turn, allows us test for differences in expression or abundance of the same cell type/state between conditions (Chapter \@ref(multi-condition-analysis)).
 
 Some users get very upset that a (very interesting!) biological difference between conditions is deliberately removed by batch correction.
 However, this concern is largely misplaced as the corrected values are only ever used for defining common clusters and annotations.
-Any differences between conditions will still be preserved in the results of Section \@ref(multi-condition-analyses).
+Any differences between conditions will still be preserved in the results of Chapter \@ref(multi-condition-analysis).
 The alternative strategy would be to cluster each condition separately and to attempt to identify matching clusters across conditions,
 which is much less convenient - though not an inherently bad idea, see Section \@ref(regrets).
 

@@ -274,13 +274,13 @@ sce.pca.pbmc <- runPca.se(sce.var.pbmc, features=rowData(sce.var.pbmc)$hvg, numb
 ncol(reducedDim(sce.pca.pbmc))
 ```
 
-Possibly the simplest method to combine modalities involves literally combining the matrices of ADT- and RNA-derived PC scores.
-(Or if no PCA was performed for the ADTs, the log-abundance matrix can be used instead.)
+We'll start by considering the simplest possible method of combining information across modalities, i.e., literally combining their PC score matrices. 
+(If we didn't perform PCA on the ADTs, the log-abundance matrix could be used instead.)
 The combined matrix contains both sets of PCs, ensuring that heterogeneity from both modalities will be considered, e.g., when computing distances and finding neighbors.
 However, naively combining the two matrices is not ideal as the number of genes is typically several orders of magnitude greater than the number of ADTs.
 This would cause the RNA modality to dominate the variance in the combined matrix, effectively sidelining any contributions from the ADT modality.
 
-Instead, we scale the modalities to balance their contributions to the combined matrix with the `scaleByNeighbors.se()` function.
+To balance the contributions of each modality to the combined matrix, we scale their respective matrices with the `scaleByNeighbors.se()` function.
 For each modality, we compute the median distance from each cell to its $k$-nearest neighbor, which we treat as a proxy for the uninteresting variation within subpopulations. 
 Each matrix of PCs is then scaled according to its median distance, equalizing the magnitude of uninteresting variation across modalities.
 This ensures that high baseline variation in one modality will not drown out interesting biological variation in another modality in the combined matrix.

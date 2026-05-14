@@ -228,7 +228,7 @@ Our analysis strategy would look something like this:
    The increased variance is important as it properly reflects our uncertainty about the existence of the cell subtype itself.
 
 In practice, this kind of analysis is pretty exhausting, especially for larger studies.
-We've see this done only a handful of times over the years because it's just too inconvenient. 
+We've only seen this approach used on a handful of occasions over the years because it's just too inconvenient. 
 Besides, the incentives for reproducibility don't exist in most scientific environments^[ 
 Why should we do more work to introduce more variance and reduce the number of significant hits?
 This is antithetical to the raison d'être of single-cell genomics, which is to create publishable results.].
