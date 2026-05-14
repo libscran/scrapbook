@@ -258,7 +258,7 @@ but then again, maybe we would, if we were really interested in studying differe
 In any case, it is best to treat batch-corrected data - and conclusions derived from it - with a grain of salt.
 The various merging decisions made by the algorithm may or may not be sensible depending on our scientific question.
 We recommend verifying any important conclusions^[
-As we all know, some conclusions are just there to fill up the manuscript.
+As opposed to other conclusions that are just there to fill up the manuscript.
 I mean... does the world really need more gene regulatory networks?] by repeating the analysis without correction,
 e.g., by analyzing individual batches separately to check that a putative cell type is not an artifact.
 
@@ -270,7 +270,7 @@ One example is the biological variability between replicate samples (e.g., donor
 We are generally uninterested in systematic differences between samples, which might cause cells of the same type to form separate clusters based on their sample of origin.
 In these replicated experiments, we might consider removing this sample-to-sample variability by treating each sample as a batch in `correctMnn.se()`.
 Similarly, we could apply batch correction to any uninteresting categorical factor in our dataset, e.g., sex, genotype, cell cycle phase.
-Admittedly, we're misusing the word "batch" here^[
+Admittedly, at this point, we're misusing the word "batch"^[
 A better name would be "block", which is what we use to describe uninteresting factors in the rest of the book.
 But "block correction" sounds weird and bitcoin-related so we just decided to stick with "batch" in the chapter name.],
 but we're already halfway into this chapter so let's just bear with it until the end.

@@ -19,4 +19,9 @@ Useful links:
 \author{
 \strong{Maintainer}: Aaron Lun \email{infinite.monkeys.with.keyboards@gmail.com} (\href{https://orcid.org/0000-0002-3564-4813}{ORCID})
 
+Authors:
+\itemize{
+  \item Aaron Lun \email{infinite.monkeys.with.keyboards@gmail.com} (\href{https://orcid.org/0000-0002-3564-4813}{ORCID})
+}
+
 }
