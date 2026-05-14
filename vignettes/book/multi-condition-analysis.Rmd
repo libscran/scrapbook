@@ -1,0 +1,244 @@
+---
+output:
+  html_document
+bibliography: ref.bib
+---
+
+# Multi-condition analysis
+
+```{r setup, echo=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Motivation
+
+Some of our most interesting scRNA-seq datasets consist of multiple samples collected across different experimental conditions.
+The idea is to partition cells into putative cell types or states as previously described (Chapters \@ref(clustering), \@ref(batch-correction)),
+and then identify changes in gene expression or abundance between conditions for each cell type/state.
+This can yield some useful insights on the differences between the conditions, which is a nice change from the descriptive nature of most single-cell analyses.
+In fact, a multi-condition analysis represents one of the rare cases where we will actually do some formal hypothesis testing.
+So, this chapter is our chance to claw our way back towards some semblance of statistical rigor.
+
+## Differential expression
+
+Differential expression (DE) is an obvious low-hanging fruit when it comes to detecting differences between conditions.
+Specifically, our goal is to test for DE between conditions within each cell type/state identified from the single-cell data.
+This resolves changes in expression to specific subpopulations, which is more informative than the corresponding bulk RNA-seq analysis^[Though also more expensive.].
+To illustrate, let's pull out some pancreas data generated from normal donors and patients with type II diabetes [@segerstolpe2016singlecell]:
+
+```{r}
+library(scRNAseq)
+sce.seger <- SegerstolpePancreasData()
+table(sce.seger$individual, sce.seger$disease)
+```
+
+Typically, we would cluster the cells (possibly after batch correction) and then assign some biological interpretation to each cluster.
+Happily enough, the authors provided cell type labels so we'll use those directly instead of defining clusters ourselves.
+
+```{r}
+table(sce.seger$`cell type`)
+```
+
+We compute "pseudo-bulk" expression profiles [@tung2017batch] by summing counts together for all cells with the same combination of cell type and sample.
+As their name suggests, these pseudo-bulk profiles are intended to mimic bulk RNA-seq data so that they can be analyzed with existing DE workflows, e.g., `r Biocpkg("edgeR")`, `voom()`.
+We use the sum of counts for several reasons:
+
+- Larger counts are more amenable to analysis workflows designed for bulk RNA-seq data.
+  Normalization is more straightforward and certain statistical approximations are more accurate,
+  e.g., the saddlepoint approximation for quasi-likelihood methods or normality for linear models.
+- Collapsing cells into samples reflects the fact that our biological replication occurs at the sample level [@lun2017overcoming].
+  Each sample is represented no more than once for each condition, avoiding problems from unmodelled correlations between samples. 
+  Supplying the per-cell counts directly to a bulk RNA-seq workflow would imply that each cell is an independent biological replicate,
+  which is not true from an experimental perspective.
+  (A mixed effects model can handle this variance structure but involves [extra complexity](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html),
+  typically for little benefit - see @crowell2019discovery.)
+- Variance across cells within each sample is ignored, provided it does not affect the variance across (replicate) samples.
+  This is generally desirable for multi-condition analyses where the primary goal is to find consistent differences between conditions.
+  Consider a gene with a strong and consistent change in expression upon treatment but only in a subset of the cells.
+  We would happily consider this as a DE gene between conditions, despite the fact that the variance across cells in the treated samples would be inflated.
+  By comparison, marker genes should be consistently up- or down-regulated in all cells between subpopulations,
+  hence the use of the per-cell expression values in Chapter \@ref(marker-detection).
+
+```{r}
+library(scrapper)
+pseudo.bulk.seger <- aggregateAcrossCells.se(sce.seger, colData(sce.seger)[,c("individual","cell type")])
+pseudo.bulk.seger
+colData(pseudo.bulk.seger)[,c("factor.individual", "factor.cell type", "counts")]
+assay(pseudo.bulk.seger)[1:10,1:10] # sum of counts for each individual/cell-type combination
+```
+
+Once we've generated the pseudo-bulk count matrix, we test for differences between conditions - in this case, disease status - within each cell type.
+Any DE analysis method that works with bulk RNA-seq data can be used, provided that we have replicates within each condition.
+Here, we'll be using `voom()` from the `r Biocpkg("limma")` package [@law2014voom].
+We won't go into too much detail as there is plentiful documentation elsewhere, e.g., in the `limmaUsersGuide()`,
+though there are a few pieces of advice that are specific to pseudo-bulk samples:
+
+- Consider removing unreliable pseudo-bulk profiles with very few cells.
+  The exact threshold depends on the dataset, the rarity of the cell type, the variance of the assay technology (e.g., UMIs versus reads),
+  and whether the DE analysis supports downweighting of low-quality profiles.
+  A good rule of thumb seems to be 10 cells [@crowell2019discovery].
+- Perform a separate analysis for each cell type instead of cramming all cell types into the same design matrix.
+  This protects against differences in the mean-variance relationship across cell types.
+  It also ensures that any odd behavior for one cell type does not affect results for the other cell types.
+- Get used to higher variances and fewer DE genes compared to actual bulk RNA-seq data.
+  The number of cells contributing to each pseudo-bulk profile is often orders of magnitude less than that used in bulk RNA-seq,
+  so the latter will be a more precise assay of the population transcriptome.
+
+We test for disease-associated DE genes in beta cells using `voom()` with additional weighting for sample quality.
+Perhaps unsurprisingly, _INS_ is one of the top DE genes.
+We could then repeat this analysis on all available cell types, though for brevity's sake, we won't show that here. 
+Check out other Bioconductor packages like `r Biocpkg("muscat")`, which implement some convenient functions for iterative DE analyses within cell types. 
+
+```{r}
+pseudo.beta.seger <- pseudo.bulk.seger[,which(pseudo.bulk.seger$`factor.cell type` == "beta cell")]
+
+# We can have a look at the number of cells contributing to each profile, in
+# case we want to remove low-abundance profiles.
+pseudo.beta.seger$counts
+
+library(edgeR)
+y.beta.seger <- DGEList(assay(pseudo.beta.seger, "sums"), samples=as.data.frame(colData(pseudo.beta.seger)))
+
+keep.beta.seger <- filterByExpr(y.beta.seger, group=y.beta.seger$samples$disease)
+y.beta.seger <- y.beta.seger[keep.beta.seger,]
+y.beta.seger <- normLibSizes(y.beta.seger)
+
+design.beta.seger <- model.matrix(~disease, y.beta.seger$samples)
+v.beta.seger <- voomWithQualityWeights(y.beta.seger, design.beta.seger)
+fit.beta.seger <- lmFit(v.beta.seger)
+fit.beta.seger <- eBayes(fit.beta.seger, robust=TRUE)
+
+res.beta.seger <- topTable(fit.beta.seger, sort.by="p", n=Inf, coef=2)
+head(res.beta.seger)
+```
+
+```{r, echo=FALSE}
+stopifnot("INS" %in% head(res.beta.seger)$ID)
+```
+
+In effect, we treat our scRNA-seq data analysis as a kind of super-powered _in silico_ FACS^[Fluorescence-activated cell sorting, duh.].
+Here, experimental isolation of cell types based on a few surface markers is replaced by computational assignment of cell types based on their transcriptomic profiles.
+Our pseudo-bulk DE analysis is analogous to a FACS experiment followed by bulk RNA-seq on the isolated populations. 
+
+## Differential abundance
+
+We can also test for differences in cell type abundance between conditions, i.e., differential abundance (DA).
+As we all know, immunologists love to create FACS plots showing some change in the percentages between treatments, e.g., Figure 1A of @richard2018tcell.
+Now, we can do the same with scRNA-seq data.
+For our pancreas dataset, we create a count matrix of the number of cells assigned to each cell type in each sample.
+(If we didn't already have annotated cell types, we could instead consider using a tool like `r Biocpkg("miloR")`,
+which performs a DA analysis without requiring explicit assignment of each cells to clusters.)
+
+```{r}
+ab.count.seger <- countGroupsByBlock(colData(sce.seger)[,"cell type"], colData(sce.seger)$individual)
+ab.count.seger <- unclass(ab.count.seger) # get rid of the weird table class.
+ab.count.seger
+```
+
+We then apply standard DA pipelines to see which cell types are affected by disease.
+In particular, testing for DA is bread-and-butter stuff in the microbiome field,
+so we'd recommend checking out some of their [best practices](https://microbiome.github.io/OMA/docs/devel/pages/differential_abundance.html).
+Right now, though, this book is hard enough to compile without adding extra dependencies,
+so we'll just re-use `r Biocpkg("edgeR")`'s statistical machinery to test for differences in the cell abundance matrix [@robinson2010edgeR]^[
+With a hammer like `r Biocpkg("edgeR")`, everything kind of looks like a nail.].
+
+```{r}
+y.ab.seger <- DGEList(ab.count.seger)
+y.ab.seger$samples$disease <- sce.seger$disease[match(colnames(y.ab.seger), sce.seger$individual)]
+
+keep.ab.seger <- filterByExpr(y.ab.seger, group=y.ab.seger$samples$disease)
+y.ab.seger <- y.ab.seger[keep.ab.seger,]
+
+# If we don't normalize, our results will be affected by composition bias. But
+# if we use TMM normalization, that would assume that most cell types do not
+# have any change in their abundance. Hard to tell which one's worse here.
+
+design.ab.seger <- model.matrix(~disease, y.ab.seger$samples)
+fit.ab.seger <- glmQLFit(y.ab.seger, design.ab.seger)
+res.ab.seger <- glmQLFTest(fit.ab.seger, coef=2)
+topTags(res.ab.seger)
+```
+
+It's worth noting that DA and DE are two sides of the same coin as they are both inferred from the per-cell expression profiles.
+Consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
+We focus on a cell type $X$ that is present in both conditions but contains some DE genes between conditions.
+This leads to two possible outcomes:
+
+1. The DE between conditions is strong enough to split $X$ into two separate clusters (say, $X_1$ and $X_2$) in expression space.
+   This manifests as DA where $X_1$ is enriched in one condition and $X_2$ is enriched in the other condition.
+2. The DE between conditions is not sufficient to split $X$ into two separate clusters, 
+   e.g., because our batch correction algorithm identifies them as corresponding cell types and merges them together.
+   Thus, the differences between conditions manifest as DE within the single cluster corresponding to $X$.
+
+It is difficult to predict whether a difference between conditions will manifest as DE or DA.
+For example, we might see DE for coarser clusters but DA for finer clusters.
+We'd recommend performing both DE and DA analyses to ensure that we can detect either possibility.
+
+## More thoughts on statistical rigor {#regrets}
+
+In the sections above, we were fortunate enough to use pre-existing cell type annotations from @segerstolpe2016singlecell.
+For actual multi-condition analyses, we would first have to assign our own biological identities to our cell subpopulations.
+Typically, this involves some kind of correction to merge shared cell types across samples (Chapter \@ref(batch-correction)),
+clustering on the corrected data (Chapters \@ref(clustering)), and finally examination of each cluster's marker genes (Chapter \@ref(marker-detection)).
+Each cluster is used as a proxy for a cell state/type identity that is common across samples,
+serving as the basis for cell type-specific differential expression or abundance across conditions. 
+
+The most obvious concern here is that the hypothesis testing is performed on the same data used to define the subpopulations.
+This represents a form of data snooping that complicates the interpretation of the DE/DA $p$-values.
+For example, each cluster will consist of cells with similar expression profiles,
+which may (i) artificially deflate the variance across replicates but also (ii) understate the differences between conditions in a DE analysis.
+In most cases, though, it's probably fine as the process of defining the cell types/states (clustering or otherwise) is blind to the condition label of each cell.
+Any arbitrary placement of cell type/state boundaries in high-dimensional expression space should be more-or-less independent of any differences between conditions.
+Of course, we can easily imagine exceptions to this rule but these seem slightly pathological^[
+For example, if one condition has many more cells than the other, it would dictate the definition of each subpopulation, which could bias the DA analysis.
+Or, at very fine clusterings, the distributional assumptions of some DE tools are violated due to underdispersion.]. 
+
+In our opinion, the use of a common clustering is the real Achilles heel of this strategy in terms of statistical rigor.
+We fail to capture the uncertainty in the clustering and its biological interpretation, which reduces confidence in the reproducibility of the results.
+Say we discover significant DE/DA for a cell type in our dataset.
+If an independent party were to repeat our experiment and analysis, would they be able to reach the same conclusion?
+More specifically, would they be able to partition an equivalent cluster and assign the same cell type identity?
+Weakly separated cell subtypes might not manifest as separate clusters in a new dataset,
+or the ranking of markers might change in a manner that causes the analyst to assign a different biological identity.
+We wouldn't know - we can't evaluate the reproducibility of our cell type annotations because we only did the clustering and interpretation once.
+The same criticism applies to the interpretation of any common manifold, even if no explicit clustering is performed.
+
+To perform multi-condition analyses "more correctly", we need to process each sample independently to capture the variation in interpretation.
+Consider a dataset that has multiple replicate samples for each of multiple conditions.
+Our analysis strategy would look something like this:
+
+1. Analyze each sample independently, from quality control to identification of cell types/states from the clusters.
+   Specifically, biological meaning should be assigned to cell subpopulations without any information from other samples.
+   Indeed, if we were being very careful, we would blind and randomize samples across multiple analysts so that variances in human bias are also modelled during manual annotation^[
+   Though this is so exceptionally laborious, it's probably not worth doing anything less serious than a clinical trial.].
+   Alternatively, we could use automated cell type annotation tools like `r Biocpkg("SingleR")`;
+   these do not require any clustering and can be applied to each sample independently, but assume that our cell types of interest exist in the reference annotation.
+2. Match corresponding cell types or states across samples.
+   This is pretty straightforward if the per-sample cell type/state assignments use a controlled vocabulary, e.g, from the [Cell Ontology](https://cell-ontology.github.io/),
+   where the biology of interest is explicitly defined for all samples (and analysts, if more than one person is involved).
+   We avoid the use of batch correction to merge cells across samples, which means that we aren't affected by the assumptions and errors of the correction algorithm.
+   It's usually at this point that people often start complaining about their favorite cell types/states not showing up consistently across samples.
+   But frankly, if the biology is real, it had better be reproducible across your replicates^[
+   If you cant't even find your cell type in your own replicates, what chance is there of reproducing it in an independent study?], otherwise it's just wishful thinking.
+3. Create a pseudo-bulk or cell abundance count matrix based on the annotated cell types/states from all samples.
+   Any variability in the per-sample analysis will manifest as greater variance across replicates in these count matrices.
+   For example, if a cell subtype is weakly defined, we may not be able to identify it consistently across replicates, increasing the variance in the cell type abundances.
+   Similarly, if a subtype is poorly separated from its relatives, its cluster may occasionally include cells from neighboring subtypes, increasing the variance of the pseudo-bulk profiles.
+   The increased variance is important as it properly reflects our uncertainty about the existence of the cell subtype itself.
+
+In practice, this kind of analysis is pretty exhausting, especially for larger studies.
+We've see this done only a handful of times over the years because it's just too inconvenient. 
+Besides, the incentives for reproducibility don't exist in most scientific environments^[ 
+Why should we do more work to introduce more variance and reduce the number of significant hits?
+This is antithetical to the raison d'être of single-cell genomics, which is to create publishable results.].
+We typically settle on a compromise between convenience and rigor,
+where we still use a common clustering from corrected PCs but invest the extra time and resources into independent validation experiments
+(see also suggestions in Section \@ref(marker-p-value-invalidity)).
+As long as our conclusions can be validated, we can say that our preceding analyses were "exploratory" and give ourselves a pass for any statistical impropriety.
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+```
