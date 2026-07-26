@@ -417,6 +417,42 @@ gridExtra::grid.arrange(
 )
 ```
 
+```{r, echo=FALSE}
+# Check that the behavior descibed in the text above is actually occurring.
+in.grun <- sce.nn.mnn.pancreas$batch == "grun"
+in.muraro <- sce.nn.mnn.pancreas$batch == "muraro"
+
+original.values <- logcounts(sce.nn.mnn.pancreas)[current.insigf2,]
+original.grun.clusters <- split(original.values[in.grun], sce.nn.mnn.pancreas$clusters[in.grun])
+original.mean.grun <- vapply(original.grun.clusters, mean, 0)
+stopifnot(max(original.mean.grun) - median(original.mean.grun) > 4)
+
+original.muraro.clusters <- split(original.values[in.muraro], sce.nn.mnn.pancreas$clusters[in.muraro])
+original.mean.muraro <- vapply(original.muraro.clusters, mean, 0)
+original.sd.muraro <- vapply(original.muraro.clusters, sd, 0)
+stopifnot(max(original.mean.muraro) - median(original.mean.muraro) < 1)
+
+uncorrected.grun.clusters <- split(lowrank.unc.insigf2[in.grun], sce.nn.mnn.pancreas$clusters[in.grun])
+uncorrected.mean.grun <- vapply(uncorrected.grun.clusters, mean, 0)
+uncorrected.sd.grun <- vapply(uncorrected.grun.clusters, sd, 0)
+stopifnot(max(uncorrected.mean.grun) - median(uncorrected.mean.grun) > 4)
+
+uncorrected.muraro.clusters <- split(lowrank.unc.insigf2[in.muraro], sce.nn.mnn.pancreas$clusters[in.muraro])
+uncorrected.mean.muraro <- vapply(uncorrected.muraro.clusters, mean, 0)
+uncorrected.sd.muraro <- vapply(uncorrected.muraro.clusters, sd, 0)
+stopifnot(max(uncorrected.mean.muraro) - median(uncorrected.mean.muraro) < 2)
+
+corrected.grun.clusters <- split(lowrank.mnn.insigf2[in.grun], sce.nn.mnn.pancreas$clusters[in.grun])
+corrected.mean.grun <- vapply(corrected.grun.clusters, mean, 0)
+corrected.sd.grun <- vapply(corrected.grun.clusters, sd, 0)
+stopifnot(max(corrected.mean.grun) - median(corrected.mean.grun) < 2)
+
+corrected.muraro.clusters <- split(lowrank.mnn.insigf2[in.muraro], sce.nn.mnn.pancreas$clusters[in.muraro])
+corrected.mean.muraro <- vapply(corrected.muraro.clusters, mean, 0)
+corrected.sd.muraro <- vapply(corrected.muraro.clusters, sd, 0)
+stopifnot(max(corrected.mean.muraro) - median(corrected.mean.muraro) < 2)
+```
+
 For gene-based analyses, we recommend using the original log-expression values as these are easier to interpret.
 Differences between batches should be handled by some other mechanism, e.g., blocking during marker detection (Figure \@ref(fig:batch-markers-pancreas), Section \@ref(marker-block)).
 Over the past decade, we have - perhaps once or twice - used the corrected values for visualization,

@@ -103,6 +103,13 @@ plotExpression(
 Of course, the default `cohens.d.mean` is just one of many possible choices for ranking potential marker genes.
 Different effect sizes or summary statistics can yield alternative rankings that may be more or less useful.
 
+```{r, echo=FALSE}
+# If they're monocytes, we should see higher CD14 than CD16.
+stopifnot(which("CD14" == chosen.markers.10x$Symbol) < 50)
+stopifnot(which("FCGR3A" == chosen.markers.10x$Symbol) > 500)
+stopifnot(all(c("LYZ", "S100A9", "S100A8") %in% head(chosen.markers.10x$Symbol, 10)))
+```
+
 ### Choice of effect size {#marker-effect-sizes}
 
 For each pairwise comparison, we compute several effect sizes to quantify the magnitude of differential expression between two clusters.
