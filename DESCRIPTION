@@ -1,7 +1,7 @@
 Package: scrapbook
 Title: Single-cell RNA-seq analyses with scrapper
-Version: 1.1.3
-Date: 2026-07-27
+Version: 1.1.4
+Date: 2026-07-30
 Authors@R: person('Aaron', 'Lun', role = c('aut', 'cre'), email="infinite.monkeys.with.keyboards@gmail.com", comment=c(ORCID="0000-0002-3564-4813"))
 Description: 
     Demonstrates some basic analysis of single-cell RNA-seq data with scrapper. 
