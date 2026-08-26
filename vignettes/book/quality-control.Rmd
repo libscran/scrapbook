@@ -470,7 +470,7 @@ This allows most of the population structure to be characterized with fewer conc
 Once the initial analysis is done, and if there are any concerns about discarded cell types, a more thorough re-analysis can be performed where the low-quality cells are only marked.
 This recovers cell types with low RNA content, high mitochondrial proportions, etc. that only need to be interpreted insofar as they "fill the gaps" in the initial analysis.
 
-## Session Info {-}
+## Session information {-}
 
 ```{r}
 sessionInfo()
