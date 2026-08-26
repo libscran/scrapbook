@@ -1,0 +1,158 @@
+---
+output:
+  html_document
+bibliography: ref.bib
+---
+
+# Nuclei-only analysis
+
+```{r, echo=FALSE}
+library(BiocStyle)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, error=FALSE)
+```
+
+## Introduction
+
+Single-nuclei RNA-seq (snRNA-seq) is another strategy for performing single-cell transcriptomics where individual nuclei instead of cells are captured and sequenced.
+The major advantage of snRNA-seq over scRNA-seq is that the former does not require the preservation of cellular integrity during sample preparation, especially dissociation.
+We only need to extract nuclei in an intact state, meaning that snRNA-seq can be applied to cell types and tissues that are not amenable to dissociation. 
+The cost of this flexibility is the loss of cytoplasmic transcripts that might reduce the biological signal. 
+
+The computational analysis of snRNA-seq data is very much like that of scRNA-seq data.
+We have a gene-by-cell matrix of (UMI) counts that requires quality control, normalization and so on.
+(Technically, the columns correspond to nuclei but we will use these two terms interchangeably in this chapter.)
+In fact, the biggest difference in processing occurs in the construction of the count matrix itself,
+where intronic regions must be included in the annotation for each gene to account for the increased abundance of unspliced transcripts.
+The `r Biocpkg("scrapper")` analysis itself only requires a few minor adjustments to account for the loss of cytoplasmic transcripts.
+We demonstrate using a dataset from @wu2019advantages involving snRNA-seq on healthy and fibrotic mouse kidneys.
+
+```{r}
+library(scRNAseq)
+sce.nuc <- WuKidneyData()
+sce.nuc <- sce.nuc[,sce.nuc$Technology=="sNuc-10x"]
+sce.nuc
+```
+
+## Quality control for stripped nuclei
+
+We re-use the same functions in Chapter \@ref(quality-control) to compute QC metrics in our snRNA-seq dataset (Figure \@ref(fig:qc-dist-nuc)).
+Our aim is to remove low-quality cells with low total counts, low numbers of detected genes and high mitochondrial proportions.
+The biggest difference from scRNA-seq is that the mitochondrial proportion now represents the efficacy of the stripping process.
+The presence of mitochondrial counts in a library indicates that the removal of the cytoplasm was not complete,
+possibly introducing irrelevant heterogeneity in downstream analyses.
+
+```{r qc-dist-nuc, fig.height=6, fig.width=10, fig.cap="Distribution of QC metrics in the snRNA-seq dataset. Each point represents a cell and is colored according to whether it was retained after QC filtering. Dashed lines represent thresholds for each metric."}
+library(scrapper)
+is.mito.nuc <- grep("^mt-", rownames(sce.nuc))
+sce.qc.nuc <- quickRnaQc.se(sce.nuc, subsets=list(Mt=is.mito.nuc))
+qc.thresh.nuc <- metadata(sce.qc.nuc)$qc$thresholds
+qc.thresh.nuc
+
+library(scater)
+gridExtra::grid.arrange(
+    plotColData(sce.qc.nuc, y="sum", colour_by="keep") +
+        geom_hline(yintercept=qc.thresh.nuc$sum, linetype="dashed", color="red") +
+        scale_y_log10() +
+        ggtitle("Total count"),
+    plotColData(sce.qc.nuc, y="detected", colour_by="keep") +
+        geom_hline(yintercept=qc.thresh.nuc$detected, linetype="dashed", color="red") +
+        scale_y_log10() +
+        ggtitle("Detected features"),
+    plotColData(sce.qc.nuc, y="subset.proportion.Mt", colour_by="keep") + 
+        geom_hline(yintercept=qc.thresh.nuc$subset.proportion["Mt"], linetype="dashed", color="red") +
+        ggtitle("Mito prop"),
+    ncol=3
+)
+```
+
+That said, it may be too conservative to remove all libraries with non-zero mitochondrial proportions.
+Some of these counts may be caused by contamination from mitochondrial transcripts in the ambient solution.
+Even if the stripping was incomplete, a library might still contain enough biological information to be useful.
+So, we might consider relaxing the QC filter threshold on the mitochondrial proportions:
+
+```{r}
+# Cells retained using the original filter thresholds.
+summary(sce.qc.nuc$keep)
+
+# Relaxing the mitochondrial filter to allow a bit of contamination.
+qc.thresh.nuc.relaxed <- qc.thresh.nuc
+qc.thresh.nuc.relaxed$subset.proportion["Mt"] <- 0.002
+
+# Supplying custom thresholds to our QC function.
+sce.qc.nuc <- quickRnaQc.se(
+    sce.nuc,
+    subsets = list(Mt = is.mito.nuc),
+    thresholds = qc.thresh.nuc.relaxed
+)
+
+# More cells retained with the relaxed threshold.
+summary(sce.qc.nuc$keep)
+```
+
+## Comments on downstream analyses
+
+The rest of the analysis is performed using the same approach described for scRNA-seq (Figure \@ref(fig:tsne-nuc)).
+Despite the loss of cytoplasmic transcripts, there is usually still enough biological signal to characterize population heterogeneity [@bakken2018single;@wu2019advantages].
+In fact, snRNA-seq might even have a higher signal-to-noise ratio than scRNA-seq,
+as sequencing resources are not wasted on highly abundant but typically uninteresting transcripts for mitochondrial and ribosomal protein genes.
+
+```{r tsne-nuc, fig.width=10, fig.height=6, fig.cap="$t$-SNE plots of the Wu kidney dataset. Each point is a cell and is colored by its cluster assignment (left) or its disease status (right)."}
+res.full.nuc <- analyze.se(
+    sce.nuc,
+    rna.qc.subsets=list(Mt=is.mito.nuc),
+    # Making use of our filter threshold decisions:
+    more.rna.qc.args=list(thresholds=qc.thresh.nuc.relaxed)
+)
+
+sce.full.nuc <- res.full.nuc$x
+gridExtra::grid.arrange(
+    plotReducedDim(sce.full.nuc, dimred="TSNE", colour_by="graph.cluster"),
+    plotReducedDim(sce.full.nuc, dimred="TSNE", colour_by="Status"),
+    ncol=2
+)
+```
+
+We can also apply more complex procedures such as MNN correction (Chapter \@ref(batch-correction)),
+e.g., to identify shared clusters across healthy and disease samples (Figure \@ref(fig:tsne-merged-nuc)).
+
+```{r tsne-merged-nuc, fig.width=10, fig.height=6, fig.cap="$t$-SNE plots of the Wu kidney dataset after applying MNN correction across samples. Each point is a cell and is colored by its cluster assignment (left) or its disease status (right)."}
+# Re-creating our custom filter thresholds for a blocked analysis.
+sce.qc.block.nuc <- quickRnaQc.se(
+    sce.nuc,
+    block=sce.nuc$Status,
+    subsets=list(Mt=is.mito.nuc)
+)
+qc.block.thresh.nuc.relaxed <- metadata(sce.qc.block.nuc)$qc$thresholds
+qc.block.thresh.nuc.relaxed$subset.proportion[["Mt"]][] <- 0.002
+
+res.full.block.nuc <- analyze.se(
+    sce.nuc,
+    block=sce.nuc$Status,
+    rna.qc.subsets=list(Mt=is.mito.nuc),
+    more.rna.qc.args=list(thresholds=qc.block.thresh.nuc.relaxed)
+)
+
+sce.full.block.nuc <- res.full.block.nuc$x
+gridExtra::grid.arrange(
+    plotReducedDim(sce.full.block.nuc, dimred="TSNE", colour_by="graph.cluster"),
+    plotReducedDim(sce.full.block.nuc, dimred="TSNE", colour_by="Status"),
+    ncol=2
+)
+```
+
+Similarly, we can perform marker detection on the snRNA-seq expression values as discussed in Chapter \@ref(marker-detection).
+For the most part, interpretation of the marker results makes the simplifying assumption that nuclear abundances are a good proxy for the overall expression profile.
+This is generally reasonable but may not always be true, resulting in some discrepancies in the marker sets between snRNA-seq and scRNA-seq datasets.
+For example, transcripts for strongly expressed genes might localize to the cytoplasm for efficient translation and subsequently be lost upon stripping,
+while genes with the same overall expression but differences in the rate of nuclear export may appear to be differentially expressed between clusters.
+
+```{r}
+markers <- res.full.block.nuc$markers$rna
+previewMarkers(markers[["8"]])
+```
+
+## Session information {-}
+
+```{r}
+sessionInfo()
+```

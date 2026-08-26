@@ -22,5 +22,6 @@ rmd_files: [
     "batch-correction.Rmd",
     "multi-condition-analysis.Rmd",
     "cite-seq.Rmd",
+    "nuclei-analysis.Rmd",
     "epilogue.Rmd"
     ]
