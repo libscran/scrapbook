@@ -23,7 +23,8 @@ Depends:
     scater,
     scrapper,
     scRNAseq,
-    TENxPBMCData
+    TENxPBMCData,
+    MouseGastrulationData
 Suggests: 
     rmarkdown,
     bookdown,
