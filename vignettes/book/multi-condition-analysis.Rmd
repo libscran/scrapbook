@@ -37,6 +37,7 @@ Typically, we would cluster the cells (possibly after batch correction) and then
 Happily enough, the authors provided cell type labels so we'll use those directly instead of defining clusters ourselves.
 
 ```{r}
+# Remove cells with no assigned cell type.
 sce.seger <- sce.seger[,!is.na(sce.seger$`cell type`)]
 table(sce.seger$`cell type`)
 ```
@@ -63,7 +64,10 @@ We use the sum of counts for several reasons:
 
 ```{r}
 library(scrapper)
-pseudo.bulk.seger <- aggregateAcrossCells.se(sce.seger, colData(sce.seger)[,c("individual","cell type")])
+pseudo.bulk.seger <- aggregateAcrossCells.se(
+    sce.seger,
+    colData(sce.seger)[,c("individual","cell type")]
+)
 pseudo.bulk.seger
 colData(pseudo.bulk.seger)[,c("factor.individual", "factor.cell type", "counts")]
 assay(pseudo.bulk.seger)[1:10,1:10] # sum of counts for each individual/cell-type combination
@@ -124,22 +128,24 @@ Our pseudo-bulk DE analysis is analogous to a FACS experiment followed by bulk R
 
 ## Differential abundance
 
-We can also test for differences in cell type abundance between conditions, i.e., differential abundance (DA).
-As we all know, immunologists love to create FACS plots showing some change in the percentages between treatments, e.g., Figure 1A of @richard2018tcell.
-Now, we can do the same with scRNA-seq data.
-For our pancreas dataset, we create a count matrix of the number of cells assigned to each cell type in each sample.
-(If we didn't already have annotated cell types, we could instead consider using a tool like `r Biocpkg("miloR")`,
-which performs a DA analysis without requiring explicit assignment of each cells to clusters.)
+Speaking of FACS, we all know that immunologists love to create FACS plots showing some change in cell type percentages between treatments, e.g., Figure 1A of @richard2018tcell.
+Now, we can do the same type of analysis with scRNA-seq data.
+Let's use our pancreas dataset to create a count matrix of the number of cells assigned to each cell type in each sample.
+Our aim is to find significant differences in cell type abundance between conditions, i.e., differential abundance (DA).
 
 ```{r}
-ab.count.seger <- countGroupsByBlock(colData(sce.seger)[,"cell type"], colData(sce.seger)$individual)
+ab.count.seger <- countGroupsByBlock(
+    colData(sce.seger)[,"cell type"],
+    colData(sce.seger)$individual
+)
 ab.count.seger <- unclass(ab.count.seger) # get rid of the weird table class.
 ab.count.seger
 ```
 
-We then apply standard DA pipelines to see which cell types are affected by disease.
-In particular, testing for DA is bread-and-butter stuff in the microbiome field,
+Testing for DA is bread-and-butter stuff in the microbiome field,
 so we'd recommend checking out some of their [best practices](https://microbiome.github.io/OMA/docs/devel/pages/differential_abundance.html).
+Alternatively, if we didn't already have annotated cell types, we could instead consider using a tool like `r Biocpkg("miloR")`,
+which performs a DA analysis without requiring explicit assignment of each cells to clusters.
 Right now, though, this book is hard enough to compile without adding extra dependencies,
 so we'll just re-use `r Biocpkg("edgeR")`'s statistical machinery to test for differences in the cell abundance matrix [@robinson2010edgeR]^[
 With a hammer like `r Biocpkg("edgeR")`, everything kind of looks like a nail.].
@@ -148,18 +154,24 @@ With a hammer like `r Biocpkg("edgeR")`, everything kind of looks like a nail.].
 y.ab.seger <- DGEList(ab.count.seger)
 y.ab.seger$samples$disease <- sce.seger$disease[match(colnames(y.ab.seger), sce.seger$individual)]
 
-keep.ab.seger <- filterByExpr(y.ab.seger, group=y.ab.seger$samples$disease)
-y.ab.seger <- y.ab.seger[keep.ab.seger,]
-
-# If we don't normalize, our results will be affected by composition bias. But
-# if we use TMM normalization, that would assume that most cell types do not
-# have any change in their abundance. Hard to tell which one's worse here.
+# Omit the filtering, we have so few subpopulations that we don't want to
+# remove any of them. We also don't call normLibSizes(), see explanation below.
 
 design.ab.seger <- model.matrix(~disease, y.ab.seger$samples)
 fit.ab.seger <- glmQLFit(y.ab.seger, design.ab.seger)
 res.ab.seger <- glmQLFTest(fit.ab.seger, coef=2)
 topTags(res.ab.seger)
 ```
+
+The trickiest part of the DA analysis is the choice of normalization strategy.
+We did not call `normLibSizes()` in the code above, which causes `r Biocpkg("edgeR")` to default to normalization by the total count.
+This assumes that any variation in the total number of cells between samples is not biologically interesting (e.g., differences in dissociation efficiency) and should be removed.
+If this assumption is not valid, our normalization could introduce spurious differences between samples due to composition bias.
+For example, if an experimental treatment induced a large expansion of a particular subpopulation in one condition, the total number of cells would be inflated in that condition.
+Normalization by the total count would then decrease the abundance of all other subpopulations, even if nothing about those other subpopulations changed between conditions.
+We might consider other methods like TMM normalization to explicitly remove composition biases,
+though these have their own assumptions (i.e., that most subpopulations are not DA) that may not always be appropriate.
+Unfortunately, there's no universally good answer to this problem so some caution is required when interpreting the DA results.
 
 It's worth noting that DA and DE are two sides of the same coin as they are both inferred from the per-cell expression profiles.
 Consider a scRNA-seq experiment involving two biological conditions with several shared cell types.
