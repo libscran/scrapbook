@@ -61,18 +61,26 @@ summary(sce.norm.zeisel$sizeFactor)
 hist(log10(sce.norm.zeisel$sizeFactor), xlab="Log10[Size factor]", col='grey80')
 ```
 
-Strictly speaking, the use of library size factors assumes that there is no "imbalance" in the differentially expressed (DE) genes between any pair of cells.
-That is, any upregulation for a subset of genes is cancelled out by the same magnitude of downregulation in a different subset of genes.
-This avoids composition biases where upregulation of some genes reduces the sequencing resources available for other genes.
-If balanced DE is not present, more sophisticated methods for computing size factors may be required [@robinson2010scaling;@anders2010differential;@lun2016pooling].
+Strictly speaking, library size normalization is not correct due to composition bias in the presence of differential expression (DE). 
+Imagine that gene $X$ is strongly upregulated in a particular cell, which increases its total RNA content and thus its library size.
+Upon normalization, the increased library size deflates the apparent expression of all other genes in the same cell.
+This results in spurious DE for those genes when compared to other cells that do not upregulate $X$.
 In practice, library size factors perform well for exploratory scRNA-seq data analyses despite their theoretical inaccuracy:
 
+- Composition biases are not introduced if the DE is "balanced",
+  i.e., any upregulation for a subset of genes is cancelled out by the same magnitude of downregulation in a different subset of genes.
+  Anecdotally, many perturbations seem to introduce balanced DE, presumably because there are only so many genes that a cell can express at any given time.
 - Gene expression profiles often contain constitutively-expressed genes with large counts, e.g., histones, ribosomal proteins^[And maybe even our favorite gene, _MALAT1_].
   These stabilize the library sizes in the presence of imbalanced DE.
 - Composition biases do not usually affect the partitioning of cells into clusters (Chapter \@ref(clustering)).
   If the DE was strong enough to introduce a significant composition bias, it is also strong enough to separate the cell subpopulations during clustering.
 - Experience from bulk RNA-seq suggests that composition biases are actually quite small, typically introducing a spurious 10-20% difference in expression. 
   This is negligible compared to the order-of-magnitude fold-changes for the marker genes (Chapter \@ref(marker-detection)). 
+
+If we really want to remove composition biases, we'll need to use more sophisticated methods [@robinson2010scaling;@anders2010differential;@lun2016pooling].
+But it's probably not worth it^[
+As much as it pains me to admit it.
+Accurate normalization goes into the bin of "things we thought were important at the time", next to all those zero-inflated models.].
 
 ## Normalized expression values
 
@@ -98,8 +106,8 @@ e.g., the squared Euclidean distance between two cells is the sum of squared log
 During the log-transformation, `normalizeRnaCounts.se()` will add a pseudo-count to avoid undefined values at zero counts.
 This addition has the side effect of shrinking log-fold changes between cells towards zero for low-abundance genes.
 Such shrinkage is desirable as the log-differences are not reliable when the counts are low due to random sampling noise. 
-So, if we were to use a pseudo-count of 1, the log-fold change between normalized expression values of 1 and 2 would be $log_2((2 + 1)/(1 + 1)) \approx 0.58$,
-while the log-fold change between normalized expression values of 10 and 20 would be $log_2((20 + 1)/(10 + 1)) \approx 0.93$,
+So, if we were to use a pseudo-count of 1, the log-fold change between normalized expression values of 1 and 2 would be $\log_2((2 + 1)/(1 + 1)) \approx 0.58$,
+while the log-fold change between normalized expression values of 10 and 20 would be $\log_2((20 + 1)/(10 + 1)) \approx 0.93$,
 i.e., larger counts will contribute more to the distances between cells.
 A pseudo-count of 1 is common for the pragmatic reason that it preserves sparsity, i.e., zeroes in the input remain zeroes after transformation.
 However, larger values can also be used for greater shrinkage if low-abundance genes are problematic [@lun2018overcoming].
@@ -178,7 +186,7 @@ plotColData(sce.qc.brain, x='study', y='sum') + scale_y_log10()
 
 A more conservative approach is to scale down the Tasic counts to match the coverage of the Zeisel data.
 We specify the study of origin for each cell in `block=`, which adjusts the size factors to scale all cells down to the lowest-coverage batch (Figure \@ref(fig:norm-batch-sf)).
-This avoids amplication of sampling noise at the cost of greater shrinkage when counts are scaled down relative to the pseudo-count (Section \@ref(norm-centering)).
+This avoids amplication of sampling noise at the cost of greater shrinkage when counts are scaled down relative to the pseudo-count. 
 In effect, we are forcibly reducing the contribution of low-abundance genes in the Tasic data to be consistent with their behavior in the Zeisel data.
 Hopefully, there's still enough signal among the higher-abundance genes to find something interesting in later analysis steps.
 
