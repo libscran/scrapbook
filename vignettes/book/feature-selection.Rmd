@@ -201,7 +201,8 @@ hvgs.tropho <- rowData(sce.var.tropho)$hvg
 sum(hvgs.tropho)
 ```
 
-Alternatively, we could focus on genes are consistently variable within each block by asking `chooseRnaHvgs.se()` to compute a quantile instead of a weighted mean.
+Alternatively, we could focus on genes that are consistently variable within each block.
+We do so by asking `chooseRnaHvgs.se()` to compute a quantile instead of a weighted mean across blocks.
 For example, we could report the minimum residual across blocks, which means that genes will only be considered as HVGs if they have large positive residuals in each block.
 This tends to scale poorly as it becomes too stringent with a large number of blocks.
 
